@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import Image from "next/image";
 import LogoutButton from "./LogoutButton";
+import type { CurrentAdminUser } from "../lib/auth";
 
 const groups = [
   { label: "Workspace", links: [["Overview", ""]] },
@@ -39,7 +40,7 @@ const groups = [
   },
 ] as const;
 
-export default function AdminSidebar({ logoUrl }: { logoUrl?: string }) {
+export default function AdminSidebar({ logoUrl, currentUser }: { logoUrl?: string; currentUser: CurrentAdminUser | null }) {
   const pathname = usePathname(),
     [open, setOpen] = useState(false);
   return (
@@ -138,9 +139,10 @@ export default function AdminSidebar({ logoUrl }: { logoUrl?: string }) {
         </nav>
         <div className="border-t border-white/[.07] p-4">
           <div className="mb-3 rounded-lg bg-white/[.03] px-3 py-3">
-            <p className="text-xs font-bold text-slate-200">Test Admin</p>
-            <p className="mt-0.5 text-[10px] font-medium text-slate-600">
-              Content administrator
+            <p className="truncate text-xs font-bold text-slate-200">{currentUser?.displayName || "Signed-in user"}</p>
+            <p className="mt-0.5 truncate text-[10px] font-medium text-slate-500">{currentUser?.email}</p>
+            <p className="mt-1 text-[9px] font-bold uppercase tracking-wider text-cyan-400/70">
+              {currentUser?.role === "administrator" ? "Administrator" : "Editor"}
             </p>
           </div>
           <LogoutButton />

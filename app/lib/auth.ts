@@ -5,6 +5,7 @@ import { db } from './db'
 
 const COOKIE_NAME = 'byteflow_admin_session'
 const MAX_AGE = 60 * 60 * 12
+export type CurrentAdminUser = { displayName: string; email: string; role: 'administrator' | 'editor' }
 
 function secret() {
   const value = process.env.ADMIN_SESSION_SECRET
@@ -86,4 +87,37 @@ export async function isAdministrator() {
     const result = await db.execute({ sql: 'SELECT role FROM admin_users WHERE lower(email)=? AND active=1 LIMIT 1', args: [session.email.toLowerCase()] })
     return result.rows[0]?.role === 'administrator'
   } catch { return false }
+}
+
+export async function getCurrentAdminUser(): Promise<CurrentAdminUser | null> {
+  try {
+    if (!(await isAdminAuthenticated())) return null
+    const value = (await cookies()).get(COOKIE_NAME)?.value
+    if (!value) return null
+    const [payload] = value.split('.')
+    const session = JSON.parse(Buffer.from(payload, 'base64url').toString()) as { email: string }
+    const email = session.email.trim().toLowerCase()
+    const result = await db.execute({
+      sql: 'SELECT display_name,email,role FROM admin_users WHERE lower(email)=? AND active=1 LIMIT 1',
+      args: [email],
+    }).catch(() => ({ rows: [] }))
+    const user = result.rows[0]
+    if (user) {
+      return {
+        displayName: String(user.display_name || user.email),
+        email: String(user.email),
+        role: user.role === 'administrator' ? 'administrator' : 'editor',
+      }
+    }
+    if (email === process.env.ADMIN_EMAIL?.trim().toLowerCase()) {
+      return {
+        displayName: email.split('@')[0].replace(/[._-]+/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase()),
+        email,
+        role: 'administrator',
+      }
+    }
+    return null
+  } catch {
+    return null
+  }
 }
