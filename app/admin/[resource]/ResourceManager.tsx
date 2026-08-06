@@ -92,23 +92,35 @@ export default function ResourceManager({
   }
   async function save(event: React.FormEvent) {
     event.preventDefault();
-    setSaving(true);
-    setNotice(null);
-    const isUpdate = Number(editing?.id) > 0;
-    const response = await fetch(`/api/admin/${resourceKey}`, {
-      method: isUpdate ? "PUT" : "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ ...form, id: editing?.id }),
-    });
-    const data = await response.json();
-    setSaving(false);
-    if (!response.ok) {
-      setNotice({ type: "error", text: data.error ?? "Unable to save" });
+    const missing = config.fields.find(
+      (field) => field.required && !String(form[field.name] ?? "").trim(),
+    );
+    if (missing) {
+      setNotice({ type: "error", text: `${missing.label} is required.` });
       return;
     }
-    setNotice({ type: "ok", text: `${config.singular} saved successfully.` });
-    if (!config.singleton) cancel();
-    await load();
+    setSaving(true);
+    setNotice(null);
+    try {
+      const isUpdate = Number(editing?.id) > 0;
+      const response = await fetch(`/api/admin/${resourceKey}`, {
+        method: isUpdate ? "PUT" : "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ ...form, id: editing?.id }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setNotice({ type: "error", text: data.error ?? "Please check the form and try again." });
+        return;
+      }
+      setNotice({ type: "ok", text: `${config.singular} saved successfully.` });
+      if (!config.singleton) cancel();
+      await load();
+    } catch {
+      setNotice({ type: "error", text: "We could not save your changes. Check your connection and try again." });
+    } finally {
+      setSaving(false);
+    }
   }
   async function remove(record: RecordValue) {
     if (

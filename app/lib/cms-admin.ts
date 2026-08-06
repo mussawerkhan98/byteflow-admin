@@ -4,6 +4,20 @@ import type { Field, Resource } from './cms-config'
 
 type Data = Record<string, unknown>
 
+async function ensureResourceTable(resource: Resource) {
+  if (resource.table !== 'website_scripts') return
+  await db.execute(`CREATE TABLE IF NOT EXISTS website_scripts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    placement TEXT NOT NULL DEFAULT 'head' CHECK(placement IN ('head','body_end')),
+    code TEXT NOT NULL,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    enabled INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  )`)
+}
+
 function normalize(field: Field, value: unknown) {
   if (field.type === 'boolean') return value === true || value === 1 || value === '1' ? 1 : 0
   if (field.type === 'number') {
@@ -34,15 +48,23 @@ function normalize(field: Field, value: unknown) {
 }
 
 function clean(resource: Resource, input: Data) {
-  return Object.fromEntries(resource.fields.map((field) => [field.name, normalize(field, input[field.name])]))
+  const data = Object.fromEntries(resource.fields.map((field) => [field.name, normalize(field, input[field.name])]))
+  if (resource.table === 'website_scripts') {
+    const code = String(data.code ?? '')
+    if (code.length > 100_000) throw new Error('Script or HTML snippet must be 100,000 characters or fewer')
+    if (/<\/(?:head|body|html)\s*>/i.test(code)) throw new Error('Script snippets cannot close the head, body, or HTML document')
+  }
+  return data
 }
 
 export async function listRecords(resource: Resource) {
+  await ensureResourceTable(resource)
   const result = await db.execute(`SELECT * FROM ${resource.table} ORDER BY ${resource.orderBy}`)
   return result.rows.map((row) => Object.fromEntries(Object.entries(row).map(([key, value]) => [key, typeof value === 'bigint' ? Number(value) : value])))
 }
 
 export async function createRecord(resource: Resource, input: Data) {
+  await ensureResourceTable(resource)
   if (resource.readOnly) throw new Error('This resource is read-only')
   const data = clean(resource, input)
   const fields = Object.keys(data)
@@ -54,6 +76,7 @@ export async function createRecord(resource: Resource, input: Data) {
 }
 
 export async function updateRecord(resource: Resource, id: number, input: Data) {
+  await ensureResourceTable(resource)
   const data = clean(resource, input)
   const fields = Object.keys(data)
   await db.execute({
@@ -63,6 +86,7 @@ export async function updateRecord(resource: Resource, id: number, input: Data) 
 }
 
 export async function deleteRecord(resource: Resource, id: number) {
+  await ensureResourceTable(resource)
   await db.execute({ sql: `DELETE FROM ${resource.table} WHERE id = ?`, args: [id] })
 }
 

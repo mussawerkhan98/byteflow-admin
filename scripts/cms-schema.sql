@@ -78,6 +78,11 @@ CREATE TABLE IF NOT EXISTS media (
   id INTEGER PRIMARY KEY AUTOINCREMENT, filename TEXT NOT NULL, url TEXT NOT NULL UNIQUE, mime_type TEXT NOT NULL,
   size_bytes INTEGER NOT NULL, alt_text TEXT NOT NULL DEFAULT '', created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+CREATE TABLE IF NOT EXISTS website_scripts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, placement TEXT NOT NULL DEFAULT 'head' CHECK(placement IN ('head','body_end')),
+  code TEXT NOT NULL, sort_order INTEGER NOT NULL DEFAULT 0, enabled INTEGER NOT NULL DEFAULT 1,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')), updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
 CREATE TABLE IF NOT EXISTS admin_users (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   display_name TEXT NOT NULL,

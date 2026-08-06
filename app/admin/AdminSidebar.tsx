@@ -34,6 +34,7 @@ const groups = [
       ["Submissions", "submissions"],
       ["Admin users", "users"],
       ["Site settings", "settings"],
+      ["Website scripts", "scripts"],
     ],
   },
 ] as const;

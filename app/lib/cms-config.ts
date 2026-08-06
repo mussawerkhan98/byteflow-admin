@@ -320,6 +320,32 @@ export const resources = {
       { name: "map_enabled", label: "Map enabled", type: "boolean" },
     ],
   },
+  scripts: {
+    table: "website_scripts",
+    title: "Website Scripts",
+    singular: "Script",
+    orderBy: "placement, sort_order, name",
+    fields: [
+      { name: "name", label: "Name", type: "text", required: true },
+      {
+        name: "placement",
+        label: "Placement",
+        type: "select",
+        required: true,
+        options: ["head", "body_end"],
+        help: "Use head for verification/meta tags and body_end for most analytics or chat scripts.",
+      },
+      {
+        name: "code",
+        label: "Script or HTML snippet",
+        type: "textarea",
+        required: true,
+        help: "Paste the complete code supplied by Google, Meta, analytics, chat, or another trusted provider.",
+      },
+      { name: "sort_order", label: "Load order", type: "number" },
+      { name: "enabled", label: "Enabled", type: "boolean" },
+    ],
+  },
   posts: {
     table: "posts",
     title: "Blog Posts",
