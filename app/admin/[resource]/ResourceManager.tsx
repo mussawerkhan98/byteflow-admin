@@ -10,8 +10,27 @@ type PageOption = { id: number; name: string; slug: string };
 const booleanValue = (value: unknown) =>
   value === true || value === 1 || value === "1";
 const isImageField = (name: string) =>
+  !/(^|_)(alt|caption)(_|$)/.test(name) &&
   /(^|_)(image|logo|favicon)(_|$)/.test(name);
 const isUploadField = (name: string) => isImageField(name) || name === "icon";
+
+async function optimizeImage(file: File) {
+  if (file.type === "image/gif" || file.size < 500 * 1024) return file;
+  const bitmap = await createImageBitmap(file);
+  const scale = Math.min(1, 1600 / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+  canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+  canvas.getContext("2d")?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close();
+  const blob = await new Promise<Blob | null>((resolve) =>
+    canvas.toBlob(resolve, "image/webp", 0.82),
+  );
+  if (!blob || blob.size >= file.size) return file;
+  return new File([blob], `${file.name.replace(/\.[^.]+$/, "")}.webp`, {
+    type: "image/webp",
+  });
+}
 
 export default function ResourceManager({
   resourceKey,
@@ -152,37 +171,43 @@ export default function ResourceManager({
     if (!file) return;
     setUploadingField(fieldName);
     setNotice(null);
-    const payload = new FormData();
-    payload.set("file", file);
-    if (fieldName === "icon") payload.set("kind", "icon");
-    payload.set(
-      "altText",
-      String(
-        form.image_alt ??
-          form.alt_text ??
-          form.title ??
-          form.name ??
-          config.singular,
-      ),
-    );
-    const response = await fetch("/api/admin/upload", {
-      method: "POST",
-      body: payload,
-    });
-    const data = await response.json();
-    setUploadingField(null);
-    if (!response.ok) {
-      setNotice({
-        type: "error",
-        text: data.error ?? "Unable to upload file",
+    try {
+      const uploadFile = fieldName === "icon" ? file : await optimizeImage(file);
+      const payload = new FormData();
+      payload.set("file", uploadFile);
+      if (fieldName === "icon") payload.set("kind", "icon");
+      payload.set(
+        "altText",
+        String(
+          form.image_alt ??
+            form.alt_text ??
+            form.title ??
+            form.name ??
+            config.singular,
+        ),
+      );
+      const response = await fetch("/api/admin/upload", {
+        method: "POST",
+        body: payload,
       });
-      return;
+      const data = await response.json();
+      if (!response.ok) {
+        setNotice({
+          type: "error",
+          text: data.error ?? "Unable to upload file",
+        });
+        return;
+      }
+      change(fieldName, data.url);
+      setNotice({
+        type: "ok",
+        text: `${fieldName === "icon" ? "SVG icon" : "Image"} uploaded. Save changes to apply it to this record.`,
+      });
+    } catch {
+      setNotice({ type: "error", text: "The image could not be prepared or uploaded. Please try again." });
+    } finally {
+      setUploadingField(null);
     }
-    change(fieldName, data.url);
-    setNotice({
-      type: "ok",
-      text: `${fieldName === "icon" ? "SVG icon" : "Image"} uploaded. Save changes to apply it to this record.`,
-    });
   }
 
   return (
