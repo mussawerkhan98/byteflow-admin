@@ -319,6 +319,7 @@ export default function ResourceManager({
                 ) : field.type === "json" ? (
                   <StructuredFieldEditor
                     fieldName={field.name}
+                    sectionType={String(form.section_type ?? "")}
                     value={String(form[field.name] ?? "")}
                     onChange={(value) => change(field.name, value)}
                   />

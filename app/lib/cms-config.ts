@@ -123,6 +123,7 @@ export const resources = {
         options: [
           "hero",
           "about",
+          "founder",
           "services",
           "faq",
           "reviews",

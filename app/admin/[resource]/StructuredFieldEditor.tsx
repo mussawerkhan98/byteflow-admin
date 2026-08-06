@@ -1,10 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus, faTrash } from "@fortawesome/free-solid-svg-icons";
 
 type Props = {
   fieldName: string;
+  sectionType?: string;
   value: string;
   onChange: (value: string) => void;
 };
@@ -21,9 +23,64 @@ function parse<T>(value: string, fallback: T): T {
 
 export default function StructuredFieldEditor({
   fieldName,
+  sectionType,
   value,
   onChange,
 }: Props) {
+  const [uploading, setUploading] = useState(false);
+  if (fieldName === "content" && sectionType === "founder") {
+    const content = parse<Record<string, string>>(value, {});
+    const fields = [
+      ["eyebrow", "Small heading", "Meet the founder"],
+      ["heading", "Main heading", "Started with a laptop and a promise…"],
+      ["story", "Story (separate paragraphs with a blank line)", "Founder story"],
+      ["image_url", "Owner image URL", "/images/owner/owner.png"],
+      ["image_alt", "Image alt text", "Byteflow founder"],
+      ["role", "Role", "Founder & CEO"],
+      ["company", "Company", "Byteflow Information Technology"],
+      ["linkedin_url", "LinkedIn URL", "https://…"],
+      ["phone_label", "Phone shown", "+971 54 328 2042"],
+      ["phone_url", "Phone link", "tel:+971543282042"],
+    ];
+    const update = (key: string, nextValue: string) =>
+      onChange(JSON.stringify({ ...content, [key]: nextValue }));
+    const uploadOwnerImage = async (file?: File) => {
+      if (!file) return;
+      setUploading(true);
+      try {
+        const payload = new FormData();
+        payload.set("file", file);
+        payload.set("altText", content.image_alt || "Byteflow founder");
+        const response = await fetch("/api/admin/upload", { method: "POST", body: payload });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Upload failed");
+        update("image_url", String(data.url));
+      } finally {
+        setUploading(false);
+      }
+    };
+    return (
+      <div className="mt-2 grid gap-3 rounded-xl border border-slate-700 bg-slate-950/50 p-4 sm:grid-cols-2">
+        {fields.map(([key, label, placeholder]) => (
+          <label key={key} className={key === "story" || key === "heading" ? "sm:col-span-2" : ""}>
+            <span className="mb-1 block text-xs text-slate-400">{label}</span>
+            {key === "image_url" ? (
+              <div className="space-y-2">
+                <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={uploading} onChange={(event) => void uploadOwnerImage(event.target.files?.[0])} className={inputClass} />
+                <input value={content[key] ?? ""} placeholder={placeholder} onChange={(event) => update(key, event.target.value)} className={inputClass} />
+                {uploading && <span className="block text-xs text-cyan-300">Uploading owner image…</span>}
+              </div>
+            ) : key === "story" ? (
+              <textarea rows={7} value={content[key] ?? ""} placeholder={placeholder} onChange={(event) => update(key, event.target.value)} className={inputClass} />
+            ) : (
+              <input value={content[key] ?? ""} placeholder={placeholder} onChange={(event) => update(key, event.target.value)} className={inputClass} />
+            )}
+          </label>
+        ))}
+      </div>
+    );
+  }
+
   if (fieldName === "metrics") {
     const rows = parse<{ value: string; label: string }[]>(value, []);
     const update = (next: typeof rows) => onChange(JSON.stringify(next));
