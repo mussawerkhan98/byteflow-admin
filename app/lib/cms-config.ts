@@ -167,7 +167,6 @@ export const resources = {
       { name: "image_alt", label: "Image alt text", type: "text" },
       { name: "cta_label", label: "CTA label", type: "text" },
       { name: "cta_link", label: "CTA link", type: "text" },
-      { name: "sort_order", label: "Display order", type: "number" },
       { name: "featured", label: "Featured", type: "boolean" },
       {
         name: "status",

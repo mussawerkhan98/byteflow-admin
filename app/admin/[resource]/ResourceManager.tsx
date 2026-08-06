@@ -11,6 +11,7 @@ const booleanValue = (value: unknown) =>
   value === true || value === 1 || value === "1";
 const isImageField = (name: string) =>
   /(^|_)(image|logo|favicon)(_|$)/.test(name);
+const isUploadField = (name: string) => isImageField(name) || name === "icon";
 
 export default function ResourceManager({
   resourceKey,
@@ -141,6 +142,7 @@ export default function ResourceManager({
     setNotice(null);
     const payload = new FormData();
     payload.set("file", file);
+    if (fieldName === "icon") payload.set("kind", "icon");
     payload.set(
       "altText",
       String(
@@ -160,14 +162,14 @@ export default function ResourceManager({
     if (!response.ok) {
       setNotice({
         type: "error",
-        text: data.error ?? "Unable to upload image",
+        text: data.error ?? "Unable to upload file",
       });
       return;
     }
     change(fieldName, data.url);
     setNotice({
       type: "ok",
-      text: "Image uploaded. Save changes to apply it to this record.",
+      text: `${fieldName === "icon" ? "SVG icon" : "Image"} uploaded. Save changes to apply it to this record.`,
     });
   }
 
@@ -231,11 +233,15 @@ export default function ResourceManager({
               >
                 {field.label}
                 {field.required && <span className="text-cyan-400"> *</span>}
-                {isImageField(field.name) ? (
+                {isUploadField(field.name) ? (
                   <div className="mt-2 rounded-xl border border-dashed border-slate-700 bg-slate-950/70 p-4">
                     <input
                       type="file"
-                      accept="image/jpeg,image/png,image/webp,image/gif"
+                      accept={
+                        field.name === "icon"
+                          ? "image/svg+xml,.svg"
+                          : "image/jpeg,image/png,image/webp,image/gif"
+                      }
                       disabled={uploadingField === field.name}
                       onChange={(event) =>
                         void uploadFieldImage(
@@ -247,7 +253,7 @@ export default function ResourceManager({
                     />
                     {uploadingField === field.name && (
                       <span className="mt-2 block text-xs text-cyan-300">
-                        Uploading image…
+                        Uploading {field.name === "icon" ? "SVG icon" : "image"}…
                       </span>
                     )}
                     {String(form[field.name] ?? "") && (
