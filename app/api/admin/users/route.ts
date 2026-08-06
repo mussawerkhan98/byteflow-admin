@@ -7,7 +7,6 @@ function validate(body:Record<string,unknown>, editing=false){
   const displayName=String(body.display_name??'').trim(),email=String(body.email??'').trim().toLowerCase(),password=String(body.password??''),role=body.role==='administrator'?'administrator':'editor',active=body.active===false||body.active===0?0:1
   if(displayName.length<2||displayName.length>100)throw new Error('Display name must be between 2 and 100 characters')
   if(!emailPattern.test(email))throw new Error('Enter a valid email address')
-  if(email===process.env.ADMIN_EMAIL?.trim().toLowerCase())throw new Error('This email is reserved for the primary administrator. Use a different email for database users.')
   if((!editing||password)&&password.length<8)throw new Error('Password must contain at least 8 characters')
   return{displayName,email,password,role,active}
 }
