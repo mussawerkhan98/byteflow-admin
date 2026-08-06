@@ -267,7 +267,6 @@ export const resources = {
       { name: "linkedin_url", label: "LinkedIn URL", type: "url" },
       { name: "x_url", label: "X URL", type: "url" },
       { name: "github_url", label: "GitHub URL", type: "url" },
-      { name: "page_id", label: "Page ID", type: "number" },
       { name: "sort_order", label: "Display order", type: "number" },
       { name: "featured", label: "Featured", type: "boolean" },
       {
