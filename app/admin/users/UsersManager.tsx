@@ -36,11 +36,16 @@ export default function UsersManager() {
 
   const load = useCallback(async (quiet = false) => {
     if (!quiet) setLoading(true);
-    const response = await fetch("/api/admin/users", { cache: "no-store" });
-    const data = await response.json();
-    if (response.ok) setUsers(data.users);
-    else setNotice(data.error);
-    if (!quiet) setLoading(false);
+    try {
+      const response = await fetch("/api/admin/users", { cache: "no-store" });
+      const data = await response.json();
+      if (response.ok) setUsers(data.users ?? []);
+      else setNotice(data.error ?? "Unable to load users. Please refresh and try again.");
+    } catch {
+      setNotice("Unable to load users. Check your connection and try again.");
+    } finally {
+      if (!quiet) setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -53,20 +58,23 @@ export default function UsersManager() {
     event.preventDefault();
     setSaving(true);
     setNotice("");
-    const response = await fetch("/api/admin/users", {
-      method: editing ? "PUT" : "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ ...form, id: editing }),
-    });
-    const data = await response.json();
-    setSaving(false);
-    if (!response.ok) return setNotice(data.error);
-    setNotice(
-      editing ? "User updated successfully." : "User created successfully.",
-    );
-    setEditing(null);
-    setForm(empty);
-    await load(true);
+    try {
+      const response = await fetch("/api/admin/users", {
+        method: editing ? "PUT" : "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ ...form, id: editing }),
+      });
+      const data = await response.json();
+      if (!response.ok) return setNotice(data.error ?? "Please check the user details and try again.");
+      setNotice(editing ? "User updated successfully." : "User created successfully.");
+      setEditing(null);
+      setForm(empty);
+      await load(true);
+    } catch {
+      setNotice("Unable to save the user. Check your connection and try again.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   function edit(user: User) {

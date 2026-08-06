@@ -37,6 +37,13 @@ function verifyPassword(password: string, stored: string) {
 
 export async function verifyAdminCredentials(email: string, password: string) {
   const normalizedEmail = email.trim().toLowerCase()
+  const expectedEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase()
+  const expectedHash = process.env.ADMIN_PASSWORD_SHA256?.trim().toLowerCase()
+  // The environment administrator is the recovery account. Never allow a
+  // database row with the same email to shadow or inherit its privileges.
+  if (expectedEmail && normalizedEmail === expectedEmail) {
+    return Boolean(expectedHash && verifyPassword(password, expectedHash))
+  }
   try {
     const result = await db.execute({ sql: 'SELECT password_hash FROM admin_users WHERE lower(email) = ? AND active = 1 LIMIT 1', args: [normalizedEmail] })
     const stored = result.rows[0]?.password_hash
@@ -44,9 +51,7 @@ export async function verifyAdminCredentials(email: string, password: string) {
   } catch {
     // The environment account remains available before the first migration.
   }
-  const expectedEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase()
-  const expectedHash = process.env.ADMIN_PASSWORD_SHA256?.trim().toLowerCase()
-  return Boolean(expectedEmail && expectedHash && normalizedEmail === expectedEmail && verifyPassword(password, expectedHash))
+  return false
 }
 
 export async function createAdminSession(email: string) {
@@ -97,6 +102,13 @@ export async function getCurrentAdminUser(): Promise<CurrentAdminUser | null> {
     const [payload] = value.split('.')
     const session = JSON.parse(Buffer.from(payload, 'base64url').toString()) as { email: string }
     const email = session.email.trim().toLowerCase()
+    if (email === process.env.ADMIN_EMAIL?.trim().toLowerCase()) {
+      return {
+        displayName: email.split('@')[0].replace(/[._-]+/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase()),
+        email,
+        role: 'administrator',
+      }
+    }
     const result = await db.execute({
       sql: 'SELECT display_name,email,role FROM admin_users WHERE lower(email)=? AND active=1 LIMIT 1',
       args: [email],
@@ -107,13 +119,6 @@ export async function getCurrentAdminUser(): Promise<CurrentAdminUser | null> {
         displayName: String(user.display_name || user.email),
         email: String(user.email),
         role: user.role === 'administrator' ? 'administrator' : 'editor',
-      }
-    }
-    if (email === process.env.ADMIN_EMAIL?.trim().toLowerCase()) {
-      return {
-        displayName: email.split('@')[0].replace(/[._-]+/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase()),
-        email,
-        role: 'administrator',
       }
     }
     return null
