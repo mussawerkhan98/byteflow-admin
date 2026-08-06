@@ -1,52 +1,24 @@
 import type { Metadata } from 'next'
-import { Space_Grotesk, Cardo } from 'next/font/google'
-import { GoogleAnalytics } from '@next/third-parties/google'
+import { Manrope } from 'next/font/google'
 import './globals.css'
-import Header from './components/Header'
-import Footer from './components/Footer'
-import StickyContactButtons from './components/StickyContactButtons'
 
-const spaceGrotesk = Space_Grotesk({
+const manrope = Manrope({
   subsets: ['latin'],
-  variable: '--font-space',
-  weight: ['300', '400', '500', '600', '700'],
-})
-
-const cardo = Cardo({
-  subsets: ['latin'],
-  variable: '--font-cardo',
-  weight: ['400', '700'],
+  variable: '--font-admin',
 })
 
 export const metadata: Metadata = {
-  title: 'Byteflow Information Technology',
-  description: 'Leading IT solutions provider trusted by 500+ businesses across Dubai and UAE since 2017.',
-  verification: {
-    google: 'tAM-FG-hPH1-sxVzCRVhEVnLM0OhIATbEoeYXTTShc4',
-  },
+  title: { default: 'Byteflow Admin', template: '%s | Byteflow Admin' },
+  description: 'Protected content management for the Byteflow website.',
+  robots: { index: false, follow: false },
 }
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode
-}>) {
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${spaceGrotesk.variable} ${cardo.variable} h-full antialiased`}>
-      <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('theme');if(!t){t=window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'}document.documentElement.setAttribute('data-theme',t)}catch(e){}})();`,
-          }}
-        />
-      </head>
-      <body className="min-h-full flex flex-col text-[var(--text-primary)]" style={{ fontFamily: 'var(--font-space), sans-serif', background: 'var(--bg-page)' }}>
-        <Header />
-        <main className="flex-1">{children}</main>
-        <Footer />
-        <StickyContactButtons />
+    <html lang="en" className={`${manrope.variable} h-full antialiased`}>
+      <body className="min-h-full bg-[#f5f7fa] text-slate-900" style={{ fontFamily: 'var(--font-admin), sans-serif' }}>
+        {children}
       </body>
-      <GoogleAnalytics gaId="G-0D6S22JEGG" />
     </html>
   )
 }
