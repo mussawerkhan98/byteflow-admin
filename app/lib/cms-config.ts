@@ -101,7 +101,12 @@ export const resources = {
       { name: "parent_id", label: "Parent item ID", type: "number" },
       { name: "sort_order", label: "Display order", type: "number" },
       { name: "new_tab", label: "Open in new tab", type: "boolean" },
-      { name: "visible", label: "Visible", type: "boolean" },
+      {
+        name: "visible",
+        label: "Visible",
+        type: "boolean",
+        help: "Visible menu items appear in the website navigation.",
+      },
     ],
   },
   sections: {
@@ -169,6 +174,7 @@ export const resources = {
         label: "Publication",
         type: "select",
         options: ["draft", "published"],
+        help: "Only published services appear on the website.",
       },
     ],
   },
