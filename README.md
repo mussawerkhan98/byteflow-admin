@@ -25,7 +25,7 @@ npm run db:seed
 
 ## Media
 
-Uploads accept JPG, PNG, WebP, and GIF files up to 5 MB, require alt text, and are saved to `public/uploads`. Deploy on persistent shared storage when the public and admin apps run as separate processes. For serverless or separately hosted deployments, replace this adapter with the project’s persistent object-storage provider while keeping the stored `media.url` values publicly accessible.
+Uploads accept JPG, PNG, WebP, and GIF files up to 5 MB. Images are optimized in the browser when useful and stored as data URLs in the shared CMS database, so separately deployed admin and public apps can use the same image without relying on an ephemeral serverless filesystem.
 
 ## Contact email
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faArrowRotateLeft,
@@ -12,6 +12,7 @@ import {
   faListOl,
   faListUl,
   faQuoteLeft,
+  faTable,
   faUnderline,
 } from "@fortawesome/free-solid-svg-icons";
 
@@ -25,6 +26,7 @@ export default function RichTextEditor({
   required?: boolean;
 }) {
   const editor = useRef<HTMLDivElement>(null);
+  const [sourceMode, setSourceMode] = useState(false);
 
   useEffect(() => {
     if (editor.current && editor.current.innerHTML !== value) {
@@ -43,12 +45,34 @@ export default function RichTextEditor({
     if (url) run("createLink", url);
   }
 
+  function addTable() {
+    const rowAnswer = window.prompt("Number of rows (1–20)", "3");
+    if (rowAnswer === null) return;
+    const rows = Math.min(20, Math.max(1, Math.floor(Number(rowAnswer) || 3)));
+    const columnAnswer = window.prompt("Number of columns (1–10)", "3");
+    if (columnAnswer === null) return;
+    const columns = Math.min(10, Math.max(1, Math.floor(Number(columnAnswer) || 3)));
+    const cells = Array.from({ length: rows }, (_, row) =>
+      `<tr>${Array.from({ length: columns }, () =>
+        row === 0 ? "<th><br></th>" : "<td><br></td>",
+      ).join("")}</tr>`,
+    ).join("");
+    run("insertHTML", `<div class="table-scroll"><table><tbody>${cells}</tbody></table></div><p><br></p>`);
+  }
+
   const toolClass =
     "grid h-8 min-w-8 place-items-center rounded-md px-2 text-xs font-bold text-slate-300 transition hover:bg-white/[.07] hover:text-cyan-300";
 
   return (
     <div className="mt-2 overflow-hidden rounded-xl border border-slate-700 bg-slate-950 focus-within:border-cyan-400">
-      <div className="flex flex-wrap gap-1 border-b border-slate-800 bg-[#101c24] p-2">
+      <div
+        role="toolbar"
+        aria-label="Text formatting"
+        onMouseDown={(event) => {
+          if ((event.target as HTMLElement).closest("button")) event.preventDefault();
+        }}
+        className="flex flex-wrap gap-1 border-b border-slate-800 bg-[#101c24] p-2"
+      >
         <button
           type="button"
           title="Heading 2"
@@ -130,6 +154,14 @@ export default function RichTextEditor({
         >
           <FontAwesomeIcon icon={faLink} />
         </button>
+        <button
+          type="button"
+          title="Insert table"
+          onClick={addTable}
+          className={toolClass}
+        >
+          <FontAwesomeIcon icon={faTable} />
+        </button>
         <span className="mx-1 w-px bg-slate-700" />
         <button
           type="button"
@@ -155,6 +187,15 @@ export default function RichTextEditor({
         >
           <FontAwesomeIcon icon={faEraser} />
         </button>
+        <button
+          type="button"
+          title={sourceMode ? "Return to visual editor" : "Edit live HTML"}
+          aria-pressed={sourceMode}
+          onClick={() => setSourceMode((current) => !current)}
+          className={`${toolClass} ${sourceMode ? "bg-cyan-400 text-slate-950" : ""}`}
+        >
+          HTML
+        </button>
       </div>
       <div
         ref={editor}
@@ -165,8 +206,18 @@ export default function RichTextEditor({
         aria-required={required}
         data-placeholder="Write the blog post content…"
         onInput={(event) => onChange(event.currentTarget.innerHTML)}
+        hidden={sourceMode}
         className="rich-text-editor min-h-80 px-5 py-4 text-sm font-normal leading-7 text-slate-200 outline-none"
       />
+      {sourceMode && (
+        <textarea
+          aria-label="Live HTML source"
+          spellCheck={false}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          className="min-h-80 w-full resize-y bg-slate-950 px-5 py-4 font-mono text-sm font-normal leading-6 text-cyan-100 outline-none"
+        />
+      )}
       <input
         className="sr-only"
         tabIndex={-1}

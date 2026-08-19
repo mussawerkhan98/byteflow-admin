@@ -1,6 +1,4 @@
-import { mkdir, writeFile } from 'node:fs/promises'
-import { extname, join } from 'node:path'
-import { randomUUID } from 'node:crypto'
+import { extname } from 'node:path'
 import { isAdminAuthenticated } from '../../../lib/auth'
 import { db } from '../../../lib/db'
 
@@ -39,19 +37,12 @@ export async function POST(request: Request) {
   const extension = allowed.get(file.type)
   if (!extension || !['.jpg','.jpeg','.png','.webp','.gif'].includes(extname(file.name).toLowerCase())) return Response.json({ error: 'Use JPG, PNG, WebP, or GIF images' }, { status: 415 })
   if (file.size <= 0 || file.size > maxBytes) return Response.json({ error: 'Images must be between 1 byte and 5 MB' }, { status: 413 })
-  const filename = `${randomUUID()}${extension}`
-  const directory = join(process.cwd(), 'public', 'uploads')
   const bytes = Buffer.from(await file.arrayBuffer())
-  await mkdir(directory, { recursive: true })
-  await writeFile(join(directory, filename), bytes, { flag: 'wx' })
-  try {
-    const websiteDirectory = join(process.cwd(), '..', 'byteflow user', 'public', 'uploads')
-    await mkdir(websiteDirectory, { recursive: true })
-    await writeFile(join(websiteDirectory, filename), bytes, { flag: 'wx' })
-  } catch {
-    // Separate production deployments should use the documented shared media adapter.
-  }
-  const url = `/uploads/${filename}`
+  // The admin and public website are separate deployments, and a serverless
+  // filesystem is both ephemeral and private to the deployment that wrote it.
+  // Store the image itself in the shared CMS database so the returned URL works
+  // immediately in both applications and survives subsequent deployments.
+  const url = `data:${file.type};base64,${bytes.toString('base64')}`
   await db.execute({ sql: 'INSERT INTO media (filename, url, mime_type, size_bytes, alt_text) VALUES (?, ?, ?, ?, ?)', args: [file.name, url, file.type, file.size, altText] })
   return Response.json({ url, altText }, { status: 201 })
 }

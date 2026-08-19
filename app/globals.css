@@ -254,3 +254,31 @@ h2 {
   color: #67e8f9;
   text-decoration: underline;
 }
+
+.rich-text-editor .table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  margin: 1rem 0;
+  border: 1px solid #334155;
+  border-radius: 0.5rem;
+}
+
+.rich-text-editor table {
+  width: 100%;
+  min-width: 32rem;
+  border-collapse: collapse;
+}
+
+.rich-text-editor th,
+.rich-text-editor td {
+  min-width: 7rem;
+  border-right: 1px solid #334155;
+  border-bottom: 1px solid #334155;
+  padding: 0.6rem 0.75rem;
+  vertical-align: top;
+}
+
+.rich-text-editor th {
+  background: rgba(34, 211, 238, 0.1);
+  color: #fff;
+}
