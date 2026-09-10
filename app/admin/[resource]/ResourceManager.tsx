@@ -15,6 +15,8 @@ const isImageField = (name: string) =>
   !/(^|_)(alt|caption)(_|$)/.test(name) &&
   /(^|_)(image|logo|favicon)(_|$)/.test(name);
 const isUploadField = (name: string) => isImageField(name) || name === "icon";
+/** Section types the website actually reads. Anything else renders nowhere. */
+const LIVE_SECTION_TYPES = ["custom", "hero", "founder"];
 
 async function optimizeImage(file: File) {
   if (file.type === "image/gif" || file.size < 500 * 1024) return file;
@@ -409,6 +411,17 @@ export default function ResourceManager({
                     className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2"
                   >
                     <>
+                      {/* A record saved before the options changed would
+                          otherwise display the first option while silently
+                          keeping its real value. */}
+                      {(() => {
+                        const current = String(form[field.name] ?? "");
+                        return current && !field.options?.includes(current) ? (
+                          <option value={current}>
+                            {current} (not used by the website)
+                          </option>
+                        ) : null;
+                      })()}
                       {field.options?.map((option) => (
                         <option key={option}>{option}</option>
                       ))}
@@ -503,8 +516,26 @@ export default function ResourceManager({
                   <p className="mt-1 truncate text-xs text-slate-500">
                     ID {String(record.id)}
                     {record.slug ? ` · /${record.slug}` : ""}
+                    {record.page_id
+                      ? ` · ${pageOptions.find((page) => page.id === Number(record.page_id))?.name ?? `page ${record.page_id}`}`
+                      : ""}
+                    {record.section_type ? ` · ${record.section_type}` : ""}
                     {record.status ? ` · ${record.status}` : ""}
+                    {!booleanValue(record.visible) &&
+                    config.fields.some((field) => field.name === "visible")
+                      ? " · hidden"
+                      : ""}
                   </p>
+                  {resourceKey === "sections" &&
+                    !LIVE_SECTION_TYPES.includes(
+                      String(record.section_type),
+                    ) && (
+                      <p className="mt-1 text-xs font-semibold text-amber-300">
+                        This block type isn&apos;t shown anywhere on the website
+                        — edit it and set Section type to “custom” to make it
+                        appear.
+                      </p>
+                    )}
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {hasOrder && (
