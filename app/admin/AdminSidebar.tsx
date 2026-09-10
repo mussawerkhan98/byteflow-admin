@@ -13,6 +13,8 @@ const groups = [
     links: [
       ["Pages & SEO", "pages"],
       ["Page heroes", "heroes"],
+      ["About Us / Founder", "about"],
+      ["Team", "team"],
       ["Page sections", "sections"],
       ["Services", "services"],
       ["Blog posts", "posts"],
@@ -26,7 +28,6 @@ const groups = [
       ["FAQs", "faqs"],
       ["Reviews", "testimonials"],
       ["Calls to action", "ctas"],
-      ["Team", "team"],
     ],
   },
   {
