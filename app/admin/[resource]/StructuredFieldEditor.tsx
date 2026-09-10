@@ -28,6 +28,104 @@ export default function StructuredFieldEditor({
   onChange,
 }: Props) {
   const [uploading, setUploading] = useState(false);
+
+  if (fieldName === "content" && sectionType === "custom") {
+    const content = parse<Record<string, string>>(value, {});
+    const update = (key: string, nextValue: string) =>
+      onChange(JSON.stringify({ ...content, [key]: nextValue }));
+    const uploadImage = async (file?: File) => {
+      if (!file) return;
+      setUploading(true);
+      try {
+        const payload = new FormData();
+        payload.set("file", file);
+        payload.set("altText", content.heading || "Page section image");
+        const response = await fetch("/api/admin/upload", { method: "POST", body: payload });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Upload failed");
+        update("image_url", String(data.url));
+      } finally {
+        setUploading(false);
+      }
+    };
+    return (
+      <div className="mt-2 grid gap-3 rounded-xl border border-slate-700 bg-slate-950/50 p-4 sm:grid-cols-2">
+        <p className="text-xs text-slate-500 sm:col-span-2">
+          This block appears near the bottom of the page you selected above. Fill in
+          what you need — anything left blank is simply left out.
+        </p>
+        <label className="sm:col-span-2">
+          <span className="mb-1 block text-xs text-slate-400">Heading</span>
+          <input
+            value={content.heading ?? ""}
+            placeholder="Why businesses choose us"
+            onChange={(event) => update("heading", event.target.value)}
+            className={inputClass}
+          />
+        </label>
+        <label className="sm:col-span-2">
+          <span className="mb-1 block text-xs text-slate-400">
+            Text (leave a blank line between paragraphs)
+          </span>
+          <textarea
+            rows={6}
+            value={content.text ?? ""}
+            placeholder="Write the paragraph shown in this block…"
+            onChange={(event) => update("text", event.target.value)}
+            className={inputClass}
+          />
+        </label>
+        <label className="sm:col-span-2">
+          <span className="mb-1 block text-xs text-slate-400">Image (optional)</span>
+          <div className="space-y-2">
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              disabled={uploading}
+              onChange={(event) => void uploadImage(event.target.files?.[0])}
+              className={inputClass}
+            />
+            {uploading && <span className="block text-xs text-cyan-300">Uploading image…</span>}
+            {content.image_url && (
+              <div className="flex items-end gap-3">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={content.image_url}
+                  alt="Section preview"
+                  className="h-24 w-36 rounded-lg border border-slate-700 object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={() => update("image_url", "")}
+                  className="rounded-lg border border-red-400/20 px-3 py-2 text-xs text-red-300"
+                >
+                  Remove image
+                </button>
+              </div>
+            )}
+          </div>
+        </label>
+        <label>
+          <span className="mb-1 block text-xs text-slate-400">Button text (optional)</span>
+          <input
+            value={content.button_label ?? ""}
+            placeholder="Get a free quote"
+            onChange={(event) => update("button_label", event.target.value)}
+            className={inputClass}
+          />
+        </label>
+        <label>
+          <span className="mb-1 block text-xs text-slate-400">Button link (optional)</span>
+          <input
+            value={content.button_link ?? ""}
+            placeholder="/contact-us"
+            onChange={(event) => update("button_link", event.target.value)}
+            className={inputClass}
+          />
+        </label>
+      </div>
+    );
+  }
   if (fieldName === "content" && sectionType === "founder") {
     const content = parse<Record<string, string>>(value, {});
     const fields = [

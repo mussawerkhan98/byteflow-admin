@@ -18,6 +18,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { db } from "../lib/db";
 import { isAdminAuthenticated } from "../lib/auth";
+import { adminGroups } from "../lib/admin-guide";
 
 const metrics = [
   {
@@ -109,8 +110,8 @@ export default async function Dashboard() {
             Good to see you.
           </h1>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-500">
-            Manage Byteflow content, customer enquiries, and website settings
-            from one place.
+            Not sure where something lives? The guide below maps every screen to
+            the part of the website it changes.
           </p>
         </div>
         <div className="flex flex-wrap gap-3">
@@ -128,6 +129,42 @@ export default async function Dashboard() {
           </Link>
         </div>
       </div>
+      <section className="mt-10 rounded-2xl border border-white/[.07] bg-[#0d1921] p-6">
+        <h2 className="text-sm font-bold text-white">
+          What do you want to change?
+        </h2>
+        <p className="mt-1 text-xs text-slate-500">
+          Every screen in the sidebar, and exactly what it controls on the
+          public website.
+        </p>
+        <div className="mt-6 grid gap-6 lg:grid-cols-2">
+          {adminGroups
+            .filter((group) => group.label !== "Start here")
+            .map((group) => (
+              <div key={group.label}>
+                <p className="mb-3 text-[10px] font-extrabold uppercase tracking-[.16em] text-slate-600">
+                  {group.label}
+                </p>
+                <div className="space-y-2">
+                  {group.sections.map((item) => (
+                    <Link
+                      key={item.key}
+                      href={`/admin/${item.key}`}
+                      className="block rounded-xl border border-white/[.06] bg-white/[.02] p-3 transition hover:border-cyan-400/30 hover:bg-cyan-400/[.05]"
+                    >
+                      <p className="text-[13px] font-bold text-slate-200">
+                        {item.label}
+                      </p>
+                      <p className="mt-1 text-xs leading-relaxed text-slate-500">
+                        {item.shows}
+                      </p>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ))}
+        </div>
+      </section>
       <div className="mt-10 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {metrics.map((item, index) => (
           <Link

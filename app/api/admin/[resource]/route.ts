@@ -6,6 +6,10 @@ function errorResponse(error: unknown) {
   const technical = error instanceof Error ? error.message : ''
   if (/FOREIGN KEY constraint failed/i.test(technical)) return Response.json({ error: 'Please choose a valid related page or parent item.' }, { status: 400 })
   if (/UNIQUE constraint/i.test(technical)) return Response.json({ error: 'That value already exists. Please use a different one.' }, { status: 409 })
+  const notNull = /NOT NULL constraint failed: \w+\.(\w+)/i.exec(technical)
+  if (notNull) return Response.json({ error: `“${notNull[1].replace(/_/g, ' ')}” cannot be empty. Please fill it in and save again.` }, { status: 400 })
+  const check = /CHECK constraint failed: (\w+)/i.exec(technical)
+  if (check) return Response.json({ error: `“${check[1].replace(/_/g, ' ')}” has a value the database does not allow. Please pick a different one.` }, { status: 400 })
   if (/required|must be|invalid|cannot be|between 1 and 5|lowercase letters/i.test(technical)) return Response.json({ error: technical }, { status: 400 })
   return Response.json({ error: 'We could not complete that action. Check the form and try again.' }, { status: 400 })
 }

@@ -6,40 +6,14 @@ import Image from "next/image";
 import LogoutButton from "./LogoutButton";
 import type { CurrentAdminUser } from "../lib/auth";
 
-const groups = [
-  { label: "Workspace", links: [["Overview", ""]] },
-  {
-    label: "Content",
-    links: [
-      ["Pages & SEO", "pages"],
-      ["Page heroes", "heroes"],
-      ["About Us / Founder", "about"],
-      ["Team", "team"],
-      ["Page sections", "sections"],
-      ["Services", "services"],
-      ["Blog posts", "posts"],
-      ["Projects", "projects"],
-    ],
-  },
-  {
-    label: "Engagement",
-    links: [
-      ["Menus", "menus"],
-      ["FAQs", "faqs"],
-      ["Reviews", "testimonials"],
-      ["Calls to action", "ctas"],
-    ],
-  },
-  {
-    label: "Operations",
-    links: [
-      ["Submissions", "submissions"],
-      ["Admin users", "users"],
-      ["Site settings", "settings"],
-      ["Website scripts", "scripts"],
-    ],
-  },
-] as const;
+import { adminGroups } from "../lib/admin-guide";
+
+const groups = adminGroups.map((group) => ({
+  label: group.label,
+  links: group.sections.map(
+    (section) => [section.label, section.key, section.shows] as const,
+  ),
+}));
 
 export default function AdminSidebar({ logoUrl, currentUser }: { logoUrl?: string; currentUser: CurrentAdminUser | null }) {
   const pathname = usePathname(),
@@ -117,13 +91,14 @@ export default function AdminSidebar({ logoUrl, currentUser }: { logoUrl?: strin
                 {group.label}
               </p>
               <div className="space-y-1">
-                {group.links.map(([label, key]) => {
+                {group.links.map(([label, key, shows]) => {
                   const href = `/admin${key ? `/${key}` : ""}`,
                     active = key ? pathname === href : pathname === "/admin";
                   return (
                     <Link
                       key={key}
                       href={href}
+                      title={shows}
                       onClick={() => setOpen(false)}
                       className={`relative flex items-center rounded-lg px-3 py-2.5 text-[13px] font-semibold tracking-[-.005em] transition ${active ? "bg-cyan-400/10 text-cyan-300" : "text-slate-400 hover:bg-white/[.04] hover:text-white"}`}
                     >

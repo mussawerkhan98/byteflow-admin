@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import AdminPageHeader from "../AdminPageHeader";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faPen,
@@ -110,15 +111,7 @@ export default function UsersManager() {
   return (
     <div className="pb-10">
       <div className="flex flex-wrap items-end justify-between gap-5">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[.18em] text-cyan-400">
-            Access control
-          </p>
-          <h1 className="mt-2 text-4xl font-bold text-white">Admin users</h1>
-          <p className="mt-2 text-sm text-slate-500">
-            Create real login accounts and control their CMS permissions.
-          </p>
-        </div>
+        <AdminPageHeader sectionKey="users" />
         <span className="inline-flex items-center gap-2 rounded-full border border-emerald-400/15 bg-emerald-400/[.06] px-3 py-1.5 text-[11px] font-semibold text-emerald-300">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" /> Live
           database users

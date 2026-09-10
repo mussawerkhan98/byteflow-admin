@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import AdminPageHeader from "../AdminPageHeader";
 
 export default function AboutFounderManager() {
   const [id, setId] = useState<number | null>(null);
@@ -79,15 +80,7 @@ export default function AboutFounderManager() {
 
   return (
     <div className="pb-10">
-      <div>
-        <p className="text-xs font-bold uppercase tracking-[.18em] text-cyan-400">
-          About Us page
-        </p>
-        <h1 className="mt-2 text-4xl font-bold text-white">Founder / CEO</h1>
-        <p className="mt-2 text-sm text-slate-500">
-          Manage the founder story shown on the About Us page — photo, name, role and bio.
-        </p>
-      </div>
+      <AdminPageHeader sectionKey="about" />
       {notice && (
         <p
           role="status"

@@ -23,7 +23,12 @@ function normalize(field: Field, value: unknown) {
   if (field.type === 'number') {
     if (value === '' || value === null || value === undefined) {
       if (field.required) throw new Error(`${field.label} is required`)
-      return null
+      // Only the foreign keys are nullable columns. Every other optional
+      // number (sort_order, rating) is NOT NULL in the schema, so leaving
+      // the input blank has to fall back to that column's default rather
+      // than writing null and failing the insert.
+      if (field.name === 'page_id' || field.name === 'parent_id') return null
+      return field.name === 'rating' ? 5 : 0
     }
     const number = Number(value)
     if (!Number.isFinite(number)) throw new Error(`${field.label} must be a valid number`)
