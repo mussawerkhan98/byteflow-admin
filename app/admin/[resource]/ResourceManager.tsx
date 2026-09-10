@@ -2,6 +2,8 @@
 /* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps, @next/next/no-img-element */
 import { useEffect, useMemo, useState } from "react";
 import type { Resource } from "../../lib/cms-config";
+import { getAdminSection } from "../../lib/admin-guide";
+import AdminPageHeader from "../AdminPageHeader";
 import RichTextEditor from "./RichTextEditor";
 import StructuredFieldEditor from "./StructuredFieldEditor";
 
@@ -65,11 +67,14 @@ export default function ResourceManager({
   const [uploadingField, setUploadingField] = useState<string | null>(null);
   const [viewing, setViewing] = useState<RecordValue | null>(null);
   const [pageOptions, setPageOptions] = useState<PageOption[]>([]);
+  const [missingBuiltins, setMissingBuiltins] = useState(0);
+  const [importing, setImporting] = useState(false);
   const [notice, setNotice] = useState<{
     type: "ok" | "error";
     text: string;
   } | null>(null);
   const hasOrder = config.fields.some((field) => field.name === "sort_order");
+  const section = getAdminSection(resourceKey);
 
   async function load() {
     setLoading(true);
@@ -94,6 +99,37 @@ export default function ResourceManager({
       setForm(records[0]);
     }
   }, [config.singleton, records, editing]);
+  useEffect(() => {
+    if (resourceKey !== "services") return;
+    void fetch("/api/admin/import-services")
+      .then((response) => response.json())
+      .then((data) => setMissingBuiltins(Number(data.missing ?? 0)))
+      .catch(() => setMissingBuiltins(0));
+  }, [resourceKey, records]);
+
+  async function importBuiltinServices() {
+    setImporting(true);
+    setNotice(null);
+    try {
+      const response = await fetch("/api/admin/import-services", {
+        method: "POST",
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setNotice({ type: "error", text: data.error ?? "Import failed" });
+        return;
+      }
+      setNotice({
+        type: "ok",
+        text: `Imported ${data.imported} service${data.imported === 1 ? "" : "s"} from the website. You can now edit, reorder and remove them here.`,
+      });
+      await load();
+    } catch {
+      setNotice({ type: "error", text: "Import failed. Please try again." });
+    } finally {
+      setImporting(false);
+    }
+  }
 
   function change(name: string, value: unknown) {
     setForm((current) => ({ ...current, [name]: value }));
@@ -214,16 +250,13 @@ export default function ResourceManager({
     <div className="pb-10">
       <div className="flex flex-wrap items-end justify-between gap-5">
         <div>
-          <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-cyan-400/10 bg-cyan-400/[.05] px-3 py-1 text-[10px] font-bold uppercase tracking-[.18em] text-cyan-400">
-            Content workspace
-          </div>
-          <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
-            {config.title}
-          </h1>
-          <p className="mt-2 text-sm text-slate-500">
-            Create, edit, publish, order, and remove{" "}
-            {config.title.toLowerCase()}.
-          </p>
+          <AdminPageHeader sectionKey={resourceKey} title={section?.label} />
+          {!section && (
+            <p className="mt-2 text-sm text-slate-500">
+              Create, edit, publish, order, and remove{" "}
+              {config.title.toLowerCase()}.
+            </p>
+          )}
         </div>
         {!config.readOnly && !config.singleton && !editing && (
           <button
@@ -241,6 +274,29 @@ export default function ResourceManager({
         >
           {notice.text}
         </p>
+      )}
+      {resourceKey === "services" && missingBuiltins > 0 && (
+        <div className="mt-5 flex flex-col gap-3 rounded-xl border border-amber-400/20 bg-amber-400/[.06] p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-bold text-amber-200">
+              {missingBuiltins} service{missingBuiltins === 1 ? "" : "s"} on your
+              website {missingBuiltins === 1 ? "is" : "are"} not managed here yet
+            </p>
+            <p className="mt-1 text-xs leading-relaxed text-amber-200/70">
+              Your homepage shows these services from built-in code, so they
+              can&apos;t be edited or reordered — and adding your own service
+              hides them. Import them once to manage every service from this
+              page.
+            </p>
+          </div>
+          <button
+            onClick={() => void importBuiltinServices()}
+            disabled={importing}
+            className="shrink-0 rounded-xl bg-amber-300 px-5 py-3 text-sm font-bold text-slate-950 transition hover:bg-amber-200 disabled:opacity-50"
+          >
+            {importing ? "Importing…" : "Import website services"}
+          </button>
+        </div>
       )}
       {editing && !config.readOnly && (
         <form

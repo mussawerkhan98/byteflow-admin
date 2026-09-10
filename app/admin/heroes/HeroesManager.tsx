@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import AdminPageHeader from "../AdminPageHeader";
 
 type PageHero = Record<string, string | number> & {
   id: number;
@@ -86,15 +87,7 @@ export default function HeroesManager() {
 
   return (
     <div className="pb-10">
-      <div>
-        <p className="text-xs font-bold uppercase tracking-[.18em] text-cyan-400">
-          Page presentation
-        </p>
-        <h1 className="mt-2 text-4xl font-bold text-white">Page heroes</h1>
-        <p className="mt-2 text-sm text-slate-500">
-          Choose a page and control the hero displayed at the top of that page.
-        </p>
-      </div>
+      <AdminPageHeader sectionKey="heroes" />
       {notice && (
         <p className="mt-5 rounded-lg border border-cyan-400/10 bg-cyan-400/[.05] p-3 text-sm text-cyan-200">
           {notice}

@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
+import AdminPageHeader from "../AdminPageHeader";
 type Item = {
   id: number;
   area: "header" | "footer";
@@ -198,15 +199,7 @@ export default function MenuBuilder() {
   }
   return (
     <div className="pb-10">
-      <div>
-        <p className="text-xs font-bold uppercase tracking-[.18em] text-cyan-400">
-          Navigation
-        </p>
-        <h1 className="mt-2 text-4xl font-bold text-white">Menu builder</h1>
-        <p className="mt-2 text-sm text-slate-500">
-          Add menu items, choose their parent dropdown, and control their order.
-        </p>
-      </div>
+      <AdminPageHeader sectionKey="menus" />
       {notice && (
         <p className="mt-5 rounded-lg border border-cyan-400/10 bg-cyan-400/[.05] p-3 text-sm text-cyan-200">
           {notice}
