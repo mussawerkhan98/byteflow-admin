@@ -127,9 +127,10 @@ export const adminGroups: AdminGroup[] = [
       },
       {
         key: "sections",
-        label: "Advanced blocks",
+        label: "Extra page blocks",
         shows:
-          "Raw content blocks. Only the homepage banner and the About Us founder block use these — everything else has its own screen above.",
+          "Extra blocks of content — heading, text, image and a button — added near the bottom of whichever page you choose.",
+        preview: "/",
       },
     ],
   },
