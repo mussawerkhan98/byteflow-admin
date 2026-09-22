@@ -147,27 +147,39 @@ function ResourceRow({
 export default function ResourceManager({
   resourceKey,
   config,
+  lockedPageId,
+  hideHeader,
 }: {
   resourceKey: string;
   config: Resource;
+  /** When set, this manager is embedded inside a single page's workspace:
+   * every record is scoped to that page, the "page" field is hidden (new
+   * records are pinned to it automatically) and the page filter/grouping UI
+   * is skipped since there's only ever one page to show. */
+  lockedPageId?: number;
+  /** Hide the big section title + "on your website" blurb — used when this
+   * manager is embedded under its own heading inside another screen. */
+  hideHeader?: boolean;
 }) {
   const initial = useMemo(
     () =>
       Object.fromEntries(
         config.fields.map((field) => [
           field.name,
-          field.type === "boolean"
-            ? true
-            : field.type === "number"
-              ? ""
-              : field.type === "json"
-                ? ["bullet_points", "metrics", "tags"].includes(field.name)
-                  ? "[]"
-                  : "{}"
-                : (field.options?.[0] ?? ""),
+          field.name === "page_id" && lockedPageId
+            ? lockedPageId
+            : field.type === "boolean"
+              ? true
+              : field.type === "number"
+                ? ""
+                : field.type === "json"
+                  ? ["bullet_points", "metrics", "tags"].includes(field.name)
+                    ? "[]"
+                    : "{}"
+                  : (field.options?.[0] ?? ""),
         ]),
       ),
-    [config],
+    [config, lockedPageId],
   );
   const [records, setRecords] = useState<RecordValue[]>([]),
     [editing, setEditing] = useState<RecordValue | null>(null);
@@ -212,12 +224,15 @@ export default function ResourceManager({
       .map(([key, count]) => ({ key, count, label: pageName(key) }))
       .sort((a, b) => a.label.localeCompare(b.label));
   }, [records, hasPageField, pageOptions]);
-  const visibleRecords =
-    hasPageField && pageFilter !== "all"
+  const visibleRecords = lockedPageId
+    ? records.filter(
+        (record) => pageGroupKey(record) === String(lockedPageId),
+      )
+    : hasPageField && pageFilter !== "all"
       ? records.filter((record) => pageGroupKey(record) === pageFilter)
       : records;
   const groupedRecords = useMemo(() => {
-    if (!hasPageField || pageFilter !== "all") return null;
+    if (lockedPageId || !hasPageField || pageFilter !== "all") return null;
     const groups = new Map<string, RecordValue[]>();
     for (const record of records) {
       const key = pageGroupKey(record);
@@ -231,7 +246,7 @@ export default function ResourceManager({
         records: groupRecords,
       }))
       .sort((a, b) => a.label.localeCompare(b.label));
-  }, [records, hasPageField, pageFilter, pageOptions]);
+  }, [records, hasPageField, pageFilter, pageOptions, lockedPageId]);
   const section = getAdminSection(resourceKey);
 
   async function load() {
@@ -409,12 +424,21 @@ export default function ResourceManager({
     <div className="pb-10">
       <div className="flex flex-wrap items-end justify-between gap-5">
         <div>
-          <AdminPageHeader sectionKey={resourceKey} title={section?.label} />
-          {!section && (
-            <p className="mt-2 text-sm text-slate-500">
-              Create, edit, publish, order, and remove{" "}
-              {config.title.toLowerCase()}.
-            </p>
+          {hideHeader ? (
+            <h2 className="text-lg font-bold text-white">{config.title}</h2>
+          ) : (
+            <>
+              <AdminPageHeader
+                sectionKey={resourceKey}
+                title={section?.label ?? config.title}
+              />
+              {!section && (
+                <p className="mt-2 text-sm text-slate-500">
+                  Create, edit, publish, order, and remove{" "}
+                  {config.title.toLowerCase()}.
+                </p>
+              )}
+            </>
           )}
         </div>
         {!config.readOnly && !config.singleton && !editing && (
@@ -474,11 +498,16 @@ export default function ResourceManager({
               </h2>
             </div>
             <span className="rounded-full bg-white/[.04] px-3 py-1 text-[10px] text-slate-500">
-              {config.fields.length} fields
+              {config.fields.filter(
+                (field) => !(field.name === "page_id" && lockedPageId),
+              ).length}{" "}
+              fields
             </span>
           </div>
           <div className="mt-6 grid gap-6 md:grid-cols-2">
-            {config.fields.map((field) => (
+            {config.fields.map((field) => {
+              if (field.name === "page_id" && lockedPageId) return null;
+              return (
               <label
                 key={field.name}
                 className={`${field.type === "textarea" || field.type === "richtext" || field.type === "json" ? "md:col-span-2" : ""} text-xs font-semibold text-slate-300`}
@@ -619,7 +648,8 @@ export default function ResourceManager({
                   </span>
                 )}
               </label>
-            ))}
+              );
+            })}
           </div>
           <div className="mt-6 flex gap-3">
             <button
@@ -643,16 +673,19 @@ export default function ResourceManager({
       <div className="mt-7 overflow-hidden rounded-xl border border-slate-800 bg-slate-900">
         {loading ? (
           <p className="p-8 text-center text-slate-400">Loading…</p>
-        ) : records.length === 0 ? (
+        ) : (lockedPageId ? visibleRecords.length === 0 : records.length === 0) ? (
           <div className="p-10 text-center">
-            <p className="font-medium">No {config.title.toLowerCase()} yet.</p>
+            <p className="font-medium">
+              No {config.title.toLowerCase()}
+              {lockedPageId ? " for this page" : ""} yet.
+            </p>
             <p className="mt-1 text-sm text-slate-500">
               Create the first record to populate this section.
             </p>
           </div>
         ) : (
           <>
-            {hasPageField && (
+            {hasPageField && !lockedPageId && (
               <div className="flex flex-wrap items-center gap-3 border-b border-slate-800 bg-slate-950/40 px-4 py-3">
                 <label className="text-xs font-semibold uppercase tracking-wide text-slate-400">
                   Filter by page
