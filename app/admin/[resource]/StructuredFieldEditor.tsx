@@ -55,6 +55,21 @@ export default function StructuredFieldEditor({
           what you need — anything left blank is simply left out.
         </p>
         <label className="sm:col-span-2">
+          <span className="mb-1 block text-xs text-slate-400">Where it appears</span>
+          <select
+            value={content.placement === "after_faq" ? "after_faq" : "before_faq"}
+            onChange={(event) => update("placement", event.target.value)}
+            className={inputClass}
+          >
+            <option value="before_faq">Above the FAQs</option>
+            <option value="after_faq">Below the FAQs (last thing before the footer)</option>
+          </select>
+          <span className="mt-1 block text-xs text-slate-500">
+            FAQs normally sit at the very bottom of the page. Choose “below” to put
+            this block underneath them instead.
+          </span>
+        </label>
+        <label className="sm:col-span-2">
           <span className="mb-1 block text-xs text-slate-400">Heading</span>
           <input
             value={content.heading ?? ""}
