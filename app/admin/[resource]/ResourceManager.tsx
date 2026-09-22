@@ -36,6 +36,114 @@ async function optimizeImage(file: File) {
   });
 }
 
+/** One row in a resource list — factored out so it can be rendered either
+ * flat or grouped under a per-page heading without duplicating the JSX. */
+function ResourceRow({
+  record,
+  config,
+  resourceKey,
+  pageOptions,
+  hasOrder,
+  reorder,
+  start,
+  remove,
+  setViewing,
+}: {
+  record: RecordValue;
+  config: Resource;
+  resourceKey: string;
+  pageOptions: PageOption[];
+  hasOrder: boolean;
+  reorder: (record: RecordValue, direction: "up" | "down") => void;
+  start: (record?: RecordValue) => void;
+  remove: (record: RecordValue) => void;
+  setViewing: (record: RecordValue | null) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="min-w-0">
+        <p className="truncate font-medium">
+          {String(
+            record.title ??
+              record.name ??
+              record.label ??
+              record.question ??
+              record.customer_name ??
+              record.filename ??
+              record.email ??
+              `#${record.id}`,
+          )}
+        </p>
+        <p className="mt-1 truncate text-xs text-slate-500">
+          ID {String(record.id)}
+          {record.slug ? ` · /${record.slug}` : ""}
+          {record.page_id
+            ? ` · ${pageOptions.find((page) => page.id === Number(record.page_id))?.name ?? `page ${record.page_id}`}`
+            : ""}
+          {record.section_type ? ` · ${record.section_type}` : ""}
+          {record.status ? ` · ${record.status}` : ""}
+          {!booleanValue(record.visible) &&
+          config.fields.some((field) => field.name === "visible")
+            ? " · hidden"
+            : ""}
+        </p>
+        {resourceKey === "sections" &&
+          !LIVE_SECTION_TYPES.includes(String(record.section_type)) && (
+            <p className="mt-1 text-xs font-semibold text-amber-300">
+              This block type isn&apos;t shown anywhere on the website — edit
+              it and set Section type to “custom” to make it appear.
+            </p>
+          )}
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {hasOrder && (
+          <>
+            <button
+              aria-label="Move up"
+              onClick={() => reorder(record, "up")}
+              className="rounded border border-slate-700 px-2.5 py-1.5 text-sm"
+            >
+              ↑
+            </button>
+            <button
+              aria-label="Move down"
+              onClick={() => reorder(record, "down")}
+              className="rounded border border-slate-700 px-2.5 py-1.5 text-sm"
+            >
+              ↓
+            </button>
+          </>
+        )}
+        {!config.readOnly && (
+          <button
+            onClick={() => start(record)}
+            className="rounded border border-slate-700 px-3 py-1.5 text-sm hover:border-cyan-400"
+          >
+            Edit
+          </button>
+        )}
+        {resourceKey === "submissions" && (
+          <button
+            onClick={() => setViewing(record)}
+            className="rounded-lg border border-cyan-400/20 bg-cyan-400/[.06] px-3 py-1.5 text-sm font-semibold text-cyan-300 transition hover:bg-cyan-400/10"
+          >
+            View inquiry
+          </button>
+        )}
+        {(!config.readOnly || resourceKey === "submissions") &&
+          !config.singleton && (
+            <button
+              onClick={() => remove(record)}
+              className="rounded border border-red-500/30 px-3 py-1.5 text-sm text-red-300"
+            >
+              Delete
+            </button>
+          )}
+      </div>
+    </div>
+  );
+}
+
 export default function ResourceManager({
   resourceKey,
   config,
@@ -75,7 +183,55 @@ export default function ResourceManager({
     type: "ok" | "error";
     text: string;
   } | null>(null);
+  const [pageFilter, setPageFilter] = useState("all");
   const hasOrder = config.fields.some((field) => field.name === "sort_order");
+  // Resources like FAQs, Extra page blocks and CTAs are assigned one at a
+  // time to a page, but the list otherwise gave no sense of which page each
+  // record belonged to — everything from every page was interleaved in one
+  // flat list. When this resource has a page_id field, group the list by
+  // page (with a "<page name>" heading per group) and offer a filter to
+  // narrow the list down to a single page.
+  const hasPageField = config.fields.some((field) => field.name === "page_id");
+  const pageName = (id: unknown) => {
+    const key = String(id ?? "");
+    if (!key) return "Not assigned to a page";
+    return (
+      pageOptions.find((page) => page.id === Number(key))?.name ??
+      `Page ${key}`
+    );
+  };
+  const pageGroupKey = (record: RecordValue) => String(record.page_id ?? "");
+  const pageFilterOptions = useMemo(() => {
+    if (!hasPageField) return [];
+    const counts = new Map<string, number>();
+    for (const record of records) {
+      const key = pageGroupKey(record);
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+    return Array.from(counts.entries())
+      .map(([key, count]) => ({ key, count, label: pageName(key) }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }, [records, hasPageField, pageOptions]);
+  const visibleRecords =
+    hasPageField && pageFilter !== "all"
+      ? records.filter((record) => pageGroupKey(record) === pageFilter)
+      : records;
+  const groupedRecords = useMemo(() => {
+    if (!hasPageField || pageFilter !== "all") return null;
+    const groups = new Map<string, RecordValue[]>();
+    for (const record of records) {
+      const key = pageGroupKey(record);
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key)!.push(record);
+    }
+    return Array.from(groups.entries())
+      .map(([key, groupRecords]) => ({
+        key,
+        label: pageName(key),
+        records: groupRecords,
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }, [records, hasPageField, pageFilter, pageOptions]);
   const section = getAdminSection(resourceKey);
 
   async function load() {
@@ -88,6 +244,7 @@ export default function ResourceManager({
   }
   useEffect(() => {
     void load();
+    setPageFilter("all");
   }, [resourceKey]);
   useEffect(() => {
     if (!config.fields.some((field) => field.name === "page_id")) return;
@@ -494,97 +651,71 @@ export default function ResourceManager({
             </p>
           </div>
         ) : (
-          <div className="divide-y divide-slate-800">
-            {records.map((record) => (
-              <div
-                key={String(record.id)}
-                className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"
-              >
-                <div className="min-w-0">
-                  <p className="truncate font-medium">
-                    {String(
-                      record.title ??
-                        record.name ??
-                        record.label ??
-                        record.question ??
-                        record.customer_name ??
-                        record.filename ??
-                        record.email ??
-                        `#${record.id}`,
-                    )}
-                  </p>
-                  <p className="mt-1 truncate text-xs text-slate-500">
-                    ID {String(record.id)}
-                    {record.slug ? ` · /${record.slug}` : ""}
-                    {record.page_id
-                      ? ` · ${pageOptions.find((page) => page.id === Number(record.page_id))?.name ?? `page ${record.page_id}`}`
-                      : ""}
-                    {record.section_type ? ` · ${record.section_type}` : ""}
-                    {record.status ? ` · ${record.status}` : ""}
-                    {!booleanValue(record.visible) &&
-                    config.fields.some((field) => field.name === "visible")
-                      ? " · hidden"
-                      : ""}
-                  </p>
-                  {resourceKey === "sections" &&
-                    !LIVE_SECTION_TYPES.includes(
-                      String(record.section_type),
-                    ) && (
-                      <p className="mt-1 text-xs font-semibold text-amber-300">
-                        This block type isn&apos;t shown anywhere on the website
-                        — edit it and set Section type to “custom” to make it
-                        appear.
-                      </p>
-                    )}
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {hasOrder && (
-                    <>
-                      <button
-                        aria-label="Move up"
-                        onClick={() => reorder(record, "up")}
-                        className="rounded border border-slate-700 px-2.5 py-1.5 text-sm"
-                      >
-                        ↑
-                      </button>
-                      <button
-                        aria-label="Move down"
-                        onClick={() => reorder(record, "down")}
-                        className="rounded border border-slate-700 px-2.5 py-1.5 text-sm"
-                      >
-                        ↓
-                      </button>
-                    </>
-                  )}
-                  {!config.readOnly && (
-                    <button
-                      onClick={() => start(record)}
-                      className="rounded border border-slate-700 px-3 py-1.5 text-sm hover:border-cyan-400"
-                    >
-                      Edit
-                    </button>
-                  )}
-                  {resourceKey === "submissions" && (
-                    <button
-                      onClick={() => setViewing(record)}
-                      className="rounded-lg border border-cyan-400/20 bg-cyan-400/[.06] px-3 py-1.5 text-sm font-semibold text-cyan-300 transition hover:bg-cyan-400/10"
-                    >
-                      View inquiry
-                    </button>
-                  )}
-                  {(!config.readOnly || resourceKey === "submissions") &&
-                    !config.singleton && (
-                      <button
-                        onClick={() => remove(record)}
-                        className="rounded border border-red-500/30 px-3 py-1.5 text-sm text-red-300"
-                      >
-                        Delete
-                      </button>
-                    )}
-                </div>
+          <>
+            {hasPageField && (
+              <div className="flex flex-wrap items-center gap-3 border-b border-slate-800 bg-slate-950/40 px-4 py-3">
+                <label className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                  Filter by page
+                </label>
+                <select
+                  value={pageFilter}
+                  onChange={(event) => setPageFilter(event.target.value)}
+                  className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-1.5 text-sm outline-none focus:border-cyan-400"
+                >
+                  <option value="all">All pages ({records.length})</option>
+                  {pageFilterOptions.map((option) => (
+                    <option key={option.key} value={option.key}>
+                      {option.label} ({option.count})
+                    </option>
+                  ))}
+                </select>
               </div>
-            ))}
-          </div>
+            )}
+            {groupedRecords ? (
+              <div className="divide-y divide-slate-800">
+                {groupedRecords.map((group) => (
+                  <div key={group.key || "unassigned"}>
+                    <p className="bg-slate-950/60 px-4 py-2 text-xs font-bold uppercase tracking-wide text-cyan-300">
+                      {group.label}
+                    </p>
+                    <div className="divide-y divide-slate-800">
+                      {group.records.map((record) => (
+                        <ResourceRow
+                          key={String(record.id)}
+                          record={record}
+                          config={config}
+                          resourceKey={resourceKey}
+                          pageOptions={pageOptions}
+                          hasOrder={hasOrder}
+                          reorder={reorder}
+                          start={start}
+                          remove={remove}
+                          setViewing={setViewing}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="divide-y divide-slate-800">
+                {visibleRecords.map((record) => (
+                  <ResourceRow
+                    key={String(record.id)}
+                    record={record}
+                    config={config}
+                    resourceKey={resourceKey}
+                    pageOptions={pageOptions}
+                    hasOrder={hasOrder}
+                    reorder={reorder}
+                    start={start}
+                    remove={remove}
+                    setViewing={setViewing}
+                  />
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
       {viewing && resourceKey === "submissions" && (
