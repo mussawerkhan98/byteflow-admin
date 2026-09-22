@@ -87,7 +87,7 @@ export default function HeroesManager() {
 
   return (
     <div className="pb-10">
-      <AdminPageHeader sectionKey="heroes" />
+      <AdminPageHeader sectionKey="heroes" title="Page top banners" />
       {notice && (
         <p className="mt-5 rounded-lg border border-cyan-400/10 bg-cyan-400/[.05] p-3 text-sm text-cyan-200">
           {notice}

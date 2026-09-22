@@ -31,11 +31,10 @@ export const adminGroups: AdminGroup[] = [
     label: "Page content",
     sections: [
       {
-        key: "heroes",
-        label: "Page top banners",
+        key: "pages",
+        label: "Pages",
         shows:
-          "The big banner at the top of each page — headline, text, buttons and background image.",
-        preview: "/",
+          "Pick a page (Home, About Us, Blog, IT Support AMC, etc.) and manage everything on it — top banner, SEO details, FAQs, extra content blocks and its call-to-action banner — all together in one place.",
       },
       {
         key: "services",
@@ -81,20 +80,6 @@ export const adminGroups: AdminGroup[] = [
           "The review slider on the homepage and the review cards on About Us.",
         preview: "/",
       },
-      {
-        key: "faqs",
-        label: "FAQs",
-        shows:
-          "The question-and-answer accordion near the bottom of whichever page you assign each question to.",
-        preview: "/",
-      },
-      {
-        key: "ctas",
-        label: "Call-to-action banners",
-        shows:
-          "The “get in touch” banner near the bottom of whichever page you assign it to.",
-        preview: "/",
-      },
     ],
   },
   {
@@ -114,23 +99,10 @@ export const adminGroups: AdminGroup[] = [
         preview: "/contact-us",
       },
       {
-        key: "pages",
-        label: "SEO & page settings",
-        shows:
-          "The Google search title and description for each page, and whether search engines may index it.",
-      },
-      {
         key: "scripts",
         label: "Tracking codes",
         shows:
           "Analytics and tracking snippets (Google, Meta, chat widgets) added to every page.",
-      },
-      {
-        key: "sections",
-        label: "Extra page blocks",
-        shows:
-          "Extra blocks of content — heading, text, image and a button — added near the bottom of whichever page you choose.",
-        preview: "/",
       },
     ],
   },
