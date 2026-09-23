@@ -1,6 +1,6 @@
 "use client";
 /* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps, @next/next/no-img-element */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Resource } from "../../lib/cms-config";
 import { getAdminSection } from "../../lib/admin-guide";
 import AdminPageHeader from "../AdminPageHeader";
@@ -196,6 +196,12 @@ export default function ResourceManager({
     text: string;
   } | null>(null);
   const [pageFilter, setPageFilter] = useState("all");
+  // The editor form is inside this card. On the per-page workspace the card
+  // is one of several stacked down the page, so scrolling the window to the
+  // top would jump away from the form and make "Edit" look like it did
+  // nothing — which is how the same record ends up being entered twice.
+  const formRef = useRef<HTMLFormElement | null>(null);
+  const scrollToForm = useRef(false);
   const hasOrder = config.fields.some((field) => field.name === "sort_order");
   // Resources like FAQs, Extra page blocks and CTAs are assigned one at a
   // time to a page, but the list otherwise gave no sense of which page each
@@ -204,6 +210,21 @@ export default function ResourceManager({
   // page (with a "<page name>" heading per group) and offer a filter to
   // narrow the list down to a single page.
   const hasPageField = config.fields.some((field) => field.name === "page_id");
+  // The field that identifies a record to a human — a FAQ's question, a
+  // block's name. Used to catch an exact duplicate before it is created.
+  const identity = useMemo(
+    () =>
+      config.fields.find(
+        (field) =>
+          field.required &&
+          ["question", "name", "title", "heading", "label"].includes(
+            field.name,
+          ),
+      ),
+    [config.fields],
+  );
+  const identityField = identity?.name;
+  const identityLabel = (identity?.label ?? "name").toLowerCase();
   const pageName = (id: unknown) => {
     const key = String(id ?? "");
     if (!key) return "Not assigned to a page";
@@ -273,6 +294,13 @@ export default function ResourceManager({
       setForm(records[0]);
     }
   }, [config.singleton, records, editing]);
+  // Only scrolls when the editor was opened by a click (start), never when a
+  // singleton resource opens its own form as the page loads.
+  useEffect(() => {
+    if (!editing || !scrollToForm.current) return;
+    scrollToForm.current = false;
+    formRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [editing]);
   useEffect(() => {
     if (resourceKey !== "services") return;
     void fetch("/api/admin/import-services")
@@ -313,7 +341,8 @@ export default function ResourceManager({
     setEditing(record ?? {});
     setForm(value);
     setNotice(null);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    // Scrolled once the form has actually rendered — see the effect below.
+    scrollToForm.current = true;
   }
   function cancel() {
     setEditing(null);
@@ -328,10 +357,38 @@ export default function ResourceManager({
       setNotice({ type: "error", text: `${missing.label} is required.` });
       return;
     }
+    const isUpdate = Number(editing?.id) > 0;
+    // Adding the same question twice instead of editing the existing one is
+    // an easy mistake to make, and the website then shows it twice. Block an
+    // exact repeat on the same page and point at the record already there.
+    // Only for page-assigned resources (FAQs, blocks, CTAs) — elsewhere a
+    // repeated name can be legitimate, two team members sharing a first name
+    // being the obvious case.
+    if (!isUpdate && identityField && hasPageField) {
+      const candidate = String(form[identityField] ?? "")
+        .trim()
+        .toLowerCase();
+      const ownerPage = lockedPageId ?? Number(form.page_id);
+      const clash =
+        candidate &&
+        records.some(
+          (record) =>
+            String(record[identityField] ?? "")
+              .trim()
+              .toLowerCase() === candidate &&
+            Number(record.page_id) === ownerPage,
+        );
+      if (clash) {
+        setNotice({
+          type: "error",
+          text: `This page already has a ${config.singular.toLowerCase()} with that ${identityLabel}. Edit the existing one instead of adding a second copy.`,
+        });
+        return;
+      }
+    }
     setSaving(true);
     setNotice(null);
     try {
-      const isUpdate = Number(editing?.id) > 0;
       const response = await fetch(`/api/admin/${resourceKey}`, {
         method: isUpdate ? "PUT" : "POST",
         headers: { "content-type": "application/json" },
@@ -483,6 +540,7 @@ export default function ResourceManager({
       )}
       {editing && !config.readOnly && (
         <form
+          ref={formRef}
           onSubmit={save}
           className="mt-7 rounded-2xl border border-white/[.08] bg-[#0d1921] p-5 shadow-2xl sm:p-7"
         >
