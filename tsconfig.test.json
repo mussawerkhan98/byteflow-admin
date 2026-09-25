@@ -8,8 +8,19 @@
     "moduleResolution": "node",
     "outDir": ".test-build",
     "rootDir": ".",
-    "types": ["node"]
+    "types": [
+      "node"
+    ]
   },
-  "include": ["app/lib/countries.ts", "app/lib/marketing-csv.ts", "tests/**/*.ts"],
-  "exclude": ["node_modules", ".next"]
+  "include": [
+    "app/lib/countries.ts",
+    "app/lib/marketing-csv.ts",
+    "app/lib/audience.ts",
+    "app/lib/email-template.ts",
+    "tests/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    ".next"
+  ]
 }
