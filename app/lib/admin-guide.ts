@@ -115,6 +115,12 @@ export const adminGroups: AdminGroup[] = [
         shows: "Messages people send you through the website contact forms.",
       },
       {
+        key: "marketing",
+        label: "Marketing",
+        shows:
+          "Your promotion mailing list and the offer emails you send to it. Nothing here appears on the website — it goes to people's inboxes.",
+      },
+      {
         key: "users",
         label: "Admin logins",
         shows: "Who is allowed to sign in to this admin panel.",
