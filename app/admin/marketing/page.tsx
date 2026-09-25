@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { isAdminAuthenticated } from "../../lib/auth";
 import { hasPermission } from "../../lib/permissions";
-import MarketingContacts from "./MarketingContacts";
+import MarketingTabs from "./MarketingTabs";
 
 export default async function MarketingPage() {
   if (!(await isAdminAuthenticated())) redirect("/admin/login");
@@ -18,5 +18,5 @@ export default async function MarketingPage() {
       </div>
     );
   }
-  return <MarketingContacts />;
+  return <MarketingTabs />;
 }
