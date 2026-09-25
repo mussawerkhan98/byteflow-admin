@@ -113,3 +113,73 @@ CREATE INDEX IF NOT EXISTS idx_team_page_order ON team_members(page_id, sort_ord
 CREATE INDEX IF NOT EXISTS idx_submissions_date ON contact_submissions(submitted_at DESC);
 INSERT OR IGNORE INTO site_settings (id, business_name, logo_url, favicon_url, header_phone, whatsapp_number, whatsapp_link, primary_email, physical_address, business_hours, footer_text, copyright_text, facebook_url, instagram_url, linkedin_url, tiktok_url)
 VALUES (1, 'Byteflow Information Technology', '/images/logo.png', '/favicon.ico', '+971 54 328 2042', '+971543282042', 'https://wa.me/971543282042', 'info@byteflow.ae', 'Dubai, United Arab Emirates', 'Monday–Saturday, 9:00 AM–6:00 PM', 'Leading IT solutions provider trusted by 500+ businesses across Dubai and UAE since 2017.', 'Byteflow Information Technology. All rights reserved.', 'https://m.facebook.com/byteflow.ae/', 'https://www.instagram.com/byteflow.ae/', 'https://ae.linkedin.com/company/byteflow-techcascade', 'https://www.tiktok.com/@byteflow.ae');
+
+-- ── Email marketing ───────────────────────────────────────────────────────
+-- Additive only: these tables are new, nothing existing is dropped or rebuilt.
+
+-- Named permissions granted to individual admin users. Administrators hold
+-- every permission implicitly, so only editors ever need rows here.
+CREATE TABLE IF NOT EXISTS admin_permissions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  admin_user_id INTEGER NOT NULL REFERENCES admin_users(id) ON DELETE CASCADE,
+  permission TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE(admin_user_id, permission)
+);
+
+-- People who may receive promotions. Email is the identity: one row per
+-- address, lower-cased, so nobody is ever emailed twice.
+CREATE TABLE IF NOT EXISTS marketing_contacts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  email TEXT NOT NULL UNIQUE,
+  name TEXT NOT NULL DEFAULT '',
+  phone TEXT NOT NULL DEFAULT '',
+  country TEXT NOT NULL DEFAULT '',
+  region TEXT NOT NULL DEFAULT '',
+  groups TEXT NOT NULL DEFAULT '',
+  opt_out INTEGER NOT NULL DEFAULT 0,
+  unsub_key TEXT NOT NULL DEFAULT '',
+  source TEXT NOT NULL DEFAULT 'manual' CHECK(source IN ('manual','import')),
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS campaigns (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  subject TEXT NOT NULL,
+  headline TEXT NOT NULL DEFAULT '',
+  body TEXT NOT NULL DEFAULT '',
+  button_text TEXT NOT NULL DEFAULT '',
+  button_url TEXT NOT NULL DEFAULT '',
+  image_data BLOB,
+  image_mime TEXT NOT NULL DEFAULT '',
+  audience TEXT NOT NULL DEFAULT '{}',
+  status TEXT NOT NULL DEFAULT 'draft' CHECK(status IN ('draft','scheduled','sending','sent')),
+  scheduled_at TEXT,
+  sent_at TEXT,
+  sent_count INTEGER NOT NULL DEFAULT 0,
+  failed_count INTEGER NOT NULL DEFAULT 0,
+  send_error TEXT NOT NULL DEFAULT '',
+  created_by TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- One row per person per send, carrying the token that makes each link in
+-- that person's email unique so clicks can be attributed.
+CREATE TABLE IF NOT EXISTS campaign_recipients (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  campaign_id INTEGER NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+  token TEXT NOT NULL UNIQUE,
+  contact_id INTEGER,
+  email TEXT NOT NULL,
+  name TEXT NOT NULL DEFAULT '',
+  clicks INTEGER NOT NULL DEFAULT 0,
+  first_click_at TEXT,
+  last_click_at TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_marketing_contacts_email ON marketing_contacts(email);
+CREATE INDEX IF NOT EXISTS idx_campaign_recipients_campaign ON campaign_recipients(campaign_id);
+CREATE INDEX IF NOT EXISTS idx_campaigns_status_scheduled ON campaigns(status, scheduled_at);
