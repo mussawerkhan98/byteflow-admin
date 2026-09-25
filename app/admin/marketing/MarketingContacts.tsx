@@ -47,7 +47,7 @@ const blank = {
 const inputClass =
   "mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm font-normal text-slate-200 outline-none focus:border-cyan-400";
 
-export default function MarketingContacts() {
+export default function MarketingContacts({ hideHeader }: { hideHeader?: boolean } = {}) {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [facets, setFacets] = useState<Facets | null>(null);
   const [loading, setLoading] = useState(true);
@@ -146,8 +146,8 @@ export default function MarketingContacts() {
   }, [contacts, search, groupFilter, statusFilter]);
 
   return (
-    <div className="pb-10">
-      <AdminPageHeader sectionKey="marketing" />
+    <div>
+      {!hideHeader && <AdminPageHeader sectionKey="marketing" />}
 
       {notice && (
         <p
