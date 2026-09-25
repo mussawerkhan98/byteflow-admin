@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import AdminPageHeader from "../AdminPageHeader";
+import PermissionEditor from "./PermissionEditor";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faPen,
@@ -247,12 +248,13 @@ export default function UsersManager() {
           </p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[760px] text-left">
+            <table className="w-full min-w-[980px] text-left">
               <thead className="bg-slate-950/50 text-[10px] font-bold uppercase tracking-wider text-slate-600">
                 <tr>
                   <th className="px-5 py-3">User</th>
                   <th className="px-5 py-3">Role</th>
                   <th className="px-5 py-3">Status</th>
+                  <th className="px-5 py-3">Can do</th>
                   <th className="px-5 py-3">Created</th>
                   <th className="px-5 py-3 text-right">Actions</th>
                 </tr>
@@ -292,6 +294,15 @@ export default function UsersManager() {
                         />
                         {user.active ? "Active" : "Disabled"}
                       </span>
+                    </td>
+                    <td className="px-5 py-4 align-top">
+                      <div className="min-w-[240px] max-w-xs">
+                        <PermissionEditor
+                          userId={user.id}
+                          role={user.role}
+                          displayName={user.display_name}
+                        />
+                      </div>
                     </td>
                     <td className="px-5 py-4 text-xs text-slate-500">
                       {user.created_at
