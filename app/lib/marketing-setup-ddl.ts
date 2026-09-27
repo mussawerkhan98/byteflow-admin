@@ -12,6 +12,7 @@ export const MARKETING_TABLES = [
   "marketing_contacts",
   "campaigns",
   "campaign_recipients",
+  "email_design",
 ] as const;
 
 export const MARKETING_DDL: readonly string[] = [
@@ -67,6 +68,13 @@ export const MARKETING_DDL: readonly string[] = [
   first_click_at TEXT,
   last_click_at TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
+)`,
+  `CREATE TABLE IF NOT EXISTS email_design (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  header_style TEXT NOT NULL DEFAULT 'name' CHECK(header_style IN ('name','logo','none')),
+  accent_color TEXT NOT NULL DEFAULT '#2CCDDE',
+  footer_note TEXT NOT NULL DEFAULT '',
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 )`,
   `CREATE INDEX IF NOT EXISTS idx_marketing_contacts_email ON marketing_contacts(email)`,
   `CREATE INDEX IF NOT EXISTS idx_campaign_recipients_campaign ON campaign_recipients(campaign_id)`,

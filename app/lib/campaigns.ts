@@ -9,6 +9,7 @@ import {
   type Audience,
 } from "./audience";
 import { buildEmail, type EmailSettings } from "./email-template";
+import { getEmailDesign } from "./email-design";
 import { brevoConfigured, sendBatch, type Message } from "./brevo";
 
 export type CampaignStatus = "draft" | "scheduled" | "sending" | "sent";
@@ -267,7 +268,7 @@ export async function cancelSchedule(id: number): Promise<void> {
   if (!changed.rowsAffected) throw new Error("That promotion is not scheduled");
 }
 
-async function emailSettings(): Promise<EmailSettings & { sender: { name: string; email: string } }> {
+export async function emailSettings(): Promise<EmailSettings & { sender: { name: string; email: string } }> {
   const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://www.byteflow.ae").replace(/\/+$/, "");
   let businessName = "Byteflow Information Technology";
   let phone = "";
@@ -286,6 +287,7 @@ async function emailSettings(): Promise<EmailSettings & { sender: { name: string
   } catch {
     // Defaults are fine; a missing settings row must not stop a send.
   }
+  const design = await getEmailDesign();
   const senderEmail = process.env.BREVO_SENDER_EMAIL || email;
   if (!senderEmail) {
     throw new Error(
@@ -297,6 +299,9 @@ async function emailSettings(): Promise<EmailSettings & { sender: { name: string
     phone,
     websiteUrl: siteUrl,
     logoUrl,
+    headerStyle: design.headerStyle,
+    accentColor: design.accentColor,
+    footerNote: design.footerNote,
     sender: { name: businessName, email: senderEmail },
   };
 }
