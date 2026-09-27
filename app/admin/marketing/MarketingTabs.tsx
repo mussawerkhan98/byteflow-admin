@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import AdminPageHeader from "../AdminPageHeader";
+import EmailDesign from "./EmailDesign";
 import MarketingContacts from "./MarketingContacts";
 import Promotions from "./Promotions";
 
@@ -11,7 +12,7 @@ import Promotions from "./Promotions";
  * audience and the promotion that targets it are read together.
  */
 export default function MarketingTabs() {
-  const [tab, setTab] = useState<"promotions" | "contacts">("promotions");
+  const [tab, setTab] = useState<"promotions" | "contacts" | "design">("promotions");
 
   return (
     <div className="pb-10">
@@ -22,6 +23,7 @@ export default function MarketingTabs() {
           [
             ["promotions", "Promotions"],
             ["contacts", "Contacts & groups"],
+            ["design", "Email design"],
           ] as const
         ).map(([key, label]) => (
           <button
@@ -39,7 +41,9 @@ export default function MarketingTabs() {
       </div>
 
       <div className="mt-6">
-        {tab === "promotions" ? <Promotions /> : <MarketingContacts hideHeader />}
+        {tab === "promotions" && <Promotions />}
+        {tab === "contacts" && <MarketingContacts hideHeader />}
+        {tab === "design" && <EmailDesign />}
       </div>
     </div>
   );
