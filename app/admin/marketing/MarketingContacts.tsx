@@ -58,6 +58,7 @@ export default function MarketingContacts({ hideHeader }: { hideHeader?: boolean
   const [statusFilter, setStatusFilter] = useState<"all" | "subscribed" | "unsubscribed">("all");
   const [editing, setEditing] = useState<typeof blank | null>(null);
   const [showImport, setShowImport] = useState(false);
+  const [tablesReady, setTablesReady] = useState(true);
   const formRef = useRef<HTMLFormElement | null>(null);
   const scrollToForm = useRef(false);
 
@@ -68,6 +69,7 @@ export default function MarketingContacts({ hideHeader }: { hideHeader?: boolean
     if (response.ok) {
       setContacts(data.contacts ?? []);
       setFacets(data.facets ?? null);
+      setTablesReady(data.tablesReady !== false);
     } else {
       setNotice({ type: "error", text: data.error ?? "Could not load contacts." });
     }
@@ -158,6 +160,13 @@ export default function MarketingContacts({ hideHeader }: { hideHeader?: boolean
           }`}
         >
           {notice.text}
+        </p>
+      )}
+
+      {!tablesReady && (
+        <p className="mt-6 rounded-lg border border-amber-400/20 bg-amber-400/[.06] p-3 text-sm text-amber-200">
+          Marketing is not set up in the database yet, so contacts cannot be saved.
+          Open the Promotions tab and use &ldquo;Set up marketing tables&rdquo; first.
         </p>
       )}
 

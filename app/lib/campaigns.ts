@@ -301,6 +301,38 @@ async function emailSettings(): Promise<EmailSettings & { sender: { name: string
   };
 }
 
+/**
+ * What a brand-new promotion's button starts as.
+ *
+ * The link is read from Contact details rather than written down here, so
+ * changing the WhatsApp number in one place moves every future promotion
+ * with it. Both fields stay editable on each promotion.
+ */
+export async function promotionDefaults(): Promise<{
+  buttonText: string;
+  buttonUrl: string;
+}> {
+  const buttonText = "Get a Free Quote";
+  try {
+    const result = await db.execute(
+      "SELECT whatsapp_link, whatsapp_number FROM site_settings WHERE id = 1",
+    );
+    const row = result.rows[0] as Record<string, unknown> | undefined;
+    const link = String(row?.whatsapp_link ?? "").trim();
+    if (/^https?:\/\//i.test(link)) return { buttonText, buttonUrl: link };
+
+    // Fall back to building the link from the number, in case only that is set.
+    const digits = String(row?.whatsapp_number ?? "").replace(/\D/g, "");
+    if (digits.length >= 8) {
+      return { buttonText, buttonUrl: `https://wa.me/${digits}` };
+    }
+  } catch {
+    // No settings row, or the table is missing: an empty link simply means
+    // the button starts blank rather than wrong.
+  }
+  return { buttonText, buttonUrl: "" };
+}
+
 const newToken = () => randomBytes(18).toString("base64url");
 
 export async function audienceFor(campaign: Campaign): Promise<MarketingContact[]> {
