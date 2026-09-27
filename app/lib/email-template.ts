@@ -8,12 +8,45 @@
  * to interpret them.
  */
 
+export type HeaderStyle = "name" | "logo" | "none";
+
 export type EmailSettings = {
   businessName: string;
   phone: string;
   websiteUrl: string;
   logoUrl: string;
+  /** What sits above the greeting. Defaults to the business name as text. */
+  headerStyle?: HeaderStyle;
+  /** Button colour, as #rrggbb. Anything else falls back to the house cyan. */
+  accentColor?: string;
+  /** Replaces the default "you asked to hear about offers" line. */
+  footerNote?: string;
 };
+
+export const DEFAULT_ACCENT = "#2CCDDE";
+
+/**
+ * A colour is written straight into a style attribute, so it is matched
+ * against a strict pattern rather than escaped. Anything that is not a plain
+ * six-digit hex colour is replaced, never sanitised and used.
+ */
+export function safeColor(value: unknown, fallback = DEFAULT_ACCENT): string {
+  const raw = String(value ?? "").trim();
+  return /^#[0-9a-fA-F]{6}$/.test(raw) ? raw : fallback;
+}
+
+/**
+ * Dark buttons need light text and vice versa, so the label colour follows
+ * the chosen accent rather than being fixed.
+ */
+export function readableOn(hex: string): string {
+  const colour = safeColor(hex);
+  const [r, g, b] = [1, 3, 5].map((start) =>
+    parseInt(colour.slice(start, start + 2), 16),
+  );
+  // Rec. 601 luma: close enough for deciding black text or white.
+  return (r * 299 + g * 587 + b * 114) / 1000 > 140 ? "#04141a" : "#ffffff";
+}
 
 export type EmailContent = {
   headline: string;
@@ -95,6 +128,23 @@ export function buildEmail(
   const unsubscribeUrl = safeUrl(recipient.unsubscribeUrl);
   const unsubscribeHref = attrUrl(recipient.unsubscribeUrl);
   const showButton = Boolean(content.buttonText && buttonUrl);
+  const headerStyle: HeaderStyle = settings.headerStyle ?? "name";
+  const accent = safeColor(settings.accentColor);
+  const accentText = readableOn(accent);
+  const footerNote =
+    String(settings.footerNote ?? "").trim() ||
+    `You're receiving this because you asked to hear about offers from ${settings.businessName}.`;
+
+  // "logo" still falls back to the name when no logo has been uploaded, so
+  // the email never opens with a broken image.
+  const header =
+    headerStyle === "none"
+      ? ""
+      : headerStyle === "logo" && logoUrl
+        ? `<tr><td align="left" style="padding:24px 32px 8px 32px;">
+<img src="${logoSrc}" alt="${escapeHtml(settings.businessName)}" width="132" style="display:block;border:0;max-width:132px;height:auto;">
+</td></tr>`
+        : `<tr><td align="left" style="padding:24px 32px 8px 32px;font-size:18px;font-weight:bold;color:#0f172a;">${escapeHtml(settings.businessName)}</td></tr>`;
 
   const html = `<!doctype html>
 <html lang="en">
@@ -107,16 +157,10 @@ export function buildEmail(
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f8;padding:24px 12px;">
 <tr><td align="center">
 <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:600px;max-width:100%;background:#ffffff;border-radius:12px;overflow:hidden;font-family:Arial,Helvetica,sans-serif;">
-${
-  logoUrl
-    ? `<tr><td align="left" style="padding:24px 32px 8px 32px;">
-<img src="${logoSrc}" alt="${escapeHtml(settings.businessName)}" width="132" style="display:block;border:0;max-width:132px;height:auto;">
-</td></tr>`
-    : `<tr><td align="left" style="padding:24px 32px 8px 32px;font-size:18px;font-weight:bold;color:#0f172a;">${escapeHtml(settings.businessName)}</td></tr>`
-}
+${header}
 ${
   imageUrl
-    ? `<tr><td style="padding:16px 0 0 0;">
+    ? `<tr><td style="padding:${header ? "16px" : "0"} 0 0 0;">
 ${buttonHref ? `<a href="${buttonHref}" style="display:block;">` : ""}
 <img src="${imageSrc}" alt="${escapeHtml(content.headline || "Offer")}" width="600" style="display:block;border:0;width:100%;max-width:600px;height:auto;">
 ${buttonUrl ? `</a>` : ""}
@@ -138,7 +182,7 @@ ${paragraphs
 ${
   showButton
     ? `<tr><td align="left" style="padding:26px 32px 0 32px;">
-<a href="${buttonHref}" style="display:inline-block;background:#2CCDDE;color:#04141a;text-decoration:none;font-size:15px;font-weight:bold;padding:14px 28px;border-radius:999px;">${escapeHtml(content.buttonText)}</a>
+<a href="${buttonHref}" style="display:inline-block;background:${accent};color:${accentText};text-decoration:none;font-size:15px;font-weight:bold;padding:14px 28px;border-radius:999px;">${escapeHtml(content.buttonText)}</a>
 </td></tr>`
     : ""
 }
@@ -148,7 +192,7 @@ ${
 ${settings.phone ? `${escapeHtml(settings.phone)}<br>` : ""}
 ${websiteUrl ? `<a href="${websiteHref}" style="color:#64748b;">${escapeHtml(settings.websiteUrl)}</a><br>` : ""}
 <br>
-You&#39;re receiving this because you asked to hear about offers from ${escapeHtml(settings.businessName)}.<br>
+${escapeHtml(footerNote)}<br>
 <a href="${unsubscribeHref}" style="color:#64748b;text-decoration:underline;">Unsubscribe</a>
 </td></tr>
 </table>
@@ -171,7 +215,7 @@ You&#39;re receiving this because you asked to hear about offers from ${escapeHt
     settings.phone ? stripTemplating(settings.phone) : "",
     settings.websiteUrl ? stripTemplating(settings.websiteUrl) : "",
     "",
-    `You're receiving this because you asked to hear about offers from ${stripTemplating(settings.businessName)}.`,
+    stripTemplating(footerNote),
     `Unsubscribe: ${unsubscribeUrl}`,
   ]
     .filter((line, index, all) => !(line === "" && all[index - 1] === ""))

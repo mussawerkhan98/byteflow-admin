@@ -180,6 +180,15 @@ CREATE TABLE IF NOT EXISTS campaign_recipients (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- How promotion emails look. A single row, and its absence means defaults.
+CREATE TABLE IF NOT EXISTS email_design (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  header_style TEXT NOT NULL DEFAULT 'name' CHECK(header_style IN ('name','logo','none')),
+  accent_color TEXT NOT NULL DEFAULT '#2CCDDE',
+  footer_note TEXT NOT NULL DEFAULT '',
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 CREATE INDEX IF NOT EXISTS idx_marketing_contacts_email ON marketing_contacts(email);
 CREATE INDEX IF NOT EXISTS idx_campaign_recipients_campaign ON campaign_recipients(campaign_id);
 CREATE INDEX IF NOT EXISTS idx_campaigns_status_scheduled ON campaigns(status, scheduled_at);
