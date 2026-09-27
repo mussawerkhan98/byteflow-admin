@@ -7,6 +7,7 @@ import {
   listContacts,
   updateContact,
 } from "../../../../lib/marketing";
+import { missingTables } from "../../../../lib/marketing-setup";
 
 export const dynamic = "force-dynamic";
 
@@ -32,8 +33,14 @@ export async function GET() {
   const denied = await guard();
   if (denied) return denied;
   try {
-    const [contacts, facets] = await Promise.all([listContacts(), contactFacets()]);
-    return Response.json({ contacts, facets });
+    const [contacts, facets, missing] = await Promise.all([
+      listContacts(),
+      contactFacets(),
+      missingTables(),
+    ]);
+    // Without this the screen cannot tell "no contacts yet" apart from
+    // "the table this reads from does not exist".
+    return Response.json({ contacts, facets, tablesReady: missing.length === 0 });
   } catch (error) {
     return failure(error);
   }
