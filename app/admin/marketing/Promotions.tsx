@@ -64,6 +64,9 @@ export default function Promotions() {
   const [people, setPeople] = useState<Person[]>([]);
   const [brevoReady, setBrevoReady] = useState(true);
   const [cronReady, setCronReady] = useState(true);
+  const [tablesReady, setTablesReady] = useState(true);
+  const [missingTables, setMissingTables] = useState<string[]>([]);
+  const [defaults, setDefaults] = useState({ buttonText: "", buttonUrl: "" });
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<{ type: "ok" | "error"; text: string } | null>(null);
@@ -83,6 +86,12 @@ export default function Promotions() {
       setPeople(data.people ?? []);
       setBrevoReady(Boolean(data.brevoReady));
       setCronReady(Boolean(data.cronReady));
+      setTablesReady(data.tablesReady !== false);
+      setMissingTables(data.missingTables ?? []);
+      setDefaults({
+        buttonText: String(data.defaults?.buttonText ?? ""),
+        buttonUrl: String(data.defaults?.buttonUrl ?? ""),
+      });
     } else {
       setNotice({ type: "error", text: data.error ?? "Could not load promotions." });
     }
@@ -129,8 +138,37 @@ export default function Promotions() {
             hasImage: campaign.hasImage,
             removeImage: false,
           }
-        : { ...emptyDraft, audience: { countries: [], regions: [], groups: [] } },
+        : {
+            ...emptyDraft,
+            // A new promotion starts pointed at WhatsApp, taken from Contact
+            // details. Editing either field on the promotion overrides it.
+            buttonText: defaults.buttonText,
+            buttonUrl: defaults.buttonUrl,
+            audience: { countries: [], regions: [], groups: [] },
+          },
     );
+  }
+
+  async function onSetUpTables() {
+    setBusy(true);
+    setNotice(null);
+    try {
+      const response = await fetch("/api/admin/marketing/setup", { method: "POST" });
+      const data = await response.json();
+      if (!response.ok) {
+        setNotice({ type: "error", text: data.error ?? "Setup did not complete." });
+        return;
+      }
+      setNotice({
+        type: "ok",
+        text: data.created?.length
+          ? `Set up: ${data.created.join(", ")}. You can create a promotion now.`
+          : "Everything was already set up.",
+      });
+      await load(true);
+    } finally {
+      setBusy(false);
+    }
   }
 
   function toggleChip(section: keyof Audience, value: string) {
@@ -287,6 +325,23 @@ export default function Promotions() {
 
   return (
     <div>
+      {!tablesReady && (
+        <div className="mb-5 rounded-lg border border-amber-400/20 bg-amber-400/[.06] p-4 text-sm text-amber-200">
+          <p className="font-semibold">Marketing is not set up in the database yet.</p>
+          <p className="mt-2 leading-relaxed">
+            Contacts and promotions cannot be saved until the tables exist
+            {missingTables.length ? ` (missing: ${missingTables.join(", ")})` : ""}.
+            This only creates new tables — nothing existing is changed or removed.
+          </p>
+          <button
+            onClick={() => void onSetUpTables()}
+            disabled={busy}
+            className="mt-3 rounded-lg border border-amber-300/30 bg-amber-300/10 px-4 py-2 text-sm font-semibold text-amber-100 transition hover:bg-amber-300/20 disabled:opacity-50"
+          >
+            {busy ? "Setting up…" : "Set up marketing tables"}
+          </button>
+        </div>
+      )}
       {!brevoReady && (
         <p className="mb-5 rounded-lg border border-amber-400/20 bg-amber-400/[.06] p-3 text-sm text-amber-200">
           Sending is not set up yet. Add <code>BREVO_API_KEY</code> in Vercel
@@ -364,7 +419,7 @@ export default function Promotions() {
                 Button text
                 <input
                   value={draft.buttonText}
-                  placeholder="See the offer"
+                  placeholder={defaults.buttonText || "Get a Free Quote"}
                   onChange={(event) => setDraft({ ...draft, buttonText: event.target.value })}
                   className={inputClass}
                 />
@@ -373,12 +428,16 @@ export default function Promotions() {
                 Button link
                 <input
                   value={draft.buttonUrl}
-                  placeholder="https://www.byteflow.ae/it-amc-services-dubai"
+                  placeholder={defaults.buttonUrl || "https://wa.me/9715XXXXXXXX"}
                   onChange={(event) => setDraft({ ...draft, buttonUrl: event.target.value })}
                   className={inputClass}
                 />
               </label>
             </div>
+            <p className="-mt-2 text-xs text-slate-500">
+              A new promotion starts with your WhatsApp link from Contact details.
+              Change either field to point this promotion somewhere else.
+            </p>
 
             <label className="text-xs font-semibold text-slate-300">
               Offer image (optional, JPG/PNG/WEBP, up to 1.5 MB)
