@@ -5,9 +5,11 @@ import {
   createCampaign,
   deleteCampaign,
   listCampaigns,
+  promotionDefaults,
   updateCampaign,
 } from "../../../../lib/campaigns";
 import { contactFacets, listContacts } from "../../../../lib/marketing";
+import { missingTables } from "../../../../lib/marketing-setup";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -34,10 +36,12 @@ export async function GET() {
   const denied = await guard();
   if (denied) return denied;
   try {
-    const [campaigns, facets, contacts] = await Promise.all([
+    const [campaigns, facets, contacts, defaults, missing] = await Promise.all([
       listCampaigns(),
       contactFacets(),
       listContacts(),
+      promotionDefaults(),
+      missingTables(),
     ]);
     // The browser needs the bare targeting fields to show a live recipient
     // count as chips are ticked, without a round trip for every click.
@@ -52,6 +56,11 @@ export async function GET() {
       })),
       brevoReady: Boolean(process.env.BREVO_API_KEY),
       cronReady: Boolean(process.env.CRON_SECRET),
+      // An empty list means nothing has been written yet — unless the tables
+      // are missing, in which case it means nothing can be written at all.
+      tablesReady: missing.length === 0,
+      missingTables: missing,
+      defaults,
     });
   } catch (error) {
     return failure(error);
