@@ -64,14 +64,22 @@ export default function RichTextEditor({
     "grid h-8 min-w-8 place-items-center rounded-md px-2 text-xs font-bold text-slate-300 transition hover:bg-white/[.07] hover:text-cyan-300";
 
   return (
-    <div className="mt-2 overflow-hidden rounded-xl border border-slate-700 bg-slate-950 focus-within:border-cyan-400">
+    // No `overflow-hidden` here on purpose: it would make this box a scroll
+    // container, and a sticky child sticks to its nearest scroll container
+    // rather than to the window — which would stop the toolbar following the
+    // page. The corners are rounded on the first and last children instead.
+    <div className="mt-2 rounded-xl border border-slate-700 bg-slate-950 focus-within:border-cyan-400">
       <div
         role="toolbar"
         aria-label="Text formatting"
         onMouseDown={(event) => {
           if ((event.target as HTMLElement).closest("button")) event.preventDefault();
         }}
-        className="flex flex-wrap gap-1 border-b border-slate-800 bg-[#101c24] p-2"
+        // Long posts used to scroll the formatting buttons off the top of the
+        // screen, so every heading or table meant scrolling back up. The bar
+        // now rides along, parking below the mobile header and at the top of
+        // the window on desktop, and stops at the end of the editor.
+        className="sticky top-16 z-20 flex flex-wrap gap-1 rounded-t-xl border-b border-slate-800 bg-[#101c24] p-2 lg:top-0"
       >
         <button
           type="button"
@@ -207,7 +215,7 @@ export default function RichTextEditor({
         data-placeholder="Write the blog post content…"
         onInput={(event) => onChange(event.currentTarget.innerHTML)}
         hidden={sourceMode}
-        className="rich-text-editor min-h-80 px-5 py-4 text-sm font-normal leading-7 text-slate-200 outline-none"
+        className="rich-text-editor min-h-80 rounded-b-xl px-5 py-4 text-sm font-normal leading-7 text-slate-200 outline-none"
       />
       {sourceMode && (
         <textarea
@@ -215,7 +223,7 @@ export default function RichTextEditor({
           spellCheck={false}
           value={value}
           onChange={(event) => onChange(event.target.value)}
-          className="min-h-80 w-full resize-y bg-slate-950 px-5 py-4 font-mono text-sm font-normal leading-6 text-cyan-100 outline-none"
+          className="min-h-80 w-full resize-y rounded-b-xl bg-slate-950 px-5 py-4 font-mono text-sm font-normal leading-6 text-cyan-100 outline-none"
         />
       )}
       <input
