@@ -79,3 +79,23 @@ export function groupChildren(kinds: readonly ChildKind[]): Segment[] {
 export function isAlreadyNormalized(kinds: readonly ChildKind[]): boolean {
   return kinds.length > 0 && kinds.every((kind) => kind === "block");
 }
+
+/**
+ * Whether rewriting the content would change anything at all.
+ *
+ * Rewriting is costly in a way that has nothing to do with speed: replacing
+ * the children throws away the node the caret sits in, and the browser reacts
+ * by moving focus elsewhere and scrolling the page. So the editor asks this
+ * first and leaves an already-tidy document completely alone.
+ *
+ * `blocksHoldingBreaks` counts direct children that are blocks still holding
+ * a soft line break of their own, since those need splitting even when the
+ * top level already looks clean.
+ */
+export function needsNormalizing(
+  kinds: readonly ChildKind[],
+  blocksHoldingBreaks: number,
+): boolean {
+  if (blocksHoldingBreaks > 0) return true;
+  return kinds.length > 0 && !isAlreadyNormalized(kinds);
+}
