@@ -3,6 +3,13 @@
 import { useEffect, useRef, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
+  groupChildren,
+  isAlreadyNormalized,
+  isBlockTag,
+  isConvertibleTag,
+  type ChildKind,
+} from "../../lib/editor-blocks";
+import {
   faArrowRotateLeft,
   faArrowRotateRight,
   faBold,
@@ -34,10 +41,230 @@ export default function RichTextEditor({
     }
   }, [value]);
 
+  // Both are document-wide switches rather than per-element ones, and the
+  // browser's defaults are the wrong way round for saved content: Enter would
+  // make <div> and bold would make a styled <span>. Set them as soon as the
+  // editor exists so even plain typing produces paragraphs.
+  useEffect(() => {
+    setEditingModes();
+  }, []);
+
+  /**
+   * Commands that act on whole blocks rather than on the selected characters.
+   * These are the ones that misbehave when the content has no block structure,
+   * so the editor is tidied up before any of them runs.
+   */
+  const BLOCK_COMMANDS = new Set([
+    "formatBlock",
+    "insertUnorderedList",
+    "insertOrderedList",
+  ]);
+
+  function kindOf(node: ChildNode): ChildKind {
+    if (node.nodeType === Node.TEXT_NODE) return "inline";
+    if (node.nodeType !== Node.ELEMENT_NODE) return "inline";
+    const tag = (node as HTMLElement).tagName;
+    if (tag === "BR") return "break";
+    if (isConvertibleTag(tag)) return "convert";
+    if (isBlockTag(tag)) return "block";
+    return "inline";
+  }
+
+  /** Character offset of a selection boundary, counted from the start. */
+  function offsetOf(root: HTMLElement, node: Node, offset: number) {
+    const range = document.createRange();
+    range.selectNodeContents(root);
+    try {
+      range.setEnd(node, offset);
+    } catch {
+      return 0;
+    }
+    return range.toString().length;
+  }
+
+  /** The text node and offset that a character offset lands on. */
+  function locate(root: HTMLElement, target: number) {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    let seen = 0;
+    let last: Text | null = null;
+    let node = walker.nextNode() as Text | null;
+    while (node) {
+      if (seen + node.length >= target) {
+        return { node, offset: Math.max(0, target - seen) };
+      }
+      seen += node.length;
+      last = node;
+      node = walker.nextNode() as Text | null;
+    }
+    return last ? { node: last, offset: last.length } : null;
+  }
+
+  function restore(root: HTMLElement, start: number, end: number) {
+    const from = locate(root, start);
+    const to = locate(root, end);
+    const selection = window.getSelection();
+    if (!selection) return;
+    const range = document.createRange();
+    if (from) range.setStart(from.node, from.offset);
+    else range.selectNodeContents(root);
+    if (to) range.setEnd(to.node, to.offset);
+    else range.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(range);
+  }
+
+  /**
+   * Give the content real blocks.
+   *
+   * Typing into an empty editor leaves the first line as a bare text node,
+   * Enter produces `<div>` and Shift+Enter produces `<br>`. With nothing to
+   * wrap, `formatBlock` splices a heading into the middle of what it finds --
+   * producing an `<h2>` nested inside a `<p>` -- which is what made applying a
+   * format to one line change the look of another. Returns whether anything
+   * moved, so the caller only restores the caret when it had to.
+   */
+  function normalize(root: HTMLElement) {
+    let changed = false;
+    for (const child of Array.from(root.childNodes)) {
+      if (child.nodeType === Node.TEXT_NODE && !(child.textContent ?? "").trim()) {
+        child.remove();
+        changed = true;
+      }
+    }
+    // A div or paragraph holding other blocks is scaffolding; lift its
+    // children out first so it never becomes a paragraph wrapped round a
+    // heading or a list.
+    if (liftBlocks(root)) changed = true;
+    // Split a block that holds soft line breaks into one block per line.
+    for (const child of Array.from(root.childNodes)) {
+      if (child.nodeType !== Node.ELEMENT_NODE) continue;
+      const element = child as HTMLElement;
+      const tag = element.tagName;
+      if (!isBlockTag(tag) && !isConvertibleTag(tag)) continue;
+      if (["UL", "OL", "TABLE", "FIGURE", "PRE"].includes(tag)) continue;
+      if (!element.querySelector(":scope > br")) continue;
+      const name = isConvertibleTag(tag) ? "p" : tag.toLowerCase();
+      const children = Array.from(element.childNodes);
+      const pieces: Node[] = [];
+      for (const segment of groupChildren(children.map(kindOf))) {
+        if (segment.kind === "wrap") {
+          const block = document.createElement(name);
+          for (const index of segment.indices) block.appendChild(children[index]);
+          pieces.push(block);
+        } else {
+          pieces.push(children[segment.index]);
+        }
+      }
+      element.replaceWith(...pieces);
+      changed = true;
+    }
+    const children = Array.from(root.childNodes);
+    const kinds = children.map(kindOf);
+    // Already clean, so the caret is left exactly where the writer put it --
+    // but say so if an earlier step above moved nodes, because the selection
+    // is then pointing at nodes that are no longer in the document.
+    if (isAlreadyNormalized(kinds)) return changed;
+    const blocks: Node[] = [];
+    for (const segment of groupChildren(kinds)) {
+      if (segment.kind === "wrap") {
+        const block = document.createElement("p");
+        for (const index of segment.indices) block.appendChild(children[index]);
+        blocks.push(block);
+      } else if (segment.kind === "convert") {
+        const old = children[segment.index] as HTMLElement;
+        const block = document.createElement("p");
+        while (old.firstChild) block.appendChild(old.firstChild);
+        blocks.push(block);
+      } else {
+        blocks.push(children[segment.index]);
+      }
+    }
+    root.replaceChildren(...blocks);
+    return true;
+  }
+
+  function setEditingModes() {
+    try {
+      document.execCommand("styleWithCSS", false, "false");
+      document.execCommand("defaultParagraphSeparator", false, "p");
+    } catch {
+      // Older engines reject the command names; the editor still works.
+    }
+  }
+
+  /**
+   * A list or heading the browser has left sitting inside a paragraph is
+   * invalid HTML and renders unpredictably on the website. Unwrapping keeps
+   * the inner nodes themselves, so the caret inside them survives.
+   */
+  function liftBlocks(root: HTMLElement) {
+    let changed = false;
+    for (let pass = 0; pass < 3; pass += 1) {
+      let lifted = false;
+      for (const child of Array.from(root.childNodes)) {
+        if (child.nodeType !== Node.ELEMENT_NODE) continue;
+        const element = child as HTMLElement;
+        if (element.tagName !== "P" && !isConvertibleTag(element.tagName)) continue;
+        const holdsBlock = Array.from(element.childNodes).some(
+          (node) =>
+            node.nodeType === Node.ELEMENT_NODE &&
+            (isBlockTag((node as HTMLElement).tagName) ||
+              isConvertibleTag((node as HTMLElement).tagName)),
+        );
+        if (holdsBlock) {
+          element.replaceWith(...Array.from(element.childNodes));
+          lifted = true;
+          changed = true;
+        }
+      }
+      if (!lifted) break;
+    }
+    return changed;
+  }
+
   function run(command: string, argument?: string) {
-    editor.current?.focus();
+    const root = editor.current;
+    if (!root) return;
+    root.focus();
+    const selection = window.getSelection();
+    // A toolbar click with the caret outside the editor used to format
+    // whatever happened to be selected elsewhere on the page.
+    if (!selection || selection.rangeCount === 0 || !root.contains(selection.anchorNode)) {
+      const range = document.createRange();
+      range.selectNodeContents(root);
+      range.collapse(false);
+      selection?.removeAllRanges();
+      selection?.addRange(range);
+    }
+    // Re-assert them here too: they are document-wide, so anything else on
+    // the page that calls execCommand can flip them back.
+    setEditingModes();
+    if (BLOCK_COMMANDS.has(command)) {
+      const live = window.getSelection();
+      const start = live?.anchorNode ? offsetOf(root, live.anchorNode, live.anchorOffset) : 0;
+      const end = live?.focusNode ? offsetOf(root, live.focusNode, live.focusOffset) : start;
+      if (normalize(root)) restore(root, Math.min(start, end), Math.max(start, end));
+    }
     document.execCommand(command, false, argument);
-    onChange(editor.current?.innerHTML ?? "");
+    liftBlocks(root);
+    onChange(root.innerHTML);
+  }
+
+  /** The block the caret sits in, so a heading button can toggle back off. */
+  function currentBlock() {
+    const root = editor.current;
+    const node = window.getSelection()?.anchorNode;
+    if (!root || !node || !root.contains(node)) return "";
+    let element = node.nodeType === Node.ELEMENT_NODE ? (node as HTMLElement) : node.parentElement;
+    while (element && element !== root) {
+      if (isBlockTag(element.tagName)) return element.tagName.toLowerCase();
+      element = element.parentElement;
+    }
+    return "";
+  }
+
+  function setBlock(tag: string) {
+    run("formatBlock", currentBlock() === tag ? "p" : tag);
   }
 
   function addLink() {
@@ -84,7 +311,7 @@ export default function RichTextEditor({
         <button
           type="button"
           title="Heading 2"
-          onClick={() => run("formatBlock", "h2")}
+          onClick={() => setBlock("h2")}
           className={toolClass}
         >
           H2
@@ -92,7 +319,7 @@ export default function RichTextEditor({
         <button
           type="button"
           title="Heading 3"
-          onClick={() => run("formatBlock", "h3")}
+          onClick={() => setBlock("h3")}
           className={toolClass}
         >
           H3
@@ -100,7 +327,7 @@ export default function RichTextEditor({
         <button
           type="button"
           title="Paragraph"
-          onClick={() => run("formatBlock", "p")}
+          onClick={() => setBlock("p")}
           className={toolClass}
         >
           P
@@ -149,7 +376,7 @@ export default function RichTextEditor({
         <button
           type="button"
           title="Quote"
-          onClick={() => run("formatBlock", "blockquote")}
+          onClick={() => setBlock("blockquote")}
           className={toolClass}
         >
           <FontAwesomeIcon icon={faQuoteLeft} />
@@ -214,6 +441,12 @@ export default function RichTextEditor({
         aria-required={required}
         data-placeholder="Write the blog post content…"
         onInput={(event) => onChange(event.currentTarget.innerHTML)}
+        onBlur={(event) => {
+          // Tidy the structure once the writer leaves the box, so content
+          // typed without ever pressing a block button still saves as
+          // paragraphs rather than bare text and divs.
+          if (normalize(event.currentTarget)) onChange(event.currentTarget.innerHTML);
+        }}
         hidden={sourceMode}
         className="rich-text-editor min-h-80 rounded-b-xl px-5 py-4 text-sm font-normal leading-7 text-slate-200 outline-none"
       />
