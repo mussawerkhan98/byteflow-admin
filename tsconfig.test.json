@@ -18,6 +18,7 @@
     "app/lib/audience.ts",
     "app/lib/email-template.ts",
     "app/lib/marketing-setup-ddl.ts",
+    "app/lib/record-filters.ts",
     "tests/**/*.ts"
   ],
   "exclude": [
