@@ -6,6 +6,14 @@ import { getAdminSection } from "../../lib/admin-guide";
 import AdminPageHeader from "../AdminPageHeader";
 import RichTextEditor from "./RichTextEditor";
 import StructuredFieldEditor from "./StructuredFieldEditor";
+import {
+  categoryOf,
+  categoryOptions,
+  filterRecords,
+  isPublished,
+  publishedCount,
+  type StatusFilter,
+} from "../../lib/record-filters";
 
 type RecordValue = Record<string, unknown>;
 type PageOption = { id: number; name: string; slug: string };
@@ -95,7 +103,23 @@ function ResourceRow({
             </p>
           )}
       </div>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-center gap-2">
+        {categoryOf(record) && (
+          <span className="rounded-full border border-slate-700 bg-slate-800/60 px-2.5 py-1 text-[11px] font-medium text-slate-300">
+            {categoryOf(record)}
+          </span>
+        )}
+        {config.fields.some((field) => field.name === "published") && (
+          <span
+            className={
+              isPublished(record)
+                ? "rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-emerald-300"
+                : "rounded-full border border-amber-400/30 bg-amber-400/10 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-amber-300"
+            }
+          >
+            {isPublished(record) ? "Published" : "Draft"}
+          </span>
+        )}
         {hasOrder && (
           <>
             <button
@@ -196,6 +220,8 @@ export default function ResourceManager({
     text: string;
   } | null>(null);
   const [pageFilter, setPageFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [categoryFilter, setCategoryFilter] = useState("all");
   // The editor form is inside this card. On the per-page workspace the card
   // is one of several stacked down the page, so scrolling the window to the
   // top would jump away from the form and make "Edit" look like it did
@@ -210,6 +236,15 @@ export default function ResourceManager({
   // page (with a "<page name>" heading per group) and offer a filter to
   // narrow the list down to a single page.
   const hasPageField = config.fields.some((field) => field.name === "page_id");
+  // Blog posts and projects are the long lists, and both carry a published
+  // flag and a free-text category. Without a way to narrow them down,
+  // finding the one draft among forty posts means reading every row.
+  const hasPublishedField = config.fields.some(
+    (field) => field.name === "published",
+  );
+  const hasCategoryField = config.fields.some(
+    (field) => field.name === "category",
+  );
   // The field that identifies a record to a human — a FAQ's question, a
   // block's name. Used to catch an exact duplicate before it is created.
   const identity = useMemo(
@@ -245,17 +280,30 @@ export default function ResourceManager({
       .map(([key, count]) => ({ key, count, label: pageName(key) }))
       .sort((a, b) => a.label.localeCompare(b.label));
   }, [records, hasPageField, pageOptions]);
+  const categoryFilterOptions = useMemo(
+    () => (hasCategoryField ? categoryOptions(records) : []),
+    [records, hasCategoryField],
+  );
+  const livePosts = hasPublishedField ? publishedCount(records) : 0;
+  // Status and category narrow the list first; the page filter and the
+  // per-page grouping below then work on what is left, so the two sets of
+  // controls combine instead of fighting each other.
+  const matchedRecords = useMemo(
+    () => filterRecords(records, { status: statusFilter, category: categoryFilter }),
+    [records, statusFilter, categoryFilter],
+  );
+  const filtersActive = statusFilter !== "all" || categoryFilter !== "all";
   const visibleRecords = lockedPageId
-    ? records.filter(
+    ? matchedRecords.filter(
         (record) => pageGroupKey(record) === String(lockedPageId),
       )
     : hasPageField && pageFilter !== "all"
-      ? records.filter((record) => pageGroupKey(record) === pageFilter)
-      : records;
+      ? matchedRecords.filter((record) => pageGroupKey(record) === pageFilter)
+      : matchedRecords;
   const groupedRecords = useMemo(() => {
     if (lockedPageId || !hasPageField || pageFilter !== "all") return null;
     const groups = new Map<string, RecordValue[]>();
-    for (const record of records) {
+    for (const record of matchedRecords) {
       const key = pageGroupKey(record);
       if (!groups.has(key)) groups.set(key, []);
       groups.get(key)!.push(record);
@@ -267,7 +315,7 @@ export default function ResourceManager({
         records: groupRecords,
       }))
       .sort((a, b) => a.label.localeCompare(b.label));
-  }, [records, hasPageField, pageFilter, pageOptions, lockedPageId]);
+  }, [matchedRecords, hasPageField, pageFilter, pageOptions, lockedPageId]);
   const section = getAdminSection(resourceKey);
 
   async function load() {
@@ -281,6 +329,8 @@ export default function ResourceManager({
   useEffect(() => {
     void load();
     setPageFilter("all");
+    setStatusFilter("all");
+    setCategoryFilter("all");
   }, [resourceKey]);
   useEffect(() => {
     if (!config.fields.some((field) => field.name === "page_id")) return;
@@ -743,26 +793,109 @@ export default function ResourceManager({
           </div>
         ) : (
           <>
-            {hasPageField && !lockedPageId && (
-              <div className="flex flex-wrap items-center gap-3 border-b border-slate-800 bg-slate-950/40 px-4 py-3">
-                <label className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-                  Filter by page
-                </label>
-                <select
-                  value={pageFilter}
-                  onChange={(event) => setPageFilter(event.target.value)}
-                  className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-1.5 text-sm outline-none focus:border-cyan-400"
-                >
-                  <option value="all">All pages ({records.length})</option>
-                  {pageFilterOptions.map((option) => (
-                    <option key={option.key} value={option.key}>
-                      {option.label} ({option.count})
-                    </option>
-                  ))}
-                </select>
+            {((hasPageField && !lockedPageId) ||
+              hasPublishedField ||
+              hasCategoryField) && (
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-3 border-b border-slate-800 bg-slate-950/40 px-4 py-3">
+                {hasPageField && !lockedPageId && (
+                  <div className="flex items-center gap-2">
+                    <label
+                      htmlFor={`${resourceKey}-page-filter`}
+                      className="text-xs font-semibold uppercase tracking-wide text-slate-400"
+                    >
+                      Page
+                    </label>
+                    <select
+                      id={`${resourceKey}-page-filter`}
+                      value={pageFilter}
+                      onChange={(event) => setPageFilter(event.target.value)}
+                      className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-1.5 text-sm outline-none focus:border-cyan-400"
+                    >
+                      <option value="all">All pages ({records.length})</option>
+                      {pageFilterOptions.map((option) => (
+                        <option key={option.key} value={option.key}>
+                          {option.label} ({option.count})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                {hasPublishedField && (
+                  <div className="flex items-center gap-2">
+                    <label
+                      htmlFor={`${resourceKey}-status-filter`}
+                      className="text-xs font-semibold uppercase tracking-wide text-slate-400"
+                    >
+                      Status
+                    </label>
+                    <select
+                      id={`${resourceKey}-status-filter`}
+                      value={statusFilter}
+                      onChange={(event) =>
+                        setStatusFilter(event.target.value as StatusFilter)
+                      }
+                      className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-1.5 text-sm outline-none focus:border-cyan-400"
+                    >
+                      <option value="all">All ({records.length})</option>
+                      <option value="published">Published ({livePosts})</option>
+                      <option value="draft">
+                        Draft ({records.length - livePosts})
+                      </option>
+                    </select>
+                  </div>
+                )}
+                {hasCategoryField && categoryFilterOptions.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <label
+                      htmlFor={`${resourceKey}-category-filter`}
+                      className="text-xs font-semibold uppercase tracking-wide text-slate-400"
+                    >
+                      Category
+                    </label>
+                    <select
+                      id={`${resourceKey}-category-filter`}
+                      value={categoryFilter}
+                      onChange={(event) => setCategoryFilter(event.target.value)}
+                      className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-1.5 text-sm outline-none focus:border-cyan-400"
+                    >
+                      <option value="all">
+                        All categories ({records.length})
+                      </option>
+                      {categoryFilterOptions.map((option) => (
+                        <option key={option.key} value={option.key}>
+                          {option.label} ({option.count})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                {filtersActive && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStatusFilter("all");
+                      setCategoryFilter("all");
+                    }}
+                    className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-semibold text-slate-300 transition hover:border-cyan-400 hover:text-cyan-300"
+                  >
+                    Clear filters
+                  </button>
+                )}
+                <span className="ml-auto text-xs text-slate-500">
+                  Showing {visibleRecords.length} of {records.length}
+                </span>
               </div>
             )}
-            {groupedRecords ? (
+            {visibleRecords.length === 0 ? (
+              <div className="p-10 text-center">
+                <p className="font-medium">
+                  No {config.title.toLowerCase()} match these filters.
+                </p>
+                <p className="mt-1 text-sm text-slate-500">
+                  Widen the status or category above to see the rest.
+                </p>
+              </div>
+            ) : groupedRecords ? (
               <div className="divide-y divide-slate-800">
                 {groupedRecords.map((group) => (
                   <div key={group.key || "unassigned"}>
