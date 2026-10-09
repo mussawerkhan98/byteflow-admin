@@ -19,6 +19,7 @@
     "app/lib/email-template.ts",
     "app/lib/marketing-setup-ddl.ts",
     "app/lib/record-filters.ts",
+    "app/lib/editor-blocks.ts",
     "tests/**/*.ts"
   ],
   "exclude": [
