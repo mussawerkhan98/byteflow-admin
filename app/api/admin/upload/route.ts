@@ -1,19 +1,16 @@
 import { extname } from 'node:path'
 import { isAdminAuthenticated } from '../../../lib/auth'
 import { db } from '../../../lib/db'
+import { svgIconDataUrl, SvgIconError } from '../../../lib/svg-icon'
 
 const allowed = new Map([['image/jpeg', '.jpg'], ['image/png', '.png'], ['image/webp', '.webp'], ['image/gif', '.gif']])
 const maxBytes = 5 * 1024 * 1024
 const maxSvgBytes = 256 * 1024
-
-function safeSvgDataUrl(bytes: Buffer) {
-  const svg = bytes.toString('utf8').replace(/^\uFEFF/, '').trim()
-  const unsafe = /<!DOCTYPE|<!ENTITY|<\s*(?:script|foreignObject|iframe|object|embed|link|style)\b|\bon[a-z]+\s*=|(?:href|xlink:href)\s*=\s*["']?\s*(?:javascript:|data:text\/html)/i
-  if (!/^<svg\b[\s\S]*<\/svg>$/i.test(svg) || unsafe.test(svg)) {
-    throw new Error('Use a standalone SVG without scripts, embedded HTML, event handlers, or external code')
-  }
-  return `data:image/svg+xml;base64,${Buffer.from(svg, 'utf8').toString('base64')}`
-}
+// Browsers do not agree on the type they report for a .svg file: Chrome sends
+// image/svg+xml, some send an XML type, and a file dragged from certain places
+// arrives with no type at all. The extension plus the content check below are
+// what actually decide, so a blank or XML type is not grounds for refusal.
+const svgTypes = new Set(['image/svg+xml', 'text/xml', 'application/xml', 'text/plain', ''])
 
 export async function POST(request: Request) {
   if (!(await isAdminAuthenticated())) return Response.json({ error: 'Unauthorized' }, { status: 401 })
@@ -23,15 +20,15 @@ export async function POST(request: Request) {
   const altText = String(form.get('altText') ?? '').trim()
   if (!(file instanceof File)) return Response.json({ error: 'Choose an image to upload' }, { status: 400 })
   if (kind === 'icon') {
-    if (file.type !== 'image/svg+xml' || extname(file.name).toLowerCase() !== '.svg') return Response.json({ error: 'Service icons must be SVG files' }, { status: 415 })
+    if (!svgTypes.has(file.type) || extname(file.name).toLowerCase() !== '.svg') return Response.json({ error: 'Service icons must be SVG files' }, { status: 415 })
     if (file.size <= 0 || file.size > maxSvgBytes) return Response.json({ error: 'SVG icons must be between 1 byte and 256 KB' }, { status: 413 })
     try {
-      const bytes = Buffer.from(await file.arrayBuffer())
-      const url = safeSvgDataUrl(bytes)
+      const url = svgIconDataUrl(await file.text())
       await db.execute({ sql: 'INSERT INTO media (filename, url, mime_type, size_bytes, alt_text) VALUES (?, ?, ?, ?, ?)', args: [file.name, url, file.type, file.size, altText] })
       return Response.json({ url, altText }, { status: 201 })
     } catch (error) {
-      return Response.json({ error: error instanceof Error ? error.message : 'Invalid SVG icon' }, { status: 415 })
+      if (error instanceof SvgIconError) return Response.json({ error: error.message }, { status: 415 })
+      return Response.json({ error: 'The icon could not be read. Make sure it is a text SVG file, not a bitmap renamed to .svg.' }, { status: 415 })
     }
   }
   const extension = allowed.get(file.type)
