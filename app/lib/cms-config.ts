@@ -157,7 +157,12 @@ export const resources = {
       { name: "slug", label: "Slug", type: "text", required: true },
       { name: "excerpt", label: "Short description", type: "textarea" },
       { name: "description", label: "Full description", type: "textarea" },
-      { name: "icon", label: "Icon", type: "text" },
+      {
+        name: "icon",
+        label: "Icon",
+        type: "text",
+        help: "An SVG file up to 256 KB, shown on the service card. Exports from Figma, Illustrator and Inkscape all work as they come.",
+      },
       { name: "image_url", label: "Image URL", type: "text" },
       { name: "image_alt", label: "Image alt text", type: "text" },
       { name: "cta_label", label: "CTA label", type: "text" },
