@@ -125,6 +125,12 @@ export const adminGroups: AdminGroup[] = [
         label: "Admin logins",
         shows: "Who is allowed to sign in to this admin panel.",
       },
+      {
+        key: "image-storage",
+        label: "Image storage",
+        shows:
+          "Images uploaded before this panel learned to store them as files sit inside the content itself, which makes every page carry them again on every visit. This moves them onto their own cacheable files. Nothing is deleted and it is safe to run more than once.",
+      },
     ],
   },
 ];
