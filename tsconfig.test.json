@@ -21,6 +21,7 @@
     "app/lib/record-filters.ts",
     "app/lib/editor-blocks.ts",
     "app/lib/svg-icon.ts",
+    "app/lib/media-migration.ts",
     "tests/**/*.ts"
   ],
   "exclude": [
