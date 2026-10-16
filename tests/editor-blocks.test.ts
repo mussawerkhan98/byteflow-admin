@@ -12,6 +12,7 @@ import assert from "node:assert/strict";
 import {
   groupChildren,
   isAlreadyNormalized,
+  needsNormalizing,
   isBlockTag,
   isConvertibleTag,
   type ChildKind,
@@ -103,4 +104,25 @@ test("content that is already clean blocks is left untouched", () => {
   // Nothing to normalize is not the same as normalized; an empty editor
   // should not short-circuit the first paragraph into existence.
   assert.equal(isAlreadyNormalized([]), false);
+});
+
+test("a tidy document is left alone, so the caret is never disturbed", () => {
+  assert.equal(needsNormalizing(["block", "block", "block"], 0), false);
+  assert.equal(needsNormalizing(["block"], 0), false);
+});
+
+test("a block still holding a soft break has to be split", () => {
+  // <p>one<br>two</p> -- the top level looks clean but the line break inside
+  // is exactly what made formatBlock splice a heading into a paragraph.
+  assert.equal(needsNormalizing(["block", "block"], 1), true);
+});
+
+test("loose content at the top level has to be rewritten", () => {
+  assert.equal(needsNormalizing(["inline", "block"], 0), true);
+  assert.equal(needsNormalizing(["convert"], 0), true);
+  assert.equal(needsNormalizing(["block", "break", "block"], 0), true);
+});
+
+test("an empty editor is not rewritten into a stray paragraph", () => {
+  assert.equal(needsNormalizing([], 0), false);
 });

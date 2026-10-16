@@ -5,6 +5,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   groupChildren,
   isAlreadyNormalized,
+  needsNormalizing,
   isBlockTag,
   isConvertibleTag,
   type ChildKind,
@@ -33,6 +34,11 @@ export default function RichTextEditor({
   required?: boolean;
 }) {
   const editor = useRef<HTMLDivElement>(null);
+  // The button a real interaction started on. A genuine click always begins
+  // with a mousedown on that button, and a keyboard activation with a keydown
+  // on it. A click that arrives with neither came from focus landing on the
+  // button by itself, which is not something the writer asked for.
+  const armed = useRef<EventTarget | null>(null);
   const [sourceMode, setSourceMode] = useState(false);
 
   useEffect(() => {
@@ -123,7 +129,28 @@ export default function RichTextEditor({
    * format to one line change the look of another. Returns whether anything
    * moved, so the caller only restores the caret when it had to.
    */
+  /** How many direct children are blocks still holding a soft line break. */
+  function blocksHoldingBreaks(root: HTMLElement) {
+    let count = 0;
+    for (const child of Array.from(root.childNodes)) {
+      if (child.nodeType !== Node.ELEMENT_NODE) continue;
+      const element = child as HTMLElement;
+      const tag = element.tagName;
+      if (!isBlockTag(tag) && !isConvertibleTag(tag)) continue;
+      if (["UL", "OL", "TABLE", "FIGURE", "PRE"].includes(tag)) continue;
+      if (element.querySelector(":scope > br")) count += 1;
+    }
+    return count;
+  }
+
   function normalize(root: HTMLElement) {
+    // Ask before touching anything. Replacing the children discards the node
+    // the caret is in, and the browser answers by moving focus to the next
+    // focusable element — a toolbar button — and scrolling. On a tidy
+    // document there is nothing to gain by paying that price.
+    if (!needsNormalizing(Array.from(root.childNodes).map(kindOf), blocksHoldingBreaks(root))) {
+      return false;
+    }
     let changed = false;
     for (const child of Array.from(root.childNodes)) {
       if (child.nodeType === Node.TEXT_NODE && !(child.textContent ?? "").trim()) {
@@ -225,6 +252,10 @@ export default function RichTextEditor({
   function run(command: string, argument?: string) {
     const root = editor.current;
     if (!root) return;
+    // Rebuilding the content and moving the caret both make the browser
+    // scroll. The writer was already looking at the right place, so put the
+    // page back where they left it rather than wherever the browser lands.
+    const scroll = window.scrollY;
     root.focus();
     const selection = window.getSelection();
     // A toolbar click with the caret outside the editor used to format
@@ -248,6 +279,7 @@ export default function RichTextEditor({
     document.execCommand(command, false, argument);
     liftBlocks(root);
     onChange(root.innerHTML);
+    if (window.scrollY !== scroll) window.scrollTo({ top: scroll });
   }
 
   /** The block the caret sits in, so a heading button can toggle back off. */
@@ -300,7 +332,29 @@ export default function RichTextEditor({
         role="toolbar"
         aria-label="Text formatting"
         onMouseDown={(event) => {
-          if ((event.target as HTMLElement).closest("button")) event.preventDefault();
+          const button = (event.target as HTMLElement).closest("button");
+          if (!button) return;
+          armed.current = button;
+          // Keep the caret where it is: without this the editor loses the
+          // selection the moment the button takes focus.
+          event.preventDefault();
+        }}
+        onKeyDown={(event) => {
+          if (event.key !== "Enter" && event.key !== " ") return;
+          const button = (event.target as HTMLElement).closest("button");
+          if (button) armed.current = button;
+        }}
+        onClickCapture={(event) => {
+          const button = (event.target as HTMLElement).closest("button");
+          if (!button) return;
+          const wanted = armed.current === button;
+          armed.current = null;
+          if (wanted) return;
+          // Chromium will focus a toolbar button and fire a click on it with
+          // no pointer interaction at all after the editor loses focus. That
+          // used to apply a heading to whatever the writer had just clicked.
+          event.preventDefault();
+          event.stopPropagation();
         }}
         // Long posts used to scroll the formatting buttons off the top of the
         // screen, so every heading or table meant scrolling back up. The bar
@@ -441,12 +495,6 @@ export default function RichTextEditor({
         aria-required={required}
         data-placeholder="Write the blog post content…"
         onInput={(event) => onChange(event.currentTarget.innerHTML)}
-        onBlur={(event) => {
-          // Tidy the structure once the writer leaves the box, so content
-          // typed without ever pressing a block button still saves as
-          // paragraphs rather than bare text and divs.
-          if (normalize(event.currentTarget)) onChange(event.currentTarget.innerHTML);
-        }}
         hidden={sourceMode}
         className="rich-text-editor min-h-80 rounded-b-xl px-5 py-4 text-sm font-normal leading-7 text-slate-200 outline-none"
       />
