@@ -18,6 +18,12 @@ type RecordValue = Record<string, unknown>;
 const inputClass =
   "mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm font-normal text-white outline-none transition focus:border-cyan-400";
 const isOn = (value: unknown) => value === true || value === 1 || value === "1";
+/**
+ * Uploaded images are stored as site paths like "/api/media/51". The website
+ * serves those; the admin's own server does not (its proxy sends anything
+ * outside /admin back to the dashboard), so previews load from the website.
+ */
+const previewSrc = (src: string) => (src.startsWith("/") ? siteUrl(src) : src);
 
 function Card({
   step,
@@ -262,7 +268,7 @@ export default function PostEditor({
               {value("image_url") && (
                 <div className="mt-4 flex flex-wrap items-end gap-4">
                   <img
-                    src={value("image_url")}
+                    src={previewSrc(value("image_url"))}
                     alt=""
                     className="aspect-video w-64 rounded-lg border border-slate-700 bg-slate-900 object-cover"
                   />
@@ -412,7 +418,7 @@ export default function PostEditor({
                 </p>
                 <div className="m-4 overflow-hidden rounded-lg border border-slate-800">
                   {value("image_url") ? (
-                    <img src={value("image_url")} alt="" className="aspect-[1.91/1] w-full object-cover" />
+                    <img src={previewSrc(value("image_url"))} alt="" className="aspect-[1.91/1] w-full object-cover" />
                   ) : (
                     <div className="flex aspect-[1.91/1] items-center justify-center bg-slate-900 text-xs text-slate-500">
                       No cover image: the Byteflow logo is used
