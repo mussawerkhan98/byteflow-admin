@@ -7,6 +7,7 @@ import {
   effectiveSeoTitle,
   fromDateInput,
   seoChecklist,
+  type SeoCheck,
   slugFromTitle,
   toDateInput,
 } from '../app/lib/post-checklist'
@@ -58,10 +59,10 @@ const good = {
     `<h2>Before</h2><p>${words2(200)} See our <a href="/it-amc-services-dubai">IT AMC services</a>.</p>` +
     '<h3>Cabling</h3><p>Detail.</p><h2>FAQs</h2><h3>How long?</h3><p>Six weeks.</p>',
 }
-const byKey = (checks: { key: string }[], key: string) => checks.find((c) => c.key === key) as {
-  status: string
-  kind: string
-  detail: string
+const byKey = (checks: SeoCheck[], key: string): SeoCheck => {
+  const check = checks.find((c) => c.key === key)
+  assert.ok(check, `no check called ${key}`)
+  return check
 }
 
 test('a well-prepared post passes every automatic check', () => {
