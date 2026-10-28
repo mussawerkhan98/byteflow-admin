@@ -1,9 +1,20 @@
 "use client";
 /* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps, @next/next/no-img-element */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Resource } from "../../lib/cms-config";
+import { getAdminSection } from "../../lib/admin-guide";
+import AdminPageHeader from "../AdminPageHeader";
 import RichTextEditor from "./RichTextEditor";
 import StructuredFieldEditor from "./StructuredFieldEditor";
+import PostEditor from "./PostEditor";
+import {
+  categoryOf,
+  categoryOptions,
+  filterRecords,
+  isPublished,
+  publishedCount,
+  type StatusFilter,
+} from "../../lib/record-filters";
 
 type RecordValue = Record<string, unknown>;
 type PageOption = { id: number; name: string; slug: string };
@@ -13,6 +24,8 @@ const isImageField = (name: string) =>
   !/(^|_)(alt|caption)(_|$)/.test(name) &&
   /(^|_)(image|logo|favicon)(_|$)/.test(name);
 const isUploadField = (name: string) => isImageField(name) || name === "icon";
+/** Section types the website actually reads. Anything else renders nowhere. */
+const LIVE_SECTION_TYPES = ["custom", "hero", "founder"];
 
 async function optimizeImage(file: File) {
   if (file.type === "image/gif" || file.size < 500 * 1024) return file;
@@ -32,30 +45,166 @@ async function optimizeImage(file: File) {
   });
 }
 
+/** One row in a resource list — factored out so it can be rendered either
+ * flat or grouped under a per-page heading without duplicating the JSX. */
+function ResourceRow({
+  record,
+  config,
+  resourceKey,
+  pageOptions,
+  hasOrder,
+  reorder,
+  start,
+  remove,
+  setViewing,
+}: {
+  record: RecordValue;
+  config: Resource;
+  resourceKey: string;
+  pageOptions: PageOption[];
+  hasOrder: boolean;
+  reorder: (record: RecordValue, direction: "up" | "down") => void;
+  start: (record?: RecordValue) => void;
+  remove: (record: RecordValue) => void;
+  setViewing: (record: RecordValue | null) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="min-w-0">
+        <p className="truncate font-medium">
+          {String(
+            record.title ??
+              record.name ??
+              record.label ??
+              record.question ??
+              record.customer_name ??
+              record.filename ??
+              record.email ??
+              `#${record.id}`,
+          )}
+        </p>
+        <p className="mt-1 truncate text-xs text-slate-500">
+          ID {String(record.id)}
+          {record.slug ? ` · /${record.slug}` : ""}
+          {record.page_id
+            ? ` · ${pageOptions.find((page) => page.id === Number(record.page_id))?.name ?? `page ${record.page_id}`}`
+            : ""}
+          {record.section_type ? ` · ${record.section_type}` : ""}
+          {record.status ? ` · ${record.status}` : ""}
+          {!booleanValue(record.visible) &&
+          config.fields.some((field) => field.name === "visible")
+            ? " · hidden"
+            : ""}
+        </p>
+        {resourceKey === "sections" &&
+          !LIVE_SECTION_TYPES.includes(String(record.section_type)) && (
+            <p className="mt-1 text-xs font-semibold text-amber-300">
+              This block type isn&apos;t shown anywhere on the website — edit
+              it and set Section type to “custom” to make it appear.
+            </p>
+          )}
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        {categoryOf(record) && (
+          <span className="rounded-full border border-slate-700 bg-slate-800/60 px-2.5 py-1 text-[11px] font-medium text-slate-300">
+            {categoryOf(record)}
+          </span>
+        )}
+        {config.fields.some((field) => field.name === "published") && (
+          <span
+            className={
+              isPublished(record)
+                ? "rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-emerald-300"
+                : "rounded-full border border-amber-400/30 bg-amber-400/10 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-amber-300"
+            }
+          >
+            {isPublished(record) ? "Published" : "Draft"}
+          </span>
+        )}
+        {hasOrder && (
+          <>
+            <button
+              aria-label="Move up"
+              onClick={() => reorder(record, "up")}
+              className="rounded border border-slate-700 px-2.5 py-1.5 text-sm"
+            >
+              ↑
+            </button>
+            <button
+              aria-label="Move down"
+              onClick={() => reorder(record, "down")}
+              className="rounded border border-slate-700 px-2.5 py-1.5 text-sm"
+            >
+              ↓
+            </button>
+          </>
+        )}
+        {!config.readOnly && (
+          <button
+            onClick={() => start(record)}
+            className="rounded border border-slate-700 px-3 py-1.5 text-sm hover:border-cyan-400"
+          >
+            Edit
+          </button>
+        )}
+        {resourceKey === "submissions" && (
+          <button
+            onClick={() => setViewing(record)}
+            className="rounded-lg border border-cyan-400/20 bg-cyan-400/[.06] px-3 py-1.5 text-sm font-semibold text-cyan-300 transition hover:bg-cyan-400/10"
+          >
+            View inquiry
+          </button>
+        )}
+        {(!config.readOnly || resourceKey === "submissions") &&
+          !config.singleton && (
+            <button
+              onClick={() => remove(record)}
+              className="rounded border border-red-500/30 px-3 py-1.5 text-sm text-red-300"
+            >
+              Delete
+            </button>
+          )}
+      </div>
+    </div>
+  );
+}
+
 export default function ResourceManager({
   resourceKey,
   config,
+  lockedPageId,
+  hideHeader,
 }: {
   resourceKey: string;
   config: Resource;
+  /** When set, this manager is embedded inside a single page's workspace:
+   * every record is scoped to that page, the "page" field is hidden (new
+   * records are pinned to it automatically) and the page filter/grouping UI
+   * is skipped since there's only ever one page to show. */
+  lockedPageId?: number;
+  /** Hide the big section title + "on your website" blurb — used when this
+   * manager is embedded under its own heading inside another screen. */
+  hideHeader?: boolean;
 }) {
   const initial = useMemo(
     () =>
       Object.fromEntries(
         config.fields.map((field) => [
           field.name,
-          field.type === "boolean"
-            ? true
-            : field.type === "number"
-              ? ""
-              : field.type === "json"
-                ? ["bullet_points", "metrics", "tags"].includes(field.name)
-                  ? "[]"
-                  : "{}"
-                : (field.options?.[0] ?? ""),
+          field.name === "page_id" && lockedPageId
+            ? lockedPageId
+            : field.type === "boolean"
+              ? true
+              : field.type === "number"
+                ? ""
+                : field.type === "json"
+                  ? ["bullet_points", "metrics", "tags"].includes(field.name)
+                    ? "[]"
+                    : "{}"
+                  : (field.options?.[0] ?? ""),
         ]),
       ),
-    [config],
+    [config, lockedPageId],
   );
   const [records, setRecords] = useState<RecordValue[]>([]),
     [editing, setEditing] = useState<RecordValue | null>(null);
@@ -65,11 +214,110 @@ export default function ResourceManager({
   const [uploadingField, setUploadingField] = useState<string | null>(null);
   const [viewing, setViewing] = useState<RecordValue | null>(null);
   const [pageOptions, setPageOptions] = useState<PageOption[]>([]);
+  const [missingBuiltins, setMissingBuiltins] = useState(0);
+  const [importing, setImporting] = useState(false);
   const [notice, setNotice] = useState<{
     type: "ok" | "error";
     text: string;
   } | null>(null);
+  const [pageFilter, setPageFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  // The editor form is inside this card. On the per-page workspace the card
+  // is one of several stacked down the page, so scrolling the window to the
+  // top would jump away from the form and make "Edit" look like it did
+  // nothing — which is how the same record ends up being entered twice.
+  const formRef = useRef<HTMLFormElement | null>(null);
+  const scrollToForm = useRef(false);
   const hasOrder = config.fields.some((field) => field.name === "sort_order");
+  // Resources like FAQs, Extra page blocks and CTAs are assigned one at a
+  // time to a page, but the list otherwise gave no sense of which page each
+  // record belonged to — everything from every page was interleaved in one
+  // flat list. When this resource has a page_id field, group the list by
+  // page (with a "<page name>" heading per group) and offer a filter to
+  // narrow the list down to a single page.
+  const hasPageField = config.fields.some((field) => field.name === "page_id");
+  // Blog posts and projects are the long lists, and both carry a published
+  // flag and a free-text category. Without a way to narrow them down,
+  // finding the one draft among forty posts means reading every row.
+  const hasPublishedField = config.fields.some(
+    (field) => field.name === "published",
+  );
+  const hasCategoryField = config.fields.some(
+    (field) => field.name === "category",
+  );
+  // The field that identifies a record to a human — a FAQ's question, a
+  // block's name. Used to catch an exact duplicate before it is created.
+  const identity = useMemo(
+    () =>
+      config.fields.find(
+        (field) =>
+          field.required &&
+          ["question", "name", "title", "heading", "label"].includes(
+            field.name,
+          ),
+      ),
+    [config.fields],
+  );
+  const identityField = identity?.name;
+  const identityLabel = (identity?.label ?? "name").toLowerCase();
+  const pageName = (id: unknown) => {
+    const key = String(id ?? "");
+    if (!key) return "Not assigned to a page";
+    return (
+      pageOptions.find((page) => page.id === Number(key))?.name ??
+      `Page ${key}`
+    );
+  };
+  const pageGroupKey = (record: RecordValue) => String(record.page_id ?? "");
+  const pageFilterOptions = useMemo(() => {
+    if (!hasPageField) return [];
+    const counts = new Map<string, number>();
+    for (const record of records) {
+      const key = pageGroupKey(record);
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+    return Array.from(counts.entries())
+      .map(([key, count]) => ({ key, count, label: pageName(key) }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }, [records, hasPageField, pageOptions]);
+  const categoryFilterOptions = useMemo(
+    () => (hasCategoryField ? categoryOptions(records) : []),
+    [records, hasCategoryField],
+  );
+  const livePosts = hasPublishedField ? publishedCount(records) : 0;
+  // Status and category narrow the list first; the page filter and the
+  // per-page grouping below then work on what is left, so the two sets of
+  // controls combine instead of fighting each other.
+  const matchedRecords = useMemo(
+    () => filterRecords(records, { status: statusFilter, category: categoryFilter }),
+    [records, statusFilter, categoryFilter],
+  );
+  const filtersActive = statusFilter !== "all" || categoryFilter !== "all";
+  const visibleRecords = lockedPageId
+    ? matchedRecords.filter(
+        (record) => pageGroupKey(record) === String(lockedPageId),
+      )
+    : hasPageField && pageFilter !== "all"
+      ? matchedRecords.filter((record) => pageGroupKey(record) === pageFilter)
+      : matchedRecords;
+  const groupedRecords = useMemo(() => {
+    if (lockedPageId || !hasPageField || pageFilter !== "all") return null;
+    const groups = new Map<string, RecordValue[]>();
+    for (const record of matchedRecords) {
+      const key = pageGroupKey(record);
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key)!.push(record);
+    }
+    return Array.from(groups.entries())
+      .map(([key, groupRecords]) => ({
+        key,
+        label: pageName(key),
+        records: groupRecords,
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }, [matchedRecords, hasPageField, pageFilter, pageOptions, lockedPageId]);
+  const section = getAdminSection(resourceKey);
 
   async function load() {
     setLoading(true);
@@ -81,6 +329,9 @@ export default function ResourceManager({
   }
   useEffect(() => {
     void load();
+    setPageFilter("all");
+    setStatusFilter("all");
+    setCategoryFilter("all");
   }, [resourceKey]);
   useEffect(() => {
     if (!config.fields.some((field) => field.name === "page_id")) return;
@@ -94,6 +345,46 @@ export default function ResourceManager({
       setForm(records[0]);
     }
   }, [config.singleton, records, editing]);
+  // Only scrolls when the editor was opened by a click (start), never when a
+  // singleton resource opens its own form as the page loads.
+  useEffect(() => {
+    if (!editing || !scrollToForm.current) return;
+    scrollToForm.current = false;
+    // The post editor takes over the whole screen, so start at its top.
+    if (resourceKey === "posts") window.scrollTo({ top: 0, behavior: "smooth" });
+    else formRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [editing]);
+  useEffect(() => {
+    if (resourceKey !== "services") return;
+    void fetch("/api/admin/import-services")
+      .then((response) => response.json())
+      .then((data) => setMissingBuiltins(Number(data.missing ?? 0)))
+      .catch(() => setMissingBuiltins(0));
+  }, [resourceKey, records]);
+
+  async function importBuiltinServices() {
+    setImporting(true);
+    setNotice(null);
+    try {
+      const response = await fetch("/api/admin/import-services", {
+        method: "POST",
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setNotice({ type: "error", text: data.error ?? "Import failed" });
+        return;
+      }
+      setNotice({
+        type: "ok",
+        text: `Imported ${data.imported} service${data.imported === 1 ? "" : "s"} from the website. You can now edit, reorder and remove them here.`,
+      });
+      await load();
+    } catch {
+      setNotice({ type: "error", text: "Import failed. Please try again." });
+    } finally {
+      setImporting(false);
+    }
+  }
 
   function change(name: string, value: unknown) {
     setForm((current) => ({ ...current, [name]: value }));
@@ -103,7 +394,8 @@ export default function ResourceManager({
     setEditing(record ?? {});
     setForm(value);
     setNotice(null);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    // Scrolled once the form has actually rendered — see the effect below.
+    scrollToForm.current = true;
   }
   function cancel() {
     setEditing(null);
@@ -118,10 +410,38 @@ export default function ResourceManager({
       setNotice({ type: "error", text: `${missing.label} is required.` });
       return;
     }
+    const isUpdate = Number(editing?.id) > 0;
+    // Adding the same question twice instead of editing the existing one is
+    // an easy mistake to make, and the website then shows it twice. Block an
+    // exact repeat on the same page and point at the record already there.
+    // Only for page-assigned resources (FAQs, blocks, CTAs) — elsewhere a
+    // repeated name can be legitimate, two team members sharing a first name
+    // being the obvious case.
+    if (!isUpdate && identityField && hasPageField) {
+      const candidate = String(form[identityField] ?? "")
+        .trim()
+        .toLowerCase();
+      const ownerPage = lockedPageId ?? Number(form.page_id);
+      const clash =
+        candidate &&
+        records.some(
+          (record) =>
+            String(record[identityField] ?? "")
+              .trim()
+              .toLowerCase() === candidate &&
+            Number(record.page_id) === ownerPage,
+        );
+      if (clash) {
+        setNotice({
+          type: "error",
+          text: `This page already has a ${config.singular.toLowerCase()} with that ${identityLabel}. Edit the existing one instead of adding a second copy.`,
+        });
+        return;
+      }
+    }
     setSaving(true);
     setNotice(null);
     try {
-      const isUpdate = Number(editing?.id) > 0;
       const response = await fetch(`/api/admin/${resourceKey}`, {
         method: isUpdate ? "PUT" : "POST",
         headers: { "content-type": "application/json" },
@@ -210,20 +530,59 @@ export default function ResourceManager({
     }
   }
 
+  const noticeBox = notice && (
+    <p
+      role="status"
+      className={`mt-5 rounded-lg p-3 text-sm ${notice.type === "ok" ? "bg-emerald-500/10 text-emerald-300" : "bg-red-500/10 text-red-300"}`}
+    >
+      {notice.text}
+    </p>
+  );
+
+  // Blog posts get their own full-screen editor: numbered steps, a live
+  // checklist and previews of what the post page, Google and shared links
+  // will show. Every other resource keeps the generic form below.
+  if (resourceKey === "posts" && editing && !config.readOnly) {
+    return (
+      <div className="pb-4">
+        <PostEditor
+          form={form}
+          editing={editing}
+          change={change}
+          onSubmit={save}
+          onCancel={cancel}
+          saving={saving}
+          uploading={uploadingField === "image_url"}
+          onUpload={(file) => void uploadFieldImage("image_url", file)}
+          categories={categoryOptions(records)
+            .map((option) => option.label)
+            .filter((label) => label !== "Uncategorised")}
+          notice={noticeBox}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="pb-10">
       <div className="flex flex-wrap items-end justify-between gap-5">
         <div>
-          <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-cyan-400/10 bg-cyan-400/[.05] px-3 py-1 text-[10px] font-bold uppercase tracking-[.18em] text-cyan-400">
-            Content workspace
-          </div>
-          <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
-            {config.title}
-          </h1>
-          <p className="mt-2 text-sm text-slate-500">
-            Create, edit, publish, order, and remove{" "}
-            {config.title.toLowerCase()}.
-          </p>
+          {hideHeader ? (
+            <h2 className="text-lg font-bold text-white">{config.title}</h2>
+          ) : (
+            <>
+              <AdminPageHeader
+                sectionKey={resourceKey}
+                title={section?.label ?? config.title}
+              />
+              {!section && (
+                <p className="mt-2 text-sm text-slate-500">
+                  Create, edit, publish, order, and remove{" "}
+                  {config.title.toLowerCase()}.
+                </p>
+              )}
+            </>
+          )}
         </div>
         {!config.readOnly && !config.singleton && !editing && (
           <button
@@ -242,8 +601,32 @@ export default function ResourceManager({
           {notice.text}
         </p>
       )}
+      {resourceKey === "services" && missingBuiltins > 0 && (
+        <div className="mt-5 flex flex-col gap-3 rounded-xl border border-amber-400/20 bg-amber-400/[.06] p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-bold text-amber-200">
+              {missingBuiltins} service{missingBuiltins === 1 ? "" : "s"} on your
+              website {missingBuiltins === 1 ? "is" : "are"} not managed here yet
+            </p>
+            <p className="mt-1 text-xs leading-relaxed text-amber-200/70">
+              Your homepage shows these services from built-in code, so they
+              can&apos;t be edited or reordered — and adding your own service
+              hides them. Import them once to manage every service from this
+              page.
+            </p>
+          </div>
+          <button
+            onClick={() => void importBuiltinServices()}
+            disabled={importing}
+            className="shrink-0 rounded-xl bg-amber-300 px-5 py-3 text-sm font-bold text-slate-950 transition hover:bg-amber-200 disabled:opacity-50"
+          >
+            {importing ? "Importing…" : "Import website services"}
+          </button>
+        </div>
+      )}
       {editing && !config.readOnly && (
         <form
+          ref={formRef}
           onSubmit={save}
           className="mt-7 rounded-2xl border border-white/[.08] bg-[#0d1921] p-5 shadow-2xl sm:p-7"
         >
@@ -259,11 +642,16 @@ export default function ResourceManager({
               </h2>
             </div>
             <span className="rounded-full bg-white/[.04] px-3 py-1 text-[10px] text-slate-500">
-              {config.fields.length} fields
+              {config.fields.filter(
+                (field) => !(field.name === "page_id" && lockedPageId),
+              ).length}{" "}
+              fields
             </span>
           </div>
           <div className="mt-6 grid gap-6 md:grid-cols-2">
-            {config.fields.map((field) => (
+            {config.fields.map((field) => {
+              if (field.name === "page_id" && lockedPageId) return null;
+              return (
               <label
                 key={field.name}
                 className={`${field.type === "textarea" || field.type === "richtext" || field.type === "json" ? "md:col-span-2" : ""} text-xs font-semibold text-slate-300`}
@@ -353,6 +741,17 @@ export default function ResourceManager({
                     className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2"
                   >
                     <>
+                      {/* A record saved before the options changed would
+                          otherwise display the first option while silently
+                          keeping its real value. */}
+                      {(() => {
+                        const current = String(form[field.name] ?? "");
+                        return current && !field.options?.includes(current) ? (
+                          <option value={current}>
+                            {current} (not used by the website)
+                          </option>
+                        ) : null;
+                      })()}
                       {field.options?.map((option) => (
                         <option key={option}>{option}</option>
                       ))}
@@ -393,7 +792,8 @@ export default function ResourceManager({
                   </span>
                 )}
               </label>
-            ))}
+              );
+            })}
           </div>
           <div className="mt-6 flex gap-3">
             <button
@@ -417,87 +817,165 @@ export default function ResourceManager({
       <div className="mt-7 overflow-hidden rounded-xl border border-slate-800 bg-slate-900">
         {loading ? (
           <p className="p-8 text-center text-slate-400">Loading…</p>
-        ) : records.length === 0 ? (
+        ) : (lockedPageId ? visibleRecords.length === 0 : records.length === 0) ? (
           <div className="p-10 text-center">
-            <p className="font-medium">No {config.title.toLowerCase()} yet.</p>
+            <p className="font-medium">
+              No {config.title.toLowerCase()}
+              {lockedPageId ? " for this page" : ""} yet.
+            </p>
             <p className="mt-1 text-sm text-slate-500">
               Create the first record to populate this section.
             </p>
           </div>
         ) : (
-          <div className="divide-y divide-slate-800">
-            {records.map((record) => (
-              <div
-                key={String(record.id)}
-                className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"
-              >
-                <div className="min-w-0">
-                  <p className="truncate font-medium">
-                    {String(
-                      record.title ??
-                        record.name ??
-                        record.label ??
-                        record.question ??
-                        record.customer_name ??
-                        record.filename ??
-                        record.email ??
-                        `#${record.id}`,
-                    )}
-                  </p>
-                  <p className="mt-1 truncate text-xs text-slate-500">
-                    ID {String(record.id)}
-                    {record.slug ? ` · /${record.slug}` : ""}
-                    {record.status ? ` · ${record.status}` : ""}
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {hasOrder && (
-                    <>
-                      <button
-                        aria-label="Move up"
-                        onClick={() => reorder(record, "up")}
-                        className="rounded border border-slate-700 px-2.5 py-1.5 text-sm"
-                      >
-                        ↑
-                      </button>
-                      <button
-                        aria-label="Move down"
-                        onClick={() => reorder(record, "down")}
-                        className="rounded border border-slate-700 px-2.5 py-1.5 text-sm"
-                      >
-                        ↓
-                      </button>
-                    </>
-                  )}
-                  {!config.readOnly && (
-                    <button
-                      onClick={() => start(record)}
-                      className="rounded border border-slate-700 px-3 py-1.5 text-sm hover:border-cyan-400"
+          <>
+            {((hasPageField && !lockedPageId) ||
+              hasPublishedField ||
+              hasCategoryField) && (
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-3 border-b border-slate-800 bg-slate-950/40 px-4 py-3">
+                {hasPageField && !lockedPageId && (
+                  <div className="flex items-center gap-2">
+                    <label
+                      htmlFor={`${resourceKey}-page-filter`}
+                      className="text-xs font-semibold uppercase tracking-wide text-slate-400"
                     >
-                      Edit
-                    </button>
-                  )}
-                  {resourceKey === "submissions" && (
-                    <button
-                      onClick={() => setViewing(record)}
-                      className="rounded-lg border border-cyan-400/20 bg-cyan-400/[.06] px-3 py-1.5 text-sm font-semibold text-cyan-300 transition hover:bg-cyan-400/10"
+                      Page
+                    </label>
+                    <select
+                      id={`${resourceKey}-page-filter`}
+                      value={pageFilter}
+                      onChange={(event) => setPageFilter(event.target.value)}
+                      className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-1.5 text-sm outline-none focus:border-cyan-400"
                     >
-                      View inquiry
-                    </button>
-                  )}
-                  {(!config.readOnly || resourceKey === "submissions") &&
-                    !config.singleton && (
-                      <button
-                        onClick={() => remove(record)}
-                        className="rounded border border-red-500/30 px-3 py-1.5 text-sm text-red-300"
-                      >
-                        Delete
-                      </button>
-                    )}
-                </div>
+                      <option value="all">All pages ({records.length})</option>
+                      {pageFilterOptions.map((option) => (
+                        <option key={option.key} value={option.key}>
+                          {option.label} ({option.count})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                {hasPublishedField && (
+                  <div className="flex items-center gap-2">
+                    <label
+                      htmlFor={`${resourceKey}-status-filter`}
+                      className="text-xs font-semibold uppercase tracking-wide text-slate-400"
+                    >
+                      Status
+                    </label>
+                    <select
+                      id={`${resourceKey}-status-filter`}
+                      value={statusFilter}
+                      onChange={(event) =>
+                        setStatusFilter(event.target.value as StatusFilter)
+                      }
+                      className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-1.5 text-sm outline-none focus:border-cyan-400"
+                    >
+                      <option value="all">All ({records.length})</option>
+                      <option value="published">Published ({livePosts})</option>
+                      <option value="draft">
+                        Draft ({records.length - livePosts})
+                      </option>
+                    </select>
+                  </div>
+                )}
+                {hasCategoryField && categoryFilterOptions.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <label
+                      htmlFor={`${resourceKey}-category-filter`}
+                      className="text-xs font-semibold uppercase tracking-wide text-slate-400"
+                    >
+                      Category
+                    </label>
+                    <select
+                      id={`${resourceKey}-category-filter`}
+                      value={categoryFilter}
+                      onChange={(event) => setCategoryFilter(event.target.value)}
+                      className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-1.5 text-sm outline-none focus:border-cyan-400"
+                    >
+                      <option value="all">
+                        All categories ({records.length})
+                      </option>
+                      {categoryFilterOptions.map((option) => (
+                        <option key={option.key} value={option.key}>
+                          {option.label} ({option.count})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                {filtersActive && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStatusFilter("all");
+                      setCategoryFilter("all");
+                    }}
+                    className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-semibold text-slate-300 transition hover:border-cyan-400 hover:text-cyan-300"
+                  >
+                    Clear filters
+                  </button>
+                )}
+                <span className="ml-auto text-xs text-slate-500">
+                  Showing {visibleRecords.length} of {records.length}
+                </span>
               </div>
-            ))}
-          </div>
+            )}
+            {visibleRecords.length === 0 ? (
+              <div className="p-10 text-center">
+                <p className="font-medium">
+                  No {config.title.toLowerCase()} match these filters.
+                </p>
+                <p className="mt-1 text-sm text-slate-500">
+                  Widen the status or category above to see the rest.
+                </p>
+              </div>
+            ) : groupedRecords ? (
+              <div className="divide-y divide-slate-800">
+                {groupedRecords.map((group) => (
+                  <div key={group.key || "unassigned"}>
+                    <p className="bg-slate-950/60 px-4 py-2 text-xs font-bold uppercase tracking-wide text-cyan-300">
+                      {group.label}
+                    </p>
+                    <div className="divide-y divide-slate-800">
+                      {group.records.map((record) => (
+                        <ResourceRow
+                          key={String(record.id)}
+                          record={record}
+                          config={config}
+                          resourceKey={resourceKey}
+                          pageOptions={pageOptions}
+                          hasOrder={hasOrder}
+                          reorder={reorder}
+                          start={start}
+                          remove={remove}
+                          setViewing={setViewing}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="divide-y divide-slate-800">
+                {visibleRecords.map((record) => (
+                  <ResourceRow
+                    key={String(record.id)}
+                    record={record}
+                    config={config}
+                    resourceKey={resourceKey}
+                    pageOptions={pageOptions}
+                    hasOrder={hasOrder}
+                    reorder={reorder}
+                    start={start}
+                    remove={remove}
+                    setViewing={setViewing}
+                  />
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
       {viewing && resourceKey === "submissions" && (
