@@ -16,6 +16,9 @@ const upgrades = [
   'ALTER TABLE services ADD COLUMN cta_link TEXT NOT NULL DEFAULT \'\'', 'ALTER TABLE services ADD COLUMN featured INTEGER NOT NULL DEFAULT 0',
   "ALTER TABLE services ADD COLUMN status TEXT NOT NULL DEFAULT 'published'", "ALTER TABLE services ADD COLUMN updated_at TEXT NOT NULL DEFAULT ''",
   'ALTER TABLE projects ADD COLUMN featured INTEGER NOT NULL DEFAULT 0', "ALTER TABLE projects ADD COLUMN updated_at TEXT NOT NULL DEFAULT ''",
+  "ALTER TABLE posts ADD COLUMN image_alt TEXT NOT NULL DEFAULT ''", "ALTER TABLE posts ADD COLUMN author_name TEXT NOT NULL DEFAULT ''",
+  'ALTER TABLE posts ADD COLUMN show_toc INTEGER NOT NULL DEFAULT 1', 'ALTER TABLE posts ADD COLUMN show_share INTEGER NOT NULL DEFAULT 1',
+  'ALTER TABLE posts ADD COLUMN show_related INTEGER NOT NULL DEFAULT 1',
 ]
 for (const statement of upgrades) { try { await db.execute(statement) } catch (error) { if (!/duplicate column name/i.test(String(error))) throw error } }
 console.log('CMS schema migration completed.')
