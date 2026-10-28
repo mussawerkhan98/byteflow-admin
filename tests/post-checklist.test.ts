@@ -6,12 +6,10 @@ import {
   effectiveSeoDescription,
   effectiveSeoTitle,
   fromDateInput,
-  postChecklist,
+  seoChecklist,
   slugFromTitle,
   toDateInput,
 } from '../app/lib/post-checklist'
-
-const words = (n: number) => Array.from({ length: n }, (_, i) => `word${i}`).join(' ')
 
 test('content stats count words, sections, stray H1s and FAQ questions', () => {
   const stats = contentStats(
@@ -44,34 +42,141 @@ test('SEO title and description fall back the way the website does', () => {
   assert.equal(effectiveSeoDescription({ excerpt: 'Summary', meta_description: 'Meta' }), 'Meta')
 })
 
-test('a complete post ticks every item', () => {
-  const content =
-    `<h2>One</h2><p>${words(300)}</p><h2>Two</h2><p>${words(300)}</p>` +
-    '<h2>Frequently asked questions</h2><h3>A?</h3><p>a</p><h3>B?</h3><p>b</p><h3>C?</h3><p>c</p>'
-  const result = postChecklist({
-    title: 'New office IT setup',
-    slug: 'new-office-it-setup',
-    excerpt: 'A stage-by-stage checklist for cabling, internet, Wi-Fi and security for a new Dubai office.',
-    image_url: '/api/media/1',
-    image_alt: 'Engineer at a network rack',
-    content,
-    meta_title: 'New Office IT Setup in Dubai | Byteflow',
-    meta_description: 'x'.repeat(140),
+const words2 = (n: number) => Array.from({ length: n }, (_, i) => `word${i}`).join(' ')
+const good = {
+  id: 7,
+  title: 'New office IT setup in Dubai',
+  slug: 'new-office-it-setup-dubai',
+  excerpt: 'A checklist.',
+  meta_title: 'New Office IT Setup in Dubai | Byteflow',
+  meta_description: 'x'.repeat(140),
+  image_url: '/api/media/1',
+  image_alt: 'Engineer at a network rack',
+  author_name: 'Sara Khan',
+  content:
+    '<p>Planning a new office IT setup in Dubai starts before the fit-out, with cabling and internet.</p>' +
+    `<h2>Before</h2><p>${words2(200)} See our <a href="/it-amc-services-dubai">IT AMC services</a>.</p>` +
+    '<h3>Cabling</h3><p>Detail.</p><h2>FAQs</h2><h3>How long?</h3><p>Six weeks.</p>',
+}
+const byKey = (checks: { key: string }[], key: string) => checks.find((c) => c.key === key) as {
+  status: string
+  kind: string
+  detail: string
+}
+
+test('a well-prepared post passes every automatic check', () => {
+  const { checks, counts } = seoChecklist(good, {
+    focusKeyword: 'new office IT setup',
+    otherPosts: [{ id: 1, title: 'Other', slug: 'other', meta_description: 'Different' }],
   })
-  assert.deepEqual(result.items.filter((item) => !item.done).map((item) => item.key), [])
-  assert.equal(result.percent, 100)
+  const notPassed = checks.filter((c) => c.status !== 'passed').map((c) => c.key)
+  // Only the two checks a program cannot decide stay optional.
+  assert.deepEqual(notPassed, ['helpful', 'length'])
+  assert.equal(counts.attention, 0)
 })
 
-test('an empty post ticks only "no extra H1"', () => {
-  const result = postChecklist({})
-  assert.deepEqual(result.items.filter((item) => item.done).map((item) => item.key), ['h1'])
-  assert.equal(result.done, 1)
+test('the checklist never requires a word count, three H2s, an FAQ or an exact length', () => {
+  const short = seoChecklist({ ...good, content: '<p>New office IT setup in Dubai: a short note.</p>' })
+  // Length is an indicator only, whatever the count.
+  assert.equal(byKey(short.checks, 'length').status, 'optional')
+  // A short post with no subheadings is fine.
+  assert.equal(byKey(short.checks, 'headings').status, 'passed')
+  // No FAQ is optional, never a problem.
+  assert.equal(byKey(short.checks, 'faq').status, 'optional')
+  // An off-guideline description is a recommendation, not a missing field.
+  const desc = byKey(seoChecklist({ ...good, meta_description: 'Too short' }).checks, 'meta-description')
+  assert.equal(desc.status, 'attention')
+  assert.equal(desc.kind, 'recommendation')
+  assert.match(desc.detail, /no fixed length/)
 })
 
-test('alt text only counts when there is a cover image', () => {
-  const item = (form: Record<string, unknown>) => postChecklist(form).items.find((i) => i.key === 'alt')!
-  assert.equal(item({ image_alt: 'A rack' }).done, false)
-  assert.equal(item({ image_alt: 'A rack', image_url: '/x.png' }).done, true)
+test('an unwritten description is a recommendation when the article exists', () => {
+  const desc = byKey(seoChecklist({ ...good, meta_description: '', excerpt: '' }).checks, 'meta-description')
+  assert.equal(desc.status, 'attention')
+  assert.equal(desc.kind, 'recommendation')
+  assert.match(desc.detail, /opening lines/)
+})
+
+test('missing fields are reported as missing, not as recommendations', () => {
+  const { checks } = seoChecklist({})
+  for (const key of ['seo-title', 'slug', 'meta-description', 'h1', 'length']) {
+    assert.equal(byKey(checks, key).status, 'attention', key)
+    assert.equal(byKey(checks, key).kind, 'missing', key)
+  }
+})
+
+test('the SEO title falls back to the post title and flags long ones', () => {
+  const auto = byKey(seoChecklist({ ...good, meta_title: '' }).checks, 'seo-title')
+  assert.equal(auto.status, 'passed')
+  assert.match(auto.detail, /automatic/)
+  const long = byKey(seoChecklist({ ...good, meta_title: 'x'.repeat(70) }).checks, 'seo-title')
+  assert.equal(long.status, 'attention')
+  assert.equal(long.kind, 'recommendation')
+})
+
+test('slugs must be valid and should relate to the title', () => {
+  assert.equal(byKey(seoChecklist({ ...good, slug: 'Bad Slug' }).checks, 'slug').kind, 'missing')
+  assert.equal(byKey(seoChecklist({ ...good, slug: 'post-123' }).checks, 'slug').status, 'attention')
+})
+
+test('an extra H1 in the article needs attention', () => {
+  const h1 = byKey(seoChecklist({ ...good, content: '<h1>Another</h1>' + good.content }).checks, 'h1')
+  assert.equal(h1.status, 'attention')
+})
+
+test('the keyword check is optional until a keyword is typed, then checks title, intro and stuffing', () => {
+  assert.equal(byKey(seoChecklist(good).checks, 'keyword').status, 'optional')
+  const absent = byKey(seoChecklist(good, { focusKeyword: 'cloud backup' }).checks, 'keyword')
+  assert.equal(absent.status, 'attention')
+  assert.match(absent.detail, /title or first paragraph/)
+  const stuffed = seoChecklist(
+    { ...good, content: '<p>cloud backup</p>' + '<p>cloud backup cloud backup</p>'.repeat(5), title: 'Cloud backup' },
+    { focusKeyword: 'cloud backup' },
+  )
+  assert.match(byKey(stuffed.checks, 'keyword').detail, /stuffing/)
+})
+
+test('headings that skip a level need attention; a long article without any does too', () => {
+  assert.equal(byKey(seoChecklist({ ...good, content: '<p>x</p><h3>Sub</h3>' }).checks, 'headings').status, 'attention')
+  assert.equal(byKey(seoChecklist({ ...good, content: `<p>${words2(400)}</p>` }).checks, 'headings').status, 'attention')
+})
+
+test('images: missing alt and pasted data images need attention; no image is optional', () => {
+  assert.equal(byKey(seoChecklist({ ...good, image_alt: '' }).checks, 'images').status, 'attention')
+  assert.equal(byKey(seoChecklist({ ...good, image_url: 'data:image/png;base64,AAAA' }).checks, 'images').status, 'attention')
+  assert.equal(byKey(seoChecklist({ ...good, image_url: '', image_alt: '' }).checks, 'images').status, 'optional')
+})
+
+test('internal links are needed, with descriptive anchor text', () => {
+  const none = seoChecklist({ ...good, content: '<p>No links. <a href="https://example.com">Example docs</a></p>' })
+  assert.equal(byKey(none.checks, 'links').status, 'attention')
+  const vague = seoChecklist({ ...good, content: good.content + '<p><a href="/contact-us">click here</a></p>' })
+  assert.match(byKey(vague.checks, 'links').detail, /vague/)
+  const absolute = seoChecklist({ ...good, content: '<p><a href="https://www.byteflow.ae/cloud-services-dubai">cloud services</a></p>' })
+  assert.equal(byKey(absolute.checks, 'links').status, 'passed')
+})
+
+test('an FAQ heading with no questions needs attention', () => {
+  const faq = byKey(seoChecklist({ ...good, content: '<h2>FAQs</h2><p>Call us.</p>' }).checks, 'faq')
+  assert.equal(faq.status, 'attention')
+})
+
+test('no author name is optional, because the Byteflow team byline shows', () => {
+  assert.equal(byKey(seoChecklist({ ...good, author_name: '' }).checks, 'author').status, 'optional')
+})
+
+test('duplicates are found across other posts, ignoring the post itself', () => {
+  const self = seoChecklist(good, { otherPosts: [{ ...good }] })
+  assert.equal(byKey(self.checks, 'unique').status, 'optional')
+  const dup = seoChecklist(good, {
+    otherPosts: [{ id: 9, title: 'X', slug: 'new-office-it-setup-dubai', meta_title: good.meta_title.toUpperCase(), meta_description: good.meta_description }],
+  })
+  const unique = byKey(dup.checks, 'unique')
+  assert.equal(unique.status, 'attention')
+  assert.equal(unique.kind, 'missing')
+  assert.match(unique.detail, /SEO title, description, page address/)
+  const descOnly = seoChecklist({ ...good, meta_description: '' }, { otherPosts: [{ id: 2, title: 'Y', slug: 'y', excerpt: 'A checklist.' }] })
+  assert.equal(byKey(descOnly.checks, 'unique').kind, 'recommendation')
 })
 
 test('slugs, read time and dates', () => {
