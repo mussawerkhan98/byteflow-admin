@@ -22,6 +22,7 @@
     "app/lib/editor-blocks.ts",
     "app/lib/svg-icon.ts",
     "app/lib/media-migration.ts",
+    "app/lib/post-checklist.ts",
     "tests/**/*.ts"
   ],
   "exclude": [
