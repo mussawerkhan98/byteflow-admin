@@ -4,7 +4,39 @@ import type { Field, Resource } from './cms-config'
 
 type Data = Record<string, unknown>
 
+/**
+ * Columns the blog post editor added. Created on first use, so deploying the
+ * admin needs no manual migration; scripts/migrate-cms.mjs adds the same
+ * ones. Defaults match how the website behaved before they existed.
+ */
+const POST_COLUMNS = [
+  "ALTER TABLE posts ADD COLUMN image_alt TEXT NOT NULL DEFAULT ''",
+  "ALTER TABLE posts ADD COLUMN author_name TEXT NOT NULL DEFAULT ''",
+  'ALTER TABLE posts ADD COLUMN show_toc INTEGER NOT NULL DEFAULT 1',
+  'ALTER TABLE posts ADD COLUMN show_share INTEGER NOT NULL DEFAULT 1',
+  'ALTER TABLE posts ADD COLUMN show_related INTEGER NOT NULL DEFAULT 1',
+]
+let postColumnsReady: Promise<void> | null = null
+
+async function ensurePostColumns() {
+  for (const statement of POST_COLUMNS) {
+    try {
+      await db.execute(statement)
+    } catch (error) {
+      if (!/duplicate column name/i.test(String(error))) throw error
+    }
+  }
+}
+
 async function ensureResourceTable(resource: Resource) {
+  if (resource.table === 'posts') {
+    postColumnsReady ??= ensurePostColumns().catch((error) => {
+      postColumnsReady = null
+      throw error
+    })
+    await postColumnsReady
+    return
+  }
   if (resource.table !== 'website_scripts') return
   await db.execute(`CREATE TABLE IF NOT EXISTS website_scripts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -23,7 +55,12 @@ function normalize(field: Field, value: unknown) {
   if (field.type === 'number') {
     if (value === '' || value === null || value === undefined) {
       if (field.required) throw new Error(`${field.label} is required`)
-      return null
+      // Only the foreign keys are nullable columns. Every other optional
+      // number (sort_order, rating) is NOT NULL in the schema, so leaving
+      // the input blank has to fall back to that column's default rather
+      // than writing null and failing the insert.
+      if (field.name === 'page_id' || field.name === 'parent_id') return null
+      return field.name === 'rating' ? 5 : 0
     }
     const number = Number(value)
     if (!Number.isFinite(number)) throw new Error(`${field.label} must be a valid number`)
