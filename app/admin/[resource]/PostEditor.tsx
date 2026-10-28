@@ -7,7 +7,9 @@ import {
   effectiveSeoDescription,
   effectiveSeoTitle,
   fromDateInput,
-  postChecklist,
+  seoChecklist,
+  type CheckStatus,
+  type OtherPost,
   slugFromTitle,
   toDateInput,
 } from "../../lib/post-checklist";
@@ -17,6 +19,34 @@ type RecordValue = Record<string, unknown>;
 
 const inputClass =
   "mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm font-normal text-white outline-none transition focus:border-cyan-400";
+const STATUS: Record<CheckStatus, { label: string; icon: string; dot: string; pill: string; box: string }> = {
+  passed: {
+    label: "Passed",
+    icon: "✓",
+    dot: "border-emerald-400 bg-emerald-400/15 text-emerald-300",
+    pill: "bg-emerald-400/10 text-emerald-300",
+    box: "border-emerald-400/20 bg-emerald-400/[.06] text-emerald-300",
+  },
+  attention: {
+    label: "Needs attention",
+    icon: "!",
+    dot: "border-amber-400 bg-amber-400/15 text-amber-300",
+    pill: "bg-amber-400/10 text-amber-300",
+    box: "border-amber-400/20 bg-amber-400/[.06] text-amber-300",
+  },
+  optional: {
+    label: "Optional",
+    icon: "–",
+    dot: "border-slate-600 text-slate-400",
+    pill: "bg-slate-700/40 text-slate-300",
+    box: "border-slate-700 bg-slate-900/60 text-slate-300",
+  },
+};
+const KIND = {
+  missing: { label: "Missing", tone: "text-red-300" },
+  recommendation: { label: "Recommendation", tone: "text-slate-400" },
+  manual: { label: "Check yourself", tone: "text-cyan-300" },
+} as const;
 const isOn = (value: unknown) => value === true || value === 1 || value === "1";
 /**
  * Uploaded images are stored as site paths like "/api/media/51". The website
@@ -131,6 +161,7 @@ export default function PostEditor({
   uploading,
   onUpload,
   categories,
+  otherPosts,
   notice,
 }: {
   form: RecordValue;
@@ -142,13 +173,20 @@ export default function PostEditor({
   uploading: boolean;
   onUpload: (file?: File) => void;
   categories: string[];
+  /** The other posts, for the duplicate title/description/address check. */
+  otherPosts: OtherPost[];
   notice: ReactNode;
 }) {
   const isUpdate = Number(editing.id) > 0;
   const wasLive = isUpdate && isOn(editing.published);
   // A new post's address follows its title until someone types one in.
   const [slugEdited, setSlugEdited] = useState(isUpdate);
-  const checklist = useMemo(() => postChecklist(form), [form]);
+  // Typed in the checklist to check keyword placement. Not saved.
+  const [focusKeyword, setFocusKeyword] = useState("");
+  const checklist = useMemo(
+    () => seoChecklist(form, { otherPosts, focusKeyword }),
+    [form, otherPosts, focusKeyword],
+  );
   const { stats } = checklist;
   const slug = String(form.slug ?? "");
   const seoTitle = effectiveSeoTitle(form);
@@ -300,14 +338,14 @@ export default function PostEditor({
           <Card step={3} title="Article" description="The body of the post. Its headings build the page around it.">
             <div className="grid gap-3 sm:grid-cols-4">
               {[
-                { label: "Words", value: stats.words, ok: stats.words >= 600 },
-                { label: "Sections (H2)", value: stats.sections, ok: stats.sections >= 3 },
-                { label: "FAQ questions", value: stats.faqQuestions, ok: stats.faqQuestions >= 3 },
-                { label: "Read time", value: automaticReadTime(stats.words).replace(" read", ""), ok: true },
+                { label: "Words", value: stats.words },
+                { label: "Sections (H2)", value: stats.sections },
+                { label: "FAQ questions", value: stats.faqQuestions },
+                { label: "Read time", value: automaticReadTime(stats.words).replace(" read", "") },
               ].map((stat) => (
                 <div key={stat.label} className="rounded-xl border border-slate-800 bg-slate-950/60 px-4 py-3">
                   <p className="text-[11px] uppercase tracking-wider text-slate-500">{stat.label}</p>
-                  <p className={`mt-1 text-xl font-bold ${stat.ok ? "text-white" : "text-amber-300"}`}>{stat.value}</p>
+                  <p className="mt-1 text-xl font-bold text-white">{stat.value}</p>
                 </div>
               ))}
             </div>
@@ -467,32 +505,46 @@ export default function PostEditor({
         {/* Sidebar */}
         <aside className="grid gap-5 lg:sticky lg:top-6">
           <div className="rounded-2xl border border-white/[.08] bg-[#0d1921] p-5">
-            <div className="flex items-baseline justify-between">
-              <h3 className="text-base font-bold text-white">Post checklist</h3>
-              <span className="text-sm font-bold text-cyan-300">{checklist.percent}%</span>
+            <h3 className="text-base font-bold text-white">SEO checklist</h3>
+            <p className="mt-1 text-xs leading-relaxed text-slate-500">
+              Based on Google Search Central and Semrush’s on-page checklist. A guide for writing a clear, helpful
+              page, not a ranking score.
+            </p>
+            <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+              {(Object.keys(STATUS) as CheckStatus[]).map((key) => (
+                <div key={key} className={`rounded-lg border px-2 py-2 ${STATUS[key].box}`}>
+                  <p className="text-lg font-bold leading-none">{checklist.counts[key]}</p>
+                  <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider">{STATUS[key].label}</p>
+                </div>
+              ))}
             </div>
-            <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-800">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-cyan-300 to-blue-500 transition-all"
-                style={{ width: `${checklist.percent}%` }}
+            <label className="mt-4 block text-xs font-semibold text-slate-300">
+              Primary keyword <span className="font-normal text-slate-500">(only for this check, not saved)</span>
+              <input
+                value={focusKeyword}
+                onChange={(event) => setFocusKeyword(event.target.value)}
+                placeholder="e.g. new office IT setup"
+                className="mt-1.5 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm font-normal text-white outline-none focus:border-cyan-400"
               />
-            </div>
-            <ul className="mt-4 grid gap-2.5">
-              {checklist.items.map((item) => (
-                <li key={item.key} className="flex gap-2.5 text-sm">
-                  <span
-                    aria-hidden="true"
-                    className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border text-[10px] ${
-                      item.done ? "border-emerald-400 bg-emerald-400/15 text-emerald-300" : "border-slate-600"
-                    }`}
-                  >
-                    {item.done ? "✓" : ""}
-                  </span>
-                  <span>
-                    <span className={item.done ? "text-slate-200" : "text-slate-400"}>{item.label}</span>
-                    <span className="sr-only">{item.done ? " (done)" : " (to do)"}</span>
-                    {!item.done && <span className="mt-0.5 block text-xs text-slate-500">{item.hint}</span>}
-                  </span>
+            </label>
+            <ul className="mt-4 grid gap-3" aria-live="polite">
+              {checklist.checks.map((check) => (
+                <li key={check.key} className="text-sm">
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="flex items-start gap-2">
+                      <span aria-hidden="true" className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border text-[10px] ${STATUS[check.status].dot}`}>
+                        {STATUS[check.status].icon}
+                      </span>
+                      <span className="text-slate-200">{check.label}</span>
+                    </span>
+                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${STATUS[check.status].pill}`}>
+                      {STATUS[check.status].label}
+                    </span>
+                  </div>
+                  <p className="mt-1 pl-6 text-xs leading-relaxed text-slate-500">
+                    <span className={`mr-1 font-semibold ${KIND[check.kind].tone}`}>{KIND[check.kind].label}:</span>
+                    {check.detail}
+                  </p>
                 </li>
               ))}
             </ul>
@@ -512,7 +564,7 @@ export default function PostEditor({
       {/* Save bar */}
       <div className="sticky bottom-0 z-20 -mx-4 mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-white/[.08] bg-[#071118]/95 px-4 py-4 backdrop-blur sm:-mx-6 sm:px-6">
         <p className="text-sm text-slate-400">
-          {checklist.done} of {checklist.items.length} checklist items done
+          SEO checklist: {checklist.counts.passed} passed, {checklist.counts.attention} need attention
           <span className="mx-2 text-slate-600">·</span>
           <span className={published ? "text-emerald-300" : "text-amber-300"}>
             {published ? "Published" : "Draft"}

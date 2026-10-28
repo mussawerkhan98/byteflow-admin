@@ -557,6 +557,7 @@ export default function ResourceManager({
           categories={categoryOptions(records)
             .map((option) => option.label)
             .filter((label) => label !== "Uncategorised")}
+          otherPosts={records}
           notice={noticeBox}
         />
       </div>
