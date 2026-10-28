@@ -1,0 +1,32 @@
+{
+  "//": "Compiles the marketing module's dependency-free logic plus its tests to CommonJS so Node's built-in test runner can execute them. Nothing here affects the Next.js build, which still uses tsconfig.json.",
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "incremental": false,
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "outDir": ".test-build",
+    "rootDir": ".",
+    "types": [
+      "node"
+    ]
+  },
+  "include": [
+    "app/lib/countries.ts",
+    "app/lib/marketing-csv.ts",
+    "app/lib/audience.ts",
+    "app/lib/email-template.ts",
+    "app/lib/marketing-setup-ddl.ts",
+    "app/lib/record-filters.ts",
+    "app/lib/editor-blocks.ts",
+    "app/lib/svg-icon.ts",
+    "app/lib/media-migration.ts",
+    "app/lib/post-checklist.ts",
+    "tests/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    ".next"
+  ]
+}
