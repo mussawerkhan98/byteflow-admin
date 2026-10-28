@@ -4,7 +4,39 @@ import type { Field, Resource } from './cms-config'
 
 type Data = Record<string, unknown>
 
+/**
+ * Columns the blog post editor added. Created on first use, so deploying the
+ * admin needs no manual migration; scripts/migrate-cms.mjs adds the same
+ * ones. Defaults match how the website behaved before they existed.
+ */
+const POST_COLUMNS = [
+  "ALTER TABLE posts ADD COLUMN image_alt TEXT NOT NULL DEFAULT ''",
+  "ALTER TABLE posts ADD COLUMN author_name TEXT NOT NULL DEFAULT ''",
+  'ALTER TABLE posts ADD COLUMN show_toc INTEGER NOT NULL DEFAULT 1',
+  'ALTER TABLE posts ADD COLUMN show_share INTEGER NOT NULL DEFAULT 1',
+  'ALTER TABLE posts ADD COLUMN show_related INTEGER NOT NULL DEFAULT 1',
+]
+let postColumnsReady: Promise<void> | null = null
+
+async function ensurePostColumns() {
+  for (const statement of POST_COLUMNS) {
+    try {
+      await db.execute(statement)
+    } catch (error) {
+      if (!/duplicate column name/i.test(String(error))) throw error
+    }
+  }
+}
+
 async function ensureResourceTable(resource: Resource) {
+  if (resource.table === 'posts') {
+    postColumnsReady ??= ensurePostColumns().catch((error) => {
+      postColumnsReady = null
+      throw error
+    })
+    await postColumnsReady
+    return
+  }
   if (resource.table !== 'website_scripts') return
   await db.execute(`CREATE TABLE IF NOT EXISTS website_scripts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

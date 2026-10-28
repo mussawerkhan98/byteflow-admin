@@ -6,6 +6,7 @@ import { getAdminSection } from "../../lib/admin-guide";
 import AdminPageHeader from "../AdminPageHeader";
 import RichTextEditor from "./RichTextEditor";
 import StructuredFieldEditor from "./StructuredFieldEditor";
+import PostEditor from "./PostEditor";
 import {
   categoryOf,
   categoryOptions,
@@ -349,7 +350,9 @@ export default function ResourceManager({
   useEffect(() => {
     if (!editing || !scrollToForm.current) return;
     scrollToForm.current = false;
-    formRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    // The post editor takes over the whole screen, so start at its top.
+    if (resourceKey === "posts") window.scrollTo({ top: 0, behavior: "smooth" });
+    else formRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   }, [editing]);
   useEffect(() => {
     if (resourceKey !== "services") return;
@@ -525,6 +528,39 @@ export default function ResourceManager({
     } finally {
       setUploadingField(null);
     }
+  }
+
+  const noticeBox = notice && (
+    <p
+      role="status"
+      className={`mt-5 rounded-lg p-3 text-sm ${notice.type === "ok" ? "bg-emerald-500/10 text-emerald-300" : "bg-red-500/10 text-red-300"}`}
+    >
+      {notice.text}
+    </p>
+  );
+
+  // Blog posts get their own full-screen editor: numbered steps, a live
+  // checklist and previews of what the post page, Google and shared links
+  // will show. Every other resource keeps the generic form below.
+  if (resourceKey === "posts" && editing && !config.readOnly) {
+    return (
+      <div className="pb-4">
+        <PostEditor
+          form={form}
+          editing={editing}
+          change={change}
+          onSubmit={save}
+          onCancel={cancel}
+          saving={saving}
+          uploading={uploadingField === "image_url"}
+          onUpload={(file) => void uploadFieldImage("image_url", file)}
+          categories={categoryOptions(records)
+            .map((option) => option.label)
+            .filter((label) => label !== "Uncategorised")}
+          notice={noticeBox}
+        />
+      </div>
+    );
   }
 
   return (
