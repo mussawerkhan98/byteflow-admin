@@ -37,6 +37,13 @@ export const adminGroups: AdminGroup[] = [
           "Pick a page (Home, About Us, Blog, IT Support AMC, etc.) and manage everything on it — top banner, SEO details, FAQs, extra content blocks and its call-to-action banner — all together in one place.",
       },
       {
+        key: "home-sections",
+        label: "Home page sections",
+        shows:
+          "The wording, links and lists of the home page blocks: the services intro, About Byteflow, the service promise, How it works and the help panel.",
+        preview: "/",
+      },
+      {
         key: "services",
         label: "Services",
         shows:
@@ -95,7 +102,7 @@ export const adminGroups: AdminGroup[] = [
         key: "settings",
         label: "Contact details & logo",
         shows:
-          "Phone, email, address, opening hours, logo and social links used everywhere on the site.",
+          "Phone, email, address, opening hours, logo and social links used everywhere on the site — plus the header bar: its button, phone display, capital-letter menu and the Services dropdown note.",
         preview: "/contact-us",
       },
       {

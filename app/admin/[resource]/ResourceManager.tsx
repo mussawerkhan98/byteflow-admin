@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Resource } from "../../lib/cms-config";
 import { getAdminSection } from "../../lib/admin-guide";
+import { sanitizeEditorHtml } from "../../lib/editor-html";
+import { homeBlockKeys } from "../../lib/home-sections";
 import AdminPageHeader from "../AdminPageHeader";
 import RichTextEditor from "./RichTextEditor";
 import StructuredFieldEditor from "./StructuredFieldEditor";
@@ -25,7 +27,7 @@ const isImageField = (name: string) =>
   /(^|_)(image|logo|favicon)(_|$)/.test(name);
 const isUploadField = (name: string) => isImageField(name) || name === "icon";
 /** Section types the website actually reads. Anything else renders nowhere. */
-const LIVE_SECTION_TYPES = ["custom", "hero", "founder"];
+const LIVE_SECTION_TYPES = ["custom", "hero", "founder", ...homeBlockKeys];
 
 async function optimizeImage(file: File) {
   if (file.type === "image/gif" || file.size < 500 * 1024) return file;
@@ -389,8 +391,22 @@ export default function ResourceManager({
   function change(name: string, value: unknown) {
     setForm((current) => ({ ...current, [name]: value }));
   }
+  /**
+   * Rich-text fields cleaned the same way the editor cleans a paste. Done
+   * when a record is opened, so content saved broken before the cleaner
+   * existed is fixed by the next save, and again on the way out.
+   */
+  function withCleanRichText(record: RecordValue): RecordValue {
+    const cleaned = { ...record };
+    for (const field of config.fields) {
+      if (field.type === "richtext" && typeof cleaned[field.name] === "string") {
+        cleaned[field.name] = sanitizeEditorHtml(cleaned[field.name] as string);
+      }
+    }
+    return cleaned;
+  }
   function start(record?: RecordValue) {
-    const value = record ?? initial;
+    const value = record ? withCleanRichText(record) : initial;
     setEditing(record ?? {});
     setForm(value);
     setNotice(null);
@@ -445,7 +461,7 @@ export default function ResourceManager({
       const response = await fetch(`/api/admin/${resourceKey}`, {
         method: isUpdate ? "PUT" : "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ ...form, id: editing?.id }),
+        body: JSON.stringify({ ...withCleanRichText(form), id: editing?.id }),
       });
       const data = await response.json();
       if (!response.ok) {

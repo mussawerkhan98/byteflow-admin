@@ -1,6 +1,7 @@
 import 'server-only'
 import { db } from './db'
 import type { Field, Resource } from './cms-config'
+import { sanitizeEditorHtml } from './editor-html'
 
 type Data = Record<string, unknown>
 
@@ -16,10 +17,22 @@ const POST_COLUMNS = [
   'ALTER TABLE posts ADD COLUMN show_share INTEGER NOT NULL DEFAULT 1',
   'ALTER TABLE posts ADD COLUMN show_related INTEGER NOT NULL DEFAULT 1',
 ]
-let postColumnsReady: Promise<void> | null = null
+/**
+ * The header bar's settings. The switches default to on, which is how the
+ * website's top bar looks with nothing saved.
+ */
+const SETTINGS_COLUMNS = [
+  "ALTER TABLE site_settings ADD COLUMN header_show_phone INTEGER NOT NULL DEFAULT 1",
+  "ALTER TABLE site_settings ADD COLUMN header_menu_uppercase INTEGER NOT NULL DEFAULT 1",
+  "ALTER TABLE site_settings ADD COLUMN header_cta_label TEXT NOT NULL DEFAULT ''",
+  "ALTER TABLE site_settings ADD COLUMN header_cta_link TEXT NOT NULL DEFAULT ''",
+  "ALTER TABLE site_settings ADD COLUMN header_dropdown_note TEXT NOT NULL DEFAULT ''",
+  "ALTER TABLE site_settings ADD COLUMN header_dropdown_cta TEXT NOT NULL DEFAULT ''",
+]
+const columnsReady = new Map<string, Promise<void>>()
 
-async function ensurePostColumns() {
-  for (const statement of POST_COLUMNS) {
+async function addColumns(statements: string[]) {
+  for (const statement of statements) {
     try {
       await db.execute(statement)
     } catch (error) {
@@ -28,15 +41,22 @@ async function ensurePostColumns() {
   }
 }
 
-async function ensureResourceTable(resource: Resource) {
-  if (resource.table === 'posts') {
-    postColumnsReady ??= ensurePostColumns().catch((error) => {
-      postColumnsReady = null
+/** Runs each table's column additions once per server, retrying after a failure. */
+async function ensureColumns(table: string, statements: string[]) {
+  let ready = columnsReady.get(table)
+  if (!ready) {
+    ready = addColumns(statements).catch((error) => {
+      columnsReady.delete(table)
       throw error
     })
-    await postColumnsReady
-    return
+    columnsReady.set(table, ready)
   }
+  await ready
+}
+
+async function ensureResourceTable(resource: Resource) {
+  if (resource.table === 'posts') return ensureColumns('posts', POST_COLUMNS)
+  if (resource.table === 'site_settings') return ensureColumns('site_settings', SETTINGS_COLUMNS)
   if (resource.table !== 'website_scripts') return
   await db.execute(`CREATE TABLE IF NOT EXISTS website_scripts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -70,7 +90,11 @@ function normalize(field: Field, value: unknown) {
     }
     return number
   }
-  const text = typeof value === 'string' ? value.trim() : String(value ?? '')
+  // Rich text is cleaned here too, so markup that skipped the editor -- an
+  // old tab, a script, a direct API call -- still can't be saved broken.
+  const text = field.type === 'richtext'
+    ? sanitizeEditorHtml(typeof value === 'string' ? value : String(value ?? ''))
+    : typeof value === 'string' ? value.trim() : String(value ?? '')
   if (field.type === 'json') {
     JSON.parse(text || '{}')
     return text || '{}'
