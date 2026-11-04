@@ -242,6 +242,106 @@ export const homeBlocks: HomeBlockDef[] = [
       lists: {},
     },
   },
+  {
+    // Not part of the home page: the header on every page. Stored with the
+    // home blocks so it is edited on this screen.
+    key: "header_menu",
+    label: "Header menu",
+    shows:
+      "The Services mega menu and the Industries dropdown in the header, on every page. Where they sit in the bar, and the other links, are set under Header & footer links (an entry called “Services” opens this menu; Industries is added after it). The button and the “Not sure which one fits?” line are in Contact details & logo.",
+    fields: [
+      { name: "eyebrow", label: "Intro — small heading", type: "text" },
+      { name: "heading", label: "Intro — heading", type: "text" },
+      { name: "description", label: "Intro — one line of text", type: "textarea" },
+      { name: "link_label", label: "Intro — link text", type: "text" },
+      { name: "link", label: "Intro — link", type: "link", help: "/#services jumps to the services on the home page." },
+      { name: "featured_eyebrow", label: "Featured card — small heading", type: "text" },
+      { name: "featured_title", label: "Featured card — title", type: "text" },
+      { name: "featured_label", label: "Featured card — button text", type: "text" },
+      { name: "featured_link", label: "Featured card — button link", type: "link" },
+      { name: "whatsapp_label", label: "Bottom strip — WhatsApp link text", type: "text", help: "Opens the WhatsApp link from Contact details & logo." },
+      { name: "industries_label", label: "Industries — menu name", type: "text" },
+      { name: "industries_heading", label: "Industries — heading inside the dropdown", type: "text" },
+    ],
+    lists: [
+      {
+        name: "services",
+        label: "Services",
+        itemLabel: "Service",
+        max: 15,
+        help: "Services with the same group name sit in one column, in the order listed. The icon is picked from the link (the service page's own icon).",
+        fields: [
+          { name: "group", label: "Group (column heading)", type: "text" },
+          { name: "title", label: "Service name", type: "text" },
+          { name: "description", label: "One-line description", type: "text" },
+          { name: "link", label: "Link", type: "link" },
+        ],
+      },
+      {
+        name: "stats",
+        label: "Featured card — numbers",
+        itemLabel: "Number",
+        max: 2,
+        fields: [
+          { name: "title", label: "Number (e.g. 2 hrs)", type: "text" },
+          { name: "description", label: "What it means", type: "text" },
+        ],
+      },
+      {
+        name: "industries",
+        label: "Industries",
+        itemLabel: "Industry",
+        max: 12,
+        help: "There are no industry pages yet, so these link to /#industries. Change each link when its page exists.",
+        fields: [
+          { name: "title", label: "Industry", type: "text" },
+          { name: "link", label: "Link", type: "link" },
+        ],
+      },
+    ],
+    defaults: {
+      fields: {
+        eyebrow: "Our services",
+        heading: "Everything IT, under one roof.",
+        description: "Support, cloud, security and creative work from one accountable team.",
+        link_label: "View all services",
+        link: "/#services",
+        featured_eyebrow: "Most popular",
+        featured_title: "IT AMC plans",
+        featured_label: "See plans",
+        featured_link: "/it-amc-services-dubai",
+        whatsapp_label: "WhatsApp us",
+        industries_label: "Industries",
+        industries_heading: "Industries we serve",
+      },
+      lists: {
+        services: [
+          { group: "IT Support & Infrastructure", title: "IT AMC / IT Support", description: "Fixed monthly support plans", link: "/it-amc-services-dubai" },
+          { group: "IT Support & Infrastructure", title: "System Integration", description: "Every device, one system", link: "/system-integration" },
+          { group: "IT Support & Infrastructure", title: "Data Backup & Recovery", description: "Survive ransomware & failure", link: "/data-backup-recovery" },
+          { group: "Cloud & Security", title: "Cloud / Microsoft 365", description: "Migration & management", link: "/cloud-services-dubai" },
+          { group: "Cloud & Security", title: "Cyber Security", description: "Firewalls, endpoint, email", link: "/cyber-security" },
+          { group: "Digital & Creative", title: "Website / Apps / Bots", description: "Built for the UAE market", link: "/website-development" },
+          { group: "Digital & Creative", title: "Landing Page Design", description: "Pages built to convert", link: "/landing-page-designing" },
+          { group: "Digital & Creative", title: "UI/UX & Graphics", description: "Brand & interface design", link: "/graphics-designing" },
+          { group: "Digital & Creative", title: "Digital Marketing", description: "Measurable monthly leads", link: "/digital-marketing" },
+        ],
+        stats: [
+          { title: "2 hrs", description: "On-site response" },
+          { title: "24/7", description: "Monitoring" },
+        ],
+        industries: [
+          { title: "Clinics & Healthcare", link: "/#industries" },
+          { title: "Schools & Education", link: "/#industries" },
+          { title: "Real Estate", link: "/#industries" },
+          { title: "Retail & Ecommerce", link: "/#industries" },
+          { title: "Logistics", link: "/#industries" },
+          { title: "Hospitality", link: "/#industries" },
+          { title: "Corporate Offices & SMEs", link: "/#industries" },
+        ],
+      },
+    },
+  },
 ];
 
 export const homeBlockKeys = homeBlocks.map((block) => block.key);

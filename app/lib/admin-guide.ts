@@ -40,7 +40,7 @@ export const adminGroups: AdminGroup[] = [
         key: "home-sections",
         label: "Home page sections",
         shows:
-          "The wording, links and lists of the home page blocks: the services intro, About Byteflow, the service promise, How it works and the help panel.",
+          "The wording, links and lists of the home page blocks: the services intro, About Byteflow, the service promise, How it works and the help panel — plus the header's Services mega menu and Industries dropdown, shown on every page.",
         preview: "/",
       },
       {
@@ -95,14 +95,15 @@ export const adminGroups: AdminGroup[] = [
       {
         key: "menus",
         label: "Header & footer links",
-        shows: "The navigation links in the website header and footer.",
+        shows:
+          "The navigation links in the website header and footer. In the header, an entry called “Services” opens the mega menu (edited under Home page sections → Header menu), Industries follows it, and a Home link is left out because the logo goes home.",
         preview: "/",
       },
       {
         key: "settings",
         label: "Contact details & logo",
         shows:
-          "Phone, email, address, opening hours, logo and social links used everywhere on the site — plus the header bar: its button, phone display, capital-letter menu and the Services dropdown note.",
+          "Phone, email, address, opening hours, logo and social links used everywhere on the site — plus the header bar: its button (and shorter phone wording), phone display and the note at the bottom of the Services menu.",
         preview: "/contact-us",
       },
       {

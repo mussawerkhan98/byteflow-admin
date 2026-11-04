@@ -53,3 +53,21 @@ test("the form starts from the website's wording, and saved values win", () => {
   assert.equal(values.description, help.defaults.fields.description);
   assert.deepEqual(homeBlockFormValues(promise, { rows: [] }).rows, promise.defaults.lists.rows);
 });
+
+test("the header menu keeps each service's group, two numbers at most, and safe links", () => {
+  const menu = getHomeBlockDef("header_menu")!;
+  const saved = sanitizeHomeBlock(menu, {
+    services: [
+      { group: " Cloud ", title: "Cloud", description: "Migration", link: "/cloud-services-dubai", icon: "x" },
+      { group: "Cloud", title: "Bad", link: "javascript:alert(1)" },
+    ],
+    stats: [{ title: "2 hrs" }, { title: "24/7" }, { title: "99%" }],
+    industries: [{ title: "Logistics", link: "/#industries" }],
+  });
+  assert.deepEqual(saved.services, [
+    { group: "Cloud", title: "Cloud", description: "Migration", link: "/cloud-services-dubai" },
+    { group: "Cloud", title: "Bad", description: "", link: "" },
+  ]);
+  assert.equal((saved.stats as unknown[]).length, 2);
+  assert.deepEqual(saved.industries, [{ title: "Logistics", link: "/#industries" }]);
+});

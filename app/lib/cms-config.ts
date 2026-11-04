@@ -129,9 +129,10 @@ export const resources = {
           "home_promise",
           "home_process",
           "home_help",
+          "header_menu",
         ],
         required: true,
-        help: "“custom” is a content block that appears near the bottom of the page you choose. “hero” and “founder” feed the top banner and the About Us founder block. The “home_…” types are edited on the Home page sections screen. Services, FAQs, Reviews, Calls to action and Team each have their own screen in the sidebar.",
+        help: "“custom” is a content block that appears near the bottom of the page you choose. “hero” and “founder” feed the top banner and the About Us founder block. The “home_…” and “header_menu” types are edited on the Home page sections screen. Services, FAQs, Reviews, Calls to action and Team each have their own screen in the sidebar.",
       },
       {
         name: "name",
@@ -310,16 +311,16 @@ export const resources = {
         help: "Shows the header phone beside the menu on wide screens.",
       },
       {
-        name: "header_menu_uppercase",
-        label: "Header bar — menu links in CAPITALS",
-        type: "boolean",
-        help: "HOME · ABOUT US · SERVICES… The links themselves are edited under Header & footer links.",
-      },
-      {
         name: "header_cta_label",
         label: "Header bar — button text",
         type: "text",
-        help: "The cyan button at the right of the top bar and in the mobile menu. Leave blank for “Contact us”.",
+        help: "The cyan button at the right of the top bar and in the mobile menu. Leave blank for “Get a Free Quote”.",
+      },
+      {
+        name: "header_cta_short_label",
+        label: "Header bar — button text on phones",
+        type: "text",
+        help: "A shorter version for the narrow bar on phones. Leave blank for “Free Quote”.",
       },
       {
         name: "header_cta_link",
@@ -331,7 +332,7 @@ export const resources = {
         name: "header_dropdown_note",
         label: "Services dropdown — small text",
         type: "text",
-        help: "The grey line in the box at the bottom of the Services dropdown. Leave blank for “Not sure which one fits?”.",
+        help: "The grey text in the strip at the bottom of the Services menu. Leave blank for “Not sure which one fits?”. The rest of that menu is under Home page sections → Header menu.",
       },
       {
         name: "header_dropdown_cta",

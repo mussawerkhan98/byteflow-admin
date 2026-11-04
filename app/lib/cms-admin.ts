@@ -28,6 +28,7 @@ const SETTINGS_COLUMNS = [
   "ALTER TABLE site_settings ADD COLUMN header_cta_link TEXT NOT NULL DEFAULT ''",
   "ALTER TABLE site_settings ADD COLUMN header_dropdown_note TEXT NOT NULL DEFAULT ''",
   "ALTER TABLE site_settings ADD COLUMN header_dropdown_cta TEXT NOT NULL DEFAULT ''",
+  "ALTER TABLE site_settings ADD COLUMN header_cta_short_label TEXT NOT NULL DEFAULT ''",
 ]
 const columnsReady = new Map<string, Promise<void>>()
 
