@@ -10,6 +10,7 @@ import {
   isConvertibleTag,
   type ChildKind,
 } from "../../lib/editor-blocks";
+import { sanitizeEditorHtml, textToEditorHtml } from "../../lib/editor-html";
 import {
   faArrowRotateLeft,
   faArrowRotateRight,
@@ -299,6 +300,127 @@ export default function RichTextEditor({
     run("formatBlock", currentBlock() === tag ? "p" : tag);
   }
 
+  /** Nearest ancestor of a node, inside the editor, with one of these tags. */
+  function enclosing(node: Node | null, tags: string[]) {
+    const root = editor.current;
+    while (node && node !== root) {
+      if (node.nodeType === Node.ELEMENT_NODE && tags.includes((node as HTMLElement).tagName)) {
+        return node as HTMLElement;
+      }
+      node = node.parentNode;
+    }
+    return null;
+  }
+
+  const isBlank = (element: HTMLElement) =>
+    !(element.textContent ?? "").trim() && !element.querySelector("img");
+
+  /** Blocks flattened to inline content, a <br> between each, for a list item or cell. */
+  function inlineFrom(blocks: Node[]) {
+    const fragment = document.createDocumentFragment();
+    const add = (nodes: Node[]) => {
+      if (fragment.childNodes.length) fragment.appendChild(document.createElement("br"));
+      for (const node of nodes) fragment.appendChild(node);
+    };
+    for (const block of blocks) {
+      if (block.nodeName === "UL" || block.nodeName === "OL") {
+        for (const item of Array.from(block.childNodes)) add(Array.from(item.childNodes));
+      } else if (["P", "H2", "H3", "H4", "BLOCKQUOTE", "FIGCAPTION"].includes(block.nodeName)) {
+        add(Array.from(block.childNodes));
+      } else {
+        add([document.createTextNode(block.textContent ?? "")]);
+      }
+    }
+    return fragment;
+  }
+
+  /**
+   * Paste clean HTML only. The browser's own paste kept the source site's
+   * styling and, with the caret in a heading, put the pasted paragraphs
+   * inside it. Several blocks pasted into a heading or paragraph now split it
+   * at the caret and go in after it, as blocks of their own.
+   */
+  function paste(event: React.ClipboardEvent<HTMLDivElement>) {
+    const root = editor.current;
+    if (!root) return;
+    event.preventDefault();
+    const html = event.clipboardData.getData("text/html");
+    const clean = html
+      ? sanitizeEditorHtml(html)
+      : textToEditorHtml(event.clipboardData.getData("text/plain"));
+    const selection = window.getSelection();
+    if (!clean || !selection || selection.rangeCount === 0) return;
+    const range = selection.getRangeAt(0);
+    if (!root.contains(range.commonAncestorContainer)) return;
+    range.deleteContents();
+
+    const template = document.createElement("template");
+    template.innerHTML = clean;
+    const blocks = Array.from(template.content.childNodes);
+    const cell = enclosing(range.startContainer, ["LI", "TD", "TH", "FIGCAPTION"]);
+    const host = enclosing(range.startContainer, ["P", "H2", "H3", "H4", "BLOCKQUOTE"]);
+    const caret = document.createRange();
+
+    if (cell || (blocks.length === 1 && blocks[0].nodeName === "P")) {
+      // One paragraph, or anything at all inside a list item or table cell:
+      // the words go in where the caret is.
+      const inline = inlineFrom(blocks);
+      const last = inline.lastChild;
+      range.insertNode(inline);
+      if (last) caret.setStartAfter(last);
+    } else if (host) {
+      const tail = document.createRange();
+      tail.setStart(range.startContainer, range.startOffset);
+      tail.setEnd(host, host.childNodes.length);
+      const after = host.cloneNode(false) as HTMLElement;
+      after.appendChild(tail.extractContents());
+      host.after(...blocks, after);
+      if (isBlank(after)) after.remove();
+      if (isBlank(host)) host.remove();
+      caret.selectNodeContents(blocks[blocks.length - 1]);
+      caret.collapse(false);
+    } else {
+      const fragment = document.createDocumentFragment();
+      fragment.append(...blocks);
+      range.insertNode(fragment);
+      caret.selectNodeContents(blocks[blocks.length - 1]);
+      caret.collapse(false);
+    }
+    selection.removeAllRanges();
+    selection.addRange(caret);
+    liftBlocks(root);
+    onChange(root.innerHTML);
+  }
+
+  /**
+   * removeFormat only knows bold, italic and the like. Pasted text also
+   * carries styled spans, so those go too: within the selection, or the
+   * caret's block when nothing is selected.
+   */
+  function clearFormatting() {
+    run("removeFormat");
+    const root = editor.current;
+    const selection = window.getSelection();
+    if (!root || !selection || selection.rangeCount === 0) return;
+    const range = selection.getRangeAt(0);
+    if (!root.contains(range.commonAncestorContainer)) return;
+    const scope = range.collapsed
+      ? enclosing(range.startContainer, ["P", "H2", "H3", "H4", "LI", "BLOCKQUOTE", "TD", "TH"])
+      : null;
+    if (range.collapsed && !scope) return;
+    const touched = Array.from(root.querySelectorAll<HTMLElement>("*")).filter((node) =>
+      scope ? scope.contains(node) : range.intersectsNode(node),
+    );
+    for (const node of touched) {
+      node.removeAttribute("style");
+      node.removeAttribute("class");
+    }
+    for (const node of touched) {
+      if (node.tagName === "SPAN" || node.tagName === "FONT") node.replaceWith(...Array.from(node.childNodes));
+    }
+    onChange(root.innerHTML);
+  }
+
   function addLink() {
     const url = window.prompt("Enter the link URL");
     if (url) run("createLink", url);
@@ -471,7 +593,7 @@ export default function RichTextEditor({
         <button
           type="button"
           title="Clear formatting"
-          onClick={() => run("removeFormat")}
+          onClick={clearFormatting}
           className={toolClass}
         >
           <FontAwesomeIcon icon={faEraser} />
@@ -480,7 +602,12 @@ export default function RichTextEditor({
           type="button"
           title={sourceMode ? "Return to visual editor" : "Edit live HTML"}
           aria-pressed={sourceMode}
-          onClick={() => setSourceMode((current) => !current)}
+          onClick={() => {
+            // Hand-edited HTML gets the same cleaning as a paste on its way
+            // back to the visual editor.
+            if (sourceMode) onChange(sanitizeEditorHtml(value));
+            setSourceMode((current) => !current);
+          }}
           className={`${toolClass} ${sourceMode ? "bg-cyan-400 text-slate-950" : ""}`}
         >
           HTML
@@ -495,6 +622,7 @@ export default function RichTextEditor({
         aria-required={required}
         data-placeholder="Write the blog post content…"
         onInput={(event) => onChange(event.currentTarget.innerHTML)}
+        onPaste={paste}
         hidden={sourceMode}
         className="rich-text-editor min-h-80 rounded-b-xl px-5 py-4 text-sm font-normal leading-7 text-slate-200 outline-none"
       />
