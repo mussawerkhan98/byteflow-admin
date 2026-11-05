@@ -12,6 +12,8 @@ export const SERVABLE = new Set([
   "image/jpeg",
   "image/png",
   "image/webp",
+  "image/avif",
+  // No longer accepted for upload; still served for images uploaded before.
   "image/gif",
   "image/svg+xml",
 ]);

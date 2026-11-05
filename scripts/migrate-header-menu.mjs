@@ -107,7 +107,7 @@ async function readCurrentHeader() {
     optional('SELECT * FROM site_settings LIMIT 1'),
     optional(`SELECT s.content FROM page_sections s JOIN pages p ON p.id = s.page_id
               WHERE p.slug = 'home' AND s.section_type = 'header_menu' ORDER BY s.sort_order LIMIT 1`),
-    optional('SELECT id, slug FROM services'),
+    optional("SELECT id, slug, title FROM services WHERE status = 'published'"),
   ])
   let savedBlock = null
   try {
@@ -124,7 +124,7 @@ async function readCurrentHeader() {
     })),
     siteSettings: settings[0] ?? null,
     savedBlock,
-    services: services.map((row) => ({ id: Number(row.id), slug: String(row.slug) })),
+    services: services.map((row) => ({ id: Number(row.id), slug: String(row.slug), title: String(row.title ?? '') })),
   })
 }
 
@@ -159,29 +159,32 @@ function seedStatements(seed) {
 console.log(`Database: ${host}${dryRun ? ' (dry run — nothing is written)' : ''}`)
 const seed = await readCurrentHeader()
 
-if (dryRun) {
-  console.log(JSON.stringify(seed, null, 2))
-  process.exit(0)
-}
-
-for (const statement of ddl) await db.execute(statement)
-for (const statement of settingsColumns) {
-  try {
-    await db.execute(statement)
-  } catch (error) {
-    if (!/duplicate column name/i.test(String(error))) throw error
+async function migrate() {
+  for (const statement of ddl) await db.execute(statement)
+  for (const statement of settingsColumns) {
+    try {
+      await db.execute(statement)
+    } catch (error) {
+      if (!/duplicate column name/i.test(String(error))) throw error
+    }
   }
-}
-console.log('Tables, indexes and site_settings columns are in place.')
+  console.log('Tables, indexes and site_settings columns are in place.')
 
-const existing = await Promise.all(['header_nav_items', 'header_mega_groups', 'header_menu_settings'].map(count))
-if (existing.some((n) => n > 0)) {
-  console.log(`Already seeded (${existing.join(' / ')} rows) — left as it is.`)
-} else {
-  await db.batch(seedStatements(seed), 'write')
-  console.log(
-    `Seeded ${seed.nav.length} bar entries, ${seed.groups.length} groups, ` +
-      `${seed.groups.reduce((n, g) => n + g.items.length, 0)} links and ${Object.keys(seed.settings).length} settings.`,
-  )
+  const existing = await Promise.all(['header_nav_items', 'header_mega_groups', 'header_menu_settings'].map(count))
+  if (existing.some((n) => n > 0)) {
+    console.log(`Already seeded (${existing.join(' / ')} rows) — left as it is.`)
+  } else {
+    await db.batch(seedStatements(seed), 'write')
+    console.log(
+      `Seeded ${seed.nav.length} bar entries, ${seed.groups.length} groups, ` +
+        `${seed.groups.reduce((n, g) => n + g.items.length, 0)} links and ${Object.keys(seed.settings).length} settings.`,
+    )
+  }
+  console.log('Header menu migration completed.')
 }
-console.log('Header menu migration completed.')
+
+// No process.exit(): on Windows it can abort while the database connection
+// is still closing. The script ends on its own once the client is closed.
+if (dryRun) console.log(JSON.stringify(seed, null, 2))
+else await migrate()
+db.close()

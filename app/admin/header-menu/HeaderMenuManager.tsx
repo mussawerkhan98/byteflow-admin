@@ -160,6 +160,16 @@ const moved = <T,>(list: T[], index: number, by: number) => {
 
 const addButton = "mt-4 rounded-lg border border-cyan-400/30 px-4 py-2 text-xs font-bold text-cyan-300";
 
+/** A link to a service saves that service's current name and page. */
+const withServiceNames = (groups: MegaGroup[], services: Service[]): MegaGroup[] =>
+  groups.map((group) => ({
+    ...group,
+    items: group.items.map((item) => {
+      const service = item.service_id ? services.find((s) => s.id === item.service_id) : undefined;
+      return service ? { ...item, label: service.title, href: `/${service.slug}` } : item;
+    }),
+  }));
+
 // ── Settings fields from header-menu-admin ──────────────────────────────────
 
 function SettingInput({ field, value, onChange }: { field: SettingField; value: string; onChange: (value: string) => void }) {
@@ -304,12 +314,15 @@ function GroupsEditor({
     if (!service) return updateItem(g, i, { service_id: null });
     updateItem(g, i, {
       service_id: service.id,
-      label: item.label || service.title,
+      // The service's own name, so the menu, the home page tabs and the
+      // service page all say the same thing.
+      label: service.title,
       href: `/${service.slug}`,
       description: item.description || service.excerpt.slice(0, LIMITS.itemDescription).replace(/\s+\S*$/, ""),
     });
   };
   const blankItem: MegaItem = { service_id: null, label: "", href: "", description: "", visible: true };
+  const linkedService = (item: MegaItem) => (isServices && item.service_id ? services.find((s) => s.id === item.service_id) : undefined);
 
   return (
     <fieldset className="md:col-span-2">
@@ -355,14 +368,18 @@ function GroupsEditor({
                         </select>
                       </label>
                     )}
-                    <TextField
-                      label="Label"
-                      help={isServices ? "A link to a service page shows that service's name from Services, so the menu matches the home page and the page itself." : undefined}
-                      value={item.label}
-                      max={LIMITS.itemLabel}
-                      onChange={(label) => updateItem(g, i, { label })}
-                    />
-                    <LinkField label="Link" value={item.href} required={isServices} onChange={(href) => updateItem(g, i, { href })} />
+                    {linkedService(item) ? (
+                      <p className="text-xs text-slate-400 md:col-span-2">
+                        Shows as <span className="font-semibold text-white">{linkedService(item)!.title}</span> and links to{" "}
+                        <span className="font-semibold text-white">/{linkedService(item)!.slug}</span>. The name comes from the
+                        Services screen, so the menu, the home page tabs and the service page always match.
+                      </p>
+                    ) : (
+                      <>
+                        <TextField label="Label" value={item.label} max={LIMITS.itemLabel} onChange={(label) => updateItem(g, i, { label })} />
+                        <LinkField label="Link" value={item.href} required={isServices} onChange={(href) => updateItem(g, i, { href })} />
+                      </>
+                    )}
                     {isServices && (
                       <TextField
                         label="Short description"
@@ -427,7 +444,7 @@ export default function HeaderMenuManager() {
         ? { nav: data.nav, cta: data.cta, settings }
         : tab === "insights"
           ? { settings }
-          : { groups: data.groups[tab], settings };
+          : { groups: tab === "services" ? withServiceNames(data.groups.services, data.services) : data.groups[tab], settings };
     try {
       const response = await fetch(`/api/admin/header-menu?part=${tab}`, {
         method: "PUT",

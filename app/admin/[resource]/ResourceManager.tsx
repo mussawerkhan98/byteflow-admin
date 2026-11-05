@@ -28,6 +28,8 @@ const isImageField = (name: string) =>
   !/(^|_)(alt|caption)(_|$)/.test(name) &&
   /(^|_)(image|logo|favicon)(_|$)/.test(name);
 const isUploadField = (name: string) => isImageField(name) || name === "icon";
+/** The alt text field saved with a picture field, when the screen has one. */
+const altFieldFor = (name: string) => (name === "image_url" ? "image_alt" : `${name}_alt`);
 /** What each image field takes (app/lib/image-rules.ts). */
 const uploadKind = (name: string): UploadKind =>
   name === "icon" ? "icon" : name === "og_image" ? "og" : name === "favicon_url" ? "favicon" : name === "logo_url" ? "logo" : "image";
@@ -620,10 +622,11 @@ export default function ResourceManager({
           <div className="mt-6 grid gap-6 md:grid-cols-2">
             {config.fields.map((field) => {
               if (field.name === "page_id" && lockedPageId) return null;
-              const hasAltField = config.fields.some((other) => other.name === "image_alt");
-              if (field.name === "image_alt" && hasAltField && config.fields.some((other) => other.name === "image_url")) return null;
+              // An alt text field is filled in inside its picture's upload box.
+              if (config.fields.some((other) => isImageField(other.name) && altFieldFor(other.name) === field.name)) return null;
               if (isUploadField(field.name)) {
-                const bindAlt = field.name === "image_url" && hasAltField;
+                const altField = altFieldFor(field.name);
+                const bindAlt = isImageField(field.name) && config.fields.some((other) => other.name === altField);
                 return (
                   <div key={field.name} className="md:col-span-2">
                     <ImageUpload
@@ -631,10 +634,10 @@ export default function ResourceManager({
                       kind={uploadKind(field.name)}
                       value={String(form[field.name] ?? "")}
                       onChange={(url) => change(field.name, url)}
-                      {...(bindAlt ? { alt: String(form.image_alt ?? ""), onAltChange: (alt: string) => change("image_alt", alt) } : {})}
+                      {...(bindAlt ? { alt: String(form[altField] ?? ""), onAltChange: (alt: string) => change(altField, alt) } : {})}
                       allowDecorative={backgroundField(field.name)}
                       help={field.help}
-                      error={fieldErrors[field.name] ?? (bindAlt ? fieldErrors.image_alt : undefined)}
+                      error={fieldErrors[field.name] ?? (bindAlt ? fieldErrors[altField] : undefined)}
                     />
                   </div>
                 );

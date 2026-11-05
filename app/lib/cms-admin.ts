@@ -45,6 +45,14 @@ const SERVICE_COLUMNS = [
   "ALTER TABLE services ADD COLUMN highlights TEXT NOT NULL DEFAULT ''",
   "ALTER TABLE services ADD COLUMN image_caption TEXT NOT NULL DEFAULT ''",
 ]
+/** The home page Selected Work card (website: app/lib/project-cards.ts). */
+const PROJECT_COLUMNS = [
+  "ALTER TABLE projects ADD COLUMN home_featured INTEGER NOT NULL DEFAULT 0",
+  "ALTER TABLE projects ADD COLUMN home_order INTEGER NOT NULL DEFAULT 0",
+  "ALTER TABLE projects ADD COLUMN challenge TEXT NOT NULL DEFAULT ''",
+  "ALTER TABLE projects ADD COLUMN card_image TEXT NOT NULL DEFAULT ''",
+  "ALTER TABLE projects ADD COLUMN card_image_alt TEXT NOT NULL DEFAULT ''",
+]
 const columnsReady = new Map<string, Promise<void>>()
 
 async function addColumns(statements: string[]) {
@@ -74,6 +82,7 @@ async function ensureResourceTable(resource: Resource) {
   if (resource.table === 'posts') return ensureColumns('posts', POST_COLUMNS)
   if (resource.table === 'site_settings') return ensureColumns('site_settings', SETTINGS_COLUMNS)
   if (resource.table === 'services') return ensureColumns('services', SERVICE_COLUMNS)
+  if (resource.table === 'projects') return ensureColumns('projects', PROJECT_COLUMNS)
   if (resource.table !== 'website_scripts') return
   await db.execute(`CREATE TABLE IF NOT EXISTS website_scripts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -146,6 +155,19 @@ export function checkServiceTab(data: Record<string, unknown>) {
     throw new FieldError('image_alt', 'Alt text required: describe the image, so screen readers and Google can read it')
 }
 
+/** Limits that keep a project's homepage card in shape, and no picture without alt text. */
+export function checkProjectCard(data: Record<string, unknown>) {
+  const limits: [string, string, number][] = [
+    ['challenge', 'Homepage card — business requirement', 220],
+    ['card_image_alt', 'Homepage card — image alt text', 125],
+  ]
+  for (const [name, label, max] of limits) {
+    if (String(data[name] ?? '').length > max) throw new FieldError(name, `${label} must be ${max} characters or fewer`)
+  }
+  if (String(data.card_image ?? '').trim() && !String(data.card_image_alt ?? '').trim())
+    throw new FieldError('card_image_alt', 'Alt text required: describe the image, so screen readers and Google can read it')
+}
+
 function clean(resource: Resource, input: Data) {
   // A problem with one field's value is reported against that field.
   const data = Object.fromEntries(
@@ -158,6 +180,7 @@ function clean(resource: Resource, input: Data) {
     }),
   )
   if (resource.table === 'services') checkServiceTab(data)
+  if (resource.table === 'projects') checkProjectCard(data)
   if (resource.table === 'site_settings') checkSiteFigures(data)
   if (resource.table === 'website_scripts') {
     const code = String(data.code ?? '')

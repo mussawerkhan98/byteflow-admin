@@ -400,7 +400,8 @@ export type SeedInput = {
   siteSettings: Record<string, unknown> | null;
   /** A saved header_menu home block, if the older screen was used. */
   savedBlock: Record<string, unknown> | null;
-  services: { id: number; slug: string }[];
+  /** Published services; a menu link to one takes its title. */
+  services: { id: number; slug: string; title?: string }[];
 };
 
 export type Seed = {
@@ -420,8 +421,11 @@ export function buildSeed(input: SeedInput): Seed {
   const s = input.siteSettings ?? {};
   const ctaLink = str(s.header_cta_link) || "/contact-us";
   const block = input.savedBlock ?? {};
-  const serviceId = (href: string) =>
-    input.services.find((service) => `/${service.slug}` === href.split(/[?#]/)[0])?.id ?? null;
+  const serviceFor = (href: string) =>
+    input.services.find((service) => `/${service.slug}` === href.split(/[?#]/)[0]);
+  const serviceId = (href: string) => serviceFor(href)?.id ?? null;
+  // One name per service: a link to a service page uses that service's title.
+  const serviceLabel = (href: string, label: string) => serviceFor(href)?.title || label;
 
   const nav: NavRow[] = [];
   for (const item of input.menuItems) {
@@ -454,14 +458,14 @@ export function buildSeed(input: SeedInput): Seed {
       let group = serviceGroups.find((g) => g.title.toLowerCase() === title.toLowerCase());
       if (!group) serviceGroups.push((group = { menu: "services", title, items: [] }));
       const href = str(item.link);
-      group.items.push({ service_id: serviceId(href), label: str(item.title), href, description: str(item.description), visible: true });
+      group.items.push({ service_id: serviceId(href), label: serviceLabel(href, str(item.title)), href, description: str(item.description), visible: true });
     }
   } else {
     for (const group of DEFAULT_SERVICE_GROUPS)
       serviceGroups.push({
         menu: "services",
         title: group.title,
-        items: group.items.map((item) => ({ ...item, service_id: serviceId(item.href), visible: true })),
+        items: group.items.map((item) => ({ ...item, label: serviceLabel(item.href, item.label), service_id: serviceId(item.href), visible: true })),
       });
   }
 

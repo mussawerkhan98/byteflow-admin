@@ -76,6 +76,32 @@ export const homeBlocks: HomeBlockDef[] = [
     },
   },
   {
+    key: "home_work",
+    label: "Selected work heading",
+    shows:
+      "The heading above the project cards after Services. The projects are picked on the Projects screen with “Feature on homepage”.",
+    fields: [
+      { name: "eyebrow", label: "Small heading", type: "text" },
+      { name: "heading", label: "Heading — first part", type: "text", help: headingHelp },
+      { name: "heading_soft", label: "Heading — second part", type: "text" },
+      { name: "intro", label: "Intro paragraph", type: "textarea" },
+      { name: "link_label", label: "Link text", type: "text" },
+      { name: "link", label: "Link", type: "link" },
+    ],
+    lists: [],
+    defaults: {
+      fields: {
+        eyebrow: "Selected work",
+        heading: "Real businesses.",
+        heading_soft: "Real results.",
+        intro: "A look at recent projects for UAE businesses, from IT support and security to cloud and the web.",
+        link_label: "Explore our work",
+        link: "/projects",
+      },
+      lists: {},
+    },
+  },
+  {
     key: "home_about",
     label: "About Byteflow",
     shows:

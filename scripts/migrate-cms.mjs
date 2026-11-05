@@ -39,6 +39,10 @@ const upgrades = [
   // Home page Services tabs (cms-admin.ts SERVICE_COLUMNS).
   "ALTER TABLE services ADD COLUMN eyebrow TEXT NOT NULL DEFAULT ''", "ALTER TABLE services ADD COLUMN tagline TEXT NOT NULL DEFAULT ''",
   "ALTER TABLE services ADD COLUMN highlights TEXT NOT NULL DEFAULT ''", "ALTER TABLE services ADD COLUMN image_caption TEXT NOT NULL DEFAULT ''",
+  // Home page Selected Work (cms-admin.ts PROJECT_COLUMNS).
+  'ALTER TABLE projects ADD COLUMN home_featured INTEGER NOT NULL DEFAULT 0', 'ALTER TABLE projects ADD COLUMN home_order INTEGER NOT NULL DEFAULT 0',
+  "ALTER TABLE projects ADD COLUMN challenge TEXT NOT NULL DEFAULT ''",
+  "ALTER TABLE projects ADD COLUMN card_image TEXT NOT NULL DEFAULT ''", "ALTER TABLE projects ADD COLUMN card_image_alt TEXT NOT NULL DEFAULT ''",
 ]
 for (const statement of upgrades) { try { await db.execute(statement) } catch (error) { if (!/duplicate column name/i.test(String(error))) throw error } }
 console.log('CMS schema migration completed.')
