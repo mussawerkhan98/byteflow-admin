@@ -244,7 +244,7 @@ export default function PageWorkspace({ pageId }: { pageId: number }) {
               value={heroForm.hero_background_image ?? ""}
               onChange={(url) => setHeroForm((current) => ({ ...current, hero_background_image: url }))}
               allowDecorative
-              help="Shown behind the heading, so it is usually decorative."
+              help="Shown darkened behind the whole banner, so it is usually decorative. For a clear picture beside the text on the home page, use “Picture on the right” in Home page extras below."
             />
           </div>
           <label className="text-xs font-semibold text-slate-300">

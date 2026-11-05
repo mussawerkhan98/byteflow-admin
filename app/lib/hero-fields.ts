@@ -30,13 +30,13 @@ export const heroExtraFields: HeroExtraField[] = [
   },
   {
     name: "hero_image",
-    label: "Visual (optional)",
+    label: "Picture on the right (optional)",
     type: "image",
-    help: "A light illustration behind the response-times card. Upload a WebP, about 1200×1000 and under 150 KB. Blank shows a soft glow instead.",
+    help: "Shown clearly on the right of the home page banner; the response-times card then moves under the text. A landscape photo about 1600×1200 works best (converted to WebP). Blank keeps the card on the right.",
   },
   {
     name: "hero_image_alt",
-    label: "Visual — alt text",
+    label: "Picture — alt text",
     type: "text",
     max: 125,
     help: "Describe the image for screen readers and Google. Needed if you upload a visual.",
