@@ -168,96 +168,35 @@ export const homeBlocks: HomeBlockDef[] = [
     key: "home_about",
     label: "About Byteflow",
     shows:
-      "The About block: headline, intro, the founder's quote and two buttons on the left; a bento of four tiles on the right (photo, years in business, Google rating, coverage); and four feature rows underneath. The years, rating and review count come from Contact details & logo; the quote, name, role and photo come from About Us — Founder.",
+      "The dark navy About section: heading and paragraph, then the numbered reasons on the right. The light card on the left shows the reason under the pointer, with a small picture and a link to its service; on phones each reason opens like an accordion.",
     fields: [
-      { name: "eyebrow", label: "Small heading", type: "text" },
-      { name: "heading", label: "Headline — first line", type: "text", help: "Keep each line short (about 25 characters) so it stays on one line." },
-      { name: "heading_soft", label: "Headline — second line (grey)", type: "text", help: figuresNote },
-      { name: "intro", label: "Intro paragraph", type: "textarea" },
-      {
-        name: "show_quote",
-        label: "Founder quote",
-        type: "select",
-        help: "The quote, name, role and photo are edited under About Us — Founder (its heading is the quote). It is hidden when that heading is empty.",
-        options: [
-          { value: "yes", label: "Show" },
-          { value: "no", label: "Hide" },
-        ],
-      },
-      { name: "primary_label", label: "Main button text", type: "text" },
-      { name: "primary_link", label: "Main button link", type: "link" },
-      { name: "secondary_label", label: "Text link", type: "text" },
-      { name: "secondary_link", label: "Text link — where it goes", type: "link" },
-      {
-        name: "image_url",
-        label: "Photo tile — team or office photo",
-        type: "image",
-        upload: "photo",
-        help: "The tall tile, cropped to fill (portrait works best, about 1200×1500). Converted to WebP. Until one is uploaded, the built-in dark artwork shows.",
-      },
-      {
-        name: "image_alt",
-        label: "Photo description (alt text)",
-        type: "text",
-        help: "Required for an uploaded photo: say what it shows, e.g. “Byteflow engineers supporting a Dubai office”.",
-      },
-      { name: "image_caption", label: "Photo tile — caption", type: "text", help: "Shown over the bottom of an uploaded photo." },
-      { name: "image_badge", label: "Photo tile — caption on the built-in artwork", type: "text", help: `Shown until a photo is uploaded. ${figuresNote}` },
-      {
-        name: "show_years_badge",
-        label: "Years tile",
-        type: "select",
-        options: [
-          { value: "yes", label: "Show" },
-          { value: "no", label: "Hide" },
-        ],
-      },
-      { name: "years_label", label: "Years tile — text", type: "text", help: "The number above it counts from the year founded in Contact details & logo, so it updates itself every January." },
-      {
-        name: "show_rating_badge",
-        label: "Google rating tile",
-        type: "select",
-        options: [
-          { value: "yes", label: "Show" },
-          { value: "no", label: "Hide" },
-        ],
-      },
-      { name: "rating_label", label: "Rating tile — text", type: "text", help: `Under the rating from Contact details & logo. ${figuresNote} The reviewer initials are from Customer reviews.` },
-      { name: "reviews_label", label: "Rating tile — link text", type: "text", help: "Links to the Google Business profile set in Contact details & logo; hidden until one is set." },
-      {
-        name: "show_coverage",
-        label: "Coverage tile",
-        type: "select",
-        options: [
-          { value: "yes", label: "Show" },
-          { value: "no", label: "Hide" },
-        ],
-      },
-      { name: "coverage_title", label: "Coverage tile — heading", type: "text" },
-      { name: "coverage_locations", label: "Coverage tile — places", type: "text", help: "Separated by commas, e.g. Dubai, Sharjah, Abu Dhabi. Each becomes a chip." },
-      { name: "coverage_note", label: "Coverage tile — note", type: "text" },
+      { name: "eyebrow", label: "Small heading", type: "text", help: figuresNote },
+      { name: "heading", label: "Heading — first part (white)", type: "text" },
+      { name: "heading_soft", label: "Heading — second part (grey)", type: "text", help: figuresNote },
+      { name: "intro", label: "Paragraph", type: "textarea" },
     ],
     lists: [
       {
         name: "highlights",
-        label: "Features (the numbered rows under the bento)",
-        itemLabel: "Feature",
+        label: "Reasons",
+        itemLabel: "Reason",
         max: 4,
+        help: "Numbered in this order. Each one's text and link show in the preview card; a link to a service page is labelled with that service's name.",
         fields: [
           { name: "title", label: "Title", type: "text" },
           { name: "description", label: "Text (one or two lines)", type: "textarea" },
-          { name: "link", label: "Page the row links to", type: "link" },
+          { name: "link", label: "Link — the related service page", type: "link" },
           {
             name: "icon",
-            label: "Icon",
+            label: "Picture in the preview card",
             type: "select",
             options: [
-              { value: "layers", label: "Layers (everything in one place)" },
-              { value: "receipt", label: "Banknote (pricing)" },
-              { value: "clock", label: "Clock (response time)" },
-              { value: "cloud", label: "Cloud" },
-              { value: "shield", label: "Shield (security)" },
-              { value: "chat", label: "Speech bubbles (support)" },
+              { value: "layers", label: "One team: network, cloud, security, web" },
+              { value: "receipt", label: "Fixed monthly plan" },
+              { value: "clock", label: "Response timeline (on site within 2 hours)" },
+              { value: "cloud", label: "Microsoft 365 set up" },
+              { value: "shield", label: "Protection: firewall, endpoint, email" },
+              { value: "chat", label: "Support chat" },
             ],
           },
           {
@@ -274,29 +213,11 @@ export const homeBlocks: HomeBlockDef[] = [
     ],
     defaults: {
       fields: {
-        eyebrow: "About Byteflow",
+        eyebrow: "About Byteflow · Since {founded}",
         heading: "Your trusted IT partner,",
         heading_soft: "serving Dubai since {founded}.",
         intro:
           "We make enterprise-grade IT accessible to every business in the UAE, so you can focus entirely on growth.",
-        show_quote: "yes",
-        primary_label: "Get in touch",
-        primary_link: "/contact-us",
-        secondary_label: "More about Byteflow",
-        secondary_link: "/about-us",
-        image_url: "/images/hero/hero.webp",
-        image_alt: "Illustration of connected servers and network links",
-        image_caption: "Our engineers on site in Dubai",
-        image_badge: "Based in Dubai since {founded}",
-        show_years_badge: "yes",
-        years_label: "Years keeping UAE businesses running",
-        show_rating_badge: "yes",
-        rating_label: "Google rating · {reviews} reviews",
-        reviews_label: "Read reviews",
-        show_coverage: "yes",
-        coverage_title: "On-site across the UAE",
-        coverage_locations: "Dubai, Sharjah, Abu Dhabi",
-        coverage_note: "2-hr on-site response",
       },
       lists: {
         highlights: [
@@ -462,21 +383,6 @@ function clean(field: HomeField, raw: unknown): string {
  * The content to save for a block: only its own fields, trimmed and capped,
  * lists cut to their maximum and stripped of items with no title.
  */
-/**
- * What a block can't be saved with, beyond what sanitizeHomeBlock already
- * cleans up; null when it is fine. An uploaded About photo needs its own
- * description: the built-in artwork's alt text doesn't describe it.
- */
-export function checkHomeBlock(def: HomeBlockDef, content: Record<string, unknown>): string | null {
-  if (def.key === "home_about") {
-    const image = String(content.image_url ?? "");
-    const alt = String(content.image_alt ?? "").trim();
-    if (image && image !== def.defaults.fields.image_url && (!alt || alt === def.defaults.fields.image_alt))
-      return "Photo description (alt text): describe the uploaded photo, e.g. “Byteflow engineers supporting a Dubai office”.";
-  }
-  return null;
-}
-
 export function sanitizeHomeBlock(def: HomeBlockDef, body: Record<string, unknown>) {
   const content: Record<string, unknown> = {};
   for (const field of def.fields) content[field.name] = clean(field, body?.[field.name]);
