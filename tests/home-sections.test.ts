@@ -89,3 +89,26 @@ test("About features: four at most, each with an icon and show or hide", () => {
   assert.equal(saved[0].icon, "layers");
   assert.equal(saved[1].show, "no");
 });
+
+test("a scenario's linked service is saved as a service slug, or nothing", () => {
+  const needs = getHomeBlockDef("home_needs")!;
+  const scenario = (service: string) =>
+    (sanitizeHomeBlock(needs, { scenarios: [{ title: "Moving office.", service, show: "maybe" }] }).scenarios as Record<string, string>[])[0];
+  assert.equal(scenario("cyber-security").service, "cyber-security");
+  assert.equal(scenario("javascript:alert(1)").service, "");
+  assert.equal(scenario("/cyber-security").service, "");
+  // An unknown show/hide value falls back to Show.
+  assert.equal(scenario("cyber-security").show, "yes");
+});
+
+test("the three default scenarios match the website's", () => {
+  const needs = getHomeBlockDef("home_needs")!;
+  assert.deepEqual(
+    needs.defaults.lists.scenarios.map((s) => [s.label, s.service, s.show]),
+    [
+      ["A new office", "system-integration", "yes"],
+      ["A safer business", "cyber-security", "yes"],
+      ["More customers", "website-development", "yes"],
+    ],
+  );
+});

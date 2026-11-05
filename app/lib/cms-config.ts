@@ -134,6 +134,7 @@ export const resources = {
           "founder",
           "home_services_intro",
           "home_work",
+          "home_needs",
           "home_about",
           "home_promise",
           "home_process",

@@ -10,7 +10,8 @@
  * Pure data and functions, so the save rules can be tested directly.
  */
 
-export type HomeFieldType = "text" | "textarea" | "link" | "image" | "select";
+/** "service": one of the published services, saved by its slug. */
+export type HomeFieldType = "text" | "textarea" | "link" | "image" | "select" | "service";
 
 export type HomeField = {
   name: string;
@@ -99,6 +100,68 @@ export const homeBlocks: HomeBlockDef[] = [
         link: "/projects",
       },
       lists: {},
+    },
+  },
+  {
+    key: "home_needs",
+    label: "Where does your IT need help?",
+    shows:
+      "The warm off-white band after Selected work: three common starting points, each linking to a service, and the process line under them.",
+    fields: [
+      { name: "eyebrow", label: "Small heading", type: "text" },
+      { name: "heading", label: "Heading", type: "text" },
+      { name: "link_label", label: "Link on the right — text", type: "text" },
+      { name: "link", label: "Link on the right — where it goes", type: "link" },
+      {
+        name: "steps",
+        label: "Bottom line — steps",
+        type: "textarea",
+        help: "One step per line; they show in capitals with arrows between them.",
+      },
+      { name: "steps_link_label", label: "Bottom line — link text", type: "text" },
+      { name: "steps_link", label: "Bottom line — link", type: "link" },
+    ],
+    lists: [
+      {
+        name: "scenarios",
+        label: "Scenarios",
+        itemLabel: "Scenario",
+        max: 3,
+        help: "The columns, in this order. Each links to its service under the service's own name from the Services screen.",
+        fields: [
+          { name: "label", label: "Small label", type: "text", help: "Shown in capitals after the number, e.g. “A new office”." },
+          { name: "title", label: "Title", type: "text" },
+          { name: "description", label: "Text", type: "textarea" },
+          { name: "service", label: "Linked service", type: "service" },
+          {
+            name: "show",
+            label: "On the website",
+            type: "select",
+            options: [
+          { value: "yes", label: "Show" },
+          { value: "no", label: "Hide" },
+        ],
+          },
+        ],
+      },
+    ],
+    defaults: {
+      fields: {
+        eyebrow: "Your business comes first",
+        heading: "Where does your IT need help?",
+        link_label: "Book a free IT assessment",
+        link: "/contact-us",
+        steps: "Free consultation\nProposal\nSetup\nOngoing support",
+        steps_link_label: "How we work",
+        steps_link: "/#how-we-work",
+      },
+      lists: {
+        scenarios: [
+          { label: "A new office", title: "Moving or opening an office.", description: "Cabling, Wi-Fi, CCTV and access control planned and installed together, so your team works from day one.", service: "system-integration", show: "yes" },
+          { label: "A safer business", title: "Worried about ransomware or data loss.", description: "Firewall, endpoint and email protection with tested backups, so one bad click does not stop the business.", service: "cyber-security", show: "yes" },
+          { label: "More customers", title: "Need a better website or more leads.", description: "A fast, mobile-first website, landing pages and chatbots built to turn visitors into enquiries.", service: "website-development", show: "yes" },
+        ],
+      },
     },
   },
   {
@@ -372,7 +435,7 @@ export function getHomeBlockDef(key: string | null): HomeBlockDef | undefined {
   return homeBlocks.find((block) => block.key === key);
 }
 
-const LIMITS: Record<HomeFieldType, number> = { text: 200, textarea: 2000, link: 500, image: 500, select: 40 };
+const LIMITS: Record<HomeFieldType, number> = { text: 200, textarea: 2000, link: 500, image: 500, select: 40, service: 100 };
 
 /**
  * Links may be site paths, web addresses, phone, email or WhatsApp links;
@@ -390,6 +453,8 @@ function clean(field: HomeField, raw: unknown): string {
   const value = typeof raw === "string" ? raw.trim().slice(0, LIMITS[field.type]) : "";
   // Only one of its options; anything else is the first (its default).
   if (field.type === "select") return field.options?.some((option) => option.value === value) ? value : field.options?.[0]?.value ?? "";
+  // A service slug, or nothing: the website looks the service up when it shows the link.
+  if (field.type === "service") return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value) ? value : "";
   return field.type === "link" || field.type === "image" ? safeUrl(value, field.type) : value;
 }
 
