@@ -1,7 +1,6 @@
 import { strict as assert } from "node:assert";
 import { test } from "node:test";
 import {
-  checkHomeBlock,
   getHomeBlockDef,
   homeBlockFormValues,
   homeBlocks,
@@ -59,33 +58,50 @@ test("the form starts from the website's wording, and saved values win", () => {
 
 test("a choice keeps one of its options; anything else falls back to the first", () => {
   const about = getHomeBlockDef("home_about")!;
-  const saved = sanitizeHomeBlock(about, { show_quote: "<script>", show_coverage: "no" });
-  assert.equal(saved.show_quote, "yes");
-  assert.equal(saved.show_coverage, "no");
+  const saved = sanitizeHomeBlock(about, {
+    highlights: [
+      { title: "A", icon: "<script>", show: "no" },
+      { title: "B", icon: "shield", show: "maybe" },
+    ],
+  }).highlights as Record<string, string>[];
+  assert.deepEqual(saved.map((item) => [item.icon, item.show]), [["layers", "no"], ["shield", "yes"]]);
 });
 
 test("no default types a figure that the site-wide settings provide", () => {
-  assert.ok(!/\b(2017|500\+|574)\b/.test(JSON.stringify(homeBlocks.map((b) => b.defaults))));
-  assert.equal(getHomeBlockDef("home_about")!.defaults.fields.rating_label, "Google rating · {reviews} reviews");
+  assert.ok(!/(2017|500+|574)/.test(JSON.stringify(homeBlocks.map((b) => b.defaults))));
+  assert.equal(getHomeBlockDef("home_about")!.defaults.fields.eyebrow, "About Byteflow · Since {founded}");
 });
 
-test("an uploaded About photo can't be saved without its own description", () => {
+test("About: heading, paragraph and up to four reasons, nothing from the old bento", () => {
   const about = getHomeBlockDef("home_about")!;
-  const save = (body: Record<string, unknown>) => checkHomeBlock(about, sanitizeHomeBlock(about, body));
-  // The built-in artwork keeps its own description.
-  assert.equal(save({ image_url: about.defaults.fields.image_url, image_alt: about.defaults.fields.image_alt }), null);
-  assert.match(save({ image_url: "/api/media/90" }) ?? "", /alt text/);
-  assert.match(save({ image_url: "/api/media/90", image_alt: about.defaults.fields.image_alt }) ?? "", /alt text/);
-  assert.equal(save({ image_url: "/api/media/90", image_alt: "Byteflow engineers supporting a Dubai office" }), null);
-  assert.equal(about.fields.find((field) => field.name === "image_url")?.upload, "photo");
-});
-
-test("About features: four at most, each with an icon and show or hide", () => {
-  const about = getHomeBlockDef("home_about")!;
+  assert.deepEqual(about.fields.map((field) => field.name), ["eyebrow", "heading", "heading_soft", "intro"]);
   const saved = sanitizeHomeBlock(about, {
-    highlights: Array.from({ length: 6 }, (_, i) => ({ title: `Feature ${i}`, icon: i ? "cloud" : "rocket", show: i === 1 ? "no" : "yes" })),
-  }).highlights as Record<string, string>[];
-  assert.equal(saved.length, 4);
-  assert.equal(saved[0].icon, "layers");
-  assert.equal(saved[1].show, "no");
+    image_url: "/api/media/90",
+    highlights: Array.from({ length: 6 }, (_, i) => ({ title: `Reason ${i}`, link: "/cyber-security" })),
+  });
+  assert.equal(saved.image_url, undefined);
+  assert.equal((saved.highlights as unknown[]).length, 4);
+});
+
+test("a scenario's linked service is saved as a service slug, or nothing", () => {
+  const needs = getHomeBlockDef("home_needs")!;
+  const scenario = (service: string) =>
+    (sanitizeHomeBlock(needs, { scenarios: [{ title: "Moving office.", service, show: "maybe" }] }).scenarios as Record<string, string>[])[0];
+  assert.equal(scenario("cyber-security").service, "cyber-security");
+  assert.equal(scenario("javascript:alert(1)").service, "");
+  assert.equal(scenario("/cyber-security").service, "");
+  // An unknown show/hide value falls back to Show.
+  assert.equal(scenario("cyber-security").show, "yes");
+});
+
+test("the three default scenarios match the website's", () => {
+  const needs = getHomeBlockDef("home_needs")!;
+  assert.deepEqual(
+    needs.defaults.lists.scenarios.map((s) => [s.label, s.service, s.show]),
+    [
+      ["A new office", "system-integration", "yes"],
+      ["A safer business", "cyber-security", "yes"],
+      ["More customers", "website-development", "yes"],
+    ],
+  );
 });

@@ -9,6 +9,8 @@ import { siteUrl } from "../../lib/admin-guide";
 type Item = Record<string, string>;
 type FormValues = Record<string, string | Item[]>;
 type Notice = { type: "ok" | "error"; text: string } | null;
+/** The published services a "service" field can link to. */
+type ServiceOption = { slug: string; title: string };
 
 const inputClass =
   "mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-3 text-sm outline-none focus:border-cyan-400";
@@ -20,7 +22,30 @@ async function fetchBlock(key: string) {
   return { ok: response.ok, data };
 }
 
-function FieldInput({ field, value, onChange }: { field: HomeField; value: string; onChange: (value: string) => void }) {
+function FieldInput({
+  field,
+  value,
+  onChange,
+  services,
+}: {
+  field: HomeField;
+  value: string;
+  onChange: (value: string) => void;
+  services: ServiceOption[];
+}) {
+  if (field.type === "service")
+    return (
+      <select value={value} onChange={(event) => onChange(event.target.value)} className={inputClass}>
+        <option value="">No link</option>
+        {/* A service unpublished since: kept, but the website shows no link. */}
+        {value && !services.some((service) => service.slug === value) && <option value={value}>{value} (not published: no link)</option>}
+        {services.map((service) => (
+          <option key={service.slug} value={service.slug}>
+            {service.title}
+          </option>
+        ))}
+      </select>
+    );
   if (field.type === "select")
     return (
       <select value={value || field.options?.[0]?.value} onChange={(event) => onChange(event.target.value)} className={inputClass}>
@@ -45,7 +70,17 @@ function FieldInput({ field, value, onChange }: { field: HomeField; value: strin
   );
 }
 
-function ListEditor({ list, items, onChange }: { list: HomeList; items: Item[]; onChange: (items: Item[]) => void }) {
+function ListEditor({
+  list,
+  items,
+  onChange,
+  services,
+}: {
+  list: HomeList;
+  items: Item[];
+  onChange: (items: Item[]) => void;
+  services: ServiceOption[];
+}) {
   const titleField = list.fields.find((field) => field.name === "title");
   const hasImage = list.fields.some((field) => field.type === "image");
   const update = (index: number, name: string, value: string) =>
@@ -100,7 +135,8 @@ function ListEditor({ list, items, onChange }: { list: HomeList; items: Item[]; 
                 ) : hasImage && field.name === "title" ? null : (
                   <label key={field.name} className={`${labelClass} ${field.type === "textarea" ? "md:col-span-2" : ""}`}>
                     {field.label}
-                    <FieldInput field={field} value={item[field.name] ?? ""} onChange={(value) => update(index, field.name, value)} />
+                    {field.help && <span className="mt-1 block font-normal text-slate-500">{field.help}</span>}
+                    <FieldInput field={field} value={item[field.name] ?? ""} onChange={(value) => update(index, field.name, value)} services={services} />
                   </label>
                 ),
               )}
@@ -132,7 +168,24 @@ export default function HomeSectionsManager() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState<Notice>(null);
+  const [services, setServices] = useState<ServiceOption[]>([]);
   const def = homeBlocks.find((block) => block.key === active)!;
+  const needsServices = def.lists.some((list) => list.fields.some((field) => field.type === "service"));
+
+  // Loaded once, the first time a section with a service picker is opened.
+  useEffect(() => {
+    if (!needsServices || services.length) return;
+    void fetch("/api/admin/services")
+      .then((response) => response.json())
+      .then((data: { records?: Record<string, unknown>[] }) =>
+        setServices(
+          (data.records ?? [])
+            .filter((row) => row.status === "published")
+            .map((row) => ({ slug: String(row.slug), title: String(row.title) })),
+        ),
+      )
+      .catch(() => setNotice({ type: "error", text: "The services list could not be loaded. Check your connection." }));
+  }, [needsServices, services.length]);
 
   const apply = useCallback(
     ({ ok, data }: { ok: boolean; data: { error?: string; saved?: boolean; content?: FormValues } }) => {
@@ -269,7 +322,7 @@ export default function HomeSectionsManager() {
                 <label key={field.name} className={`${labelClass} ${field.type === "textarea" ? "md:col-span-2" : ""}`}>
                   {field.label}
                   {field.help && <span className="mt-1 block font-normal text-slate-500">{field.help}</span>}
-                  <FieldInput field={field} value={String(form[field.name] ?? "")} onChange={(value) => change(field.name, value)} />
+                  <FieldInput field={field} value={String(form[field.name] ?? "")} onChange={(value) => change(field.name, value)} services={services} />
                 </label>
               );
             })}
@@ -279,6 +332,7 @@ export default function HomeSectionsManager() {
                 list={list}
                 items={Array.isArray(form[list.name]) ? (form[list.name] as Item[]) : []}
                 onChange={(items) => change(list.name, items)}
+                services={services}
               />
             ))}
           </div>
