@@ -10,13 +10,17 @@
  * Pure data and functions, so the save rules can be tested directly.
  */
 
-export type HomeFieldType = "text" | "textarea" | "link" | "image";
+export type HomeFieldType = "text" | "textarea" | "link" | "image" | "select";
 
 export type HomeField = {
   name: string;
   label: string;
   type: HomeFieldType;
   help?: string;
+  /** "select" only: the values it can hold, the first being the default. */
+  options?: { value: string; label: string }[];
+  /** "image" only: "logo" takes SVG or WebP as is; "photo" is converted to WebP before upload. */
+  upload?: "logo" | "photo";
 };
 
 export type HomeList = {
@@ -26,6 +30,8 @@ export type HomeList = {
   itemLabel: string;
   max: number;
   help?: string;
+  /** No default items: nothing shows on the website until one is added (client logos). */
+  startsEmpty?: boolean;
   fields: HomeField[];
 };
 
@@ -42,7 +48,89 @@ export type HomeBlockDef = {
 const headingHelp =
   "Shown in two tones: this part in dark, the next field in soft grey.";
 
+/** Text on this screen can quote the site-wide figures (Contact details & logo). */
+const figuresNote =
+  "Type {clients}, {rating}, {reviews}, {founded} or {years} to quote the site-wide figures from Contact details & logo.";
+
 export const homeBlocks: HomeBlockDef[] = [
+  {
+    key: "home_trust",
+    label: "Trust strip",
+    shows:
+      "The strip under the top banner: up to four numbers on the left and client logos on the right. Clients, the Google rating and years in Dubai come from Contact details & logo, so they match every other page; the rating links to the Google Business profile set there. With no logos up, the logo side is hidden and stats marked “Only while there are no logos” show instead.",
+    fields: [
+      { name: "logos_label", label: "Small label above the logos", type: "text", help: "Shown in capitals." },
+    ],
+    lists: [
+      {
+        name: "stats",
+        label: "Stats",
+        itemLabel: "Stat",
+        max: 4,
+        help: figuresNote,
+        fields: [
+          { name: "title", label: "Line under the number", type: "text" },
+          {
+            name: "figure",
+            label: "Number shown",
+            type: "select",
+            options: [
+              { value: "clients", label: "Number of clients" },
+              { value: "rating", label: "Google rating, with ★ (links to Google)" },
+              { value: "years", label: "Years in business, with + (counted from the year founded)" },
+              { value: "founded", label: "Year founded" },
+              { value: "custom", label: "Your own number (type it below)" },
+            ],
+          },
+          { name: "value", label: "Your own number (only for “Your own number”, e.g. 2 hrs)", type: "text" },
+          {
+            name: "show",
+            label: "Show on the website",
+            type: "select",
+            options: [
+              { value: "yes", label: "Show" },
+              { value: "no_logos", label: "Only while there are no logos" },
+              { value: "no", label: "Hide" },
+            ],
+          },
+        ],
+      },
+      {
+        name: "logos",
+        label: "Client logos",
+        itemLabel: "Logo",
+        max: 8,
+        startsEmpty: true,
+        help: "Only add the logos of clients who have agreed to be shown. Upload SVG (best) or WebP. They show in grey and turn to full colour on hover, all at the same height; five or six look best. The client name is the logo's alt text.",
+        fields: [
+          { name: "title", label: "Client name (alt text)", type: "text" },
+          { name: "image", label: "Logo (SVG or WebP)", type: "image", upload: "logo" },
+          { name: "link", label: "Link (optional)", type: "link" },
+          {
+            name: "show",
+            label: "Show on the website",
+            type: "select",
+            options: [
+              { value: "yes", label: "Show" },
+              { value: "no", label: "Hide" },
+            ],
+          },
+        ],
+      },
+    ],
+    defaults: {
+      fields: { logos_label: "Trusted by teams across the UAE" },
+      lists: {
+        stats: [
+          { title: "Businesses supported across the UAE", figure: "clients", value: "", show: "yes" },
+          { title: "Google rating · {reviews} reviews", figure: "rating", value: "", show: "yes" },
+          { title: "Years in Dubai", figure: "years", value: "", show: "yes" },
+          { title: "On-site response across Dubai, Sharjah & Abu Dhabi", figure: "custom", value: "2 hrs", show: "no_logos" },
+        ],
+        logos: [],
+      },
+    },
+  },
   {
     key: "home_services_intro",
     label: "Services intro",
@@ -69,31 +157,83 @@ export const homeBlocks: HomeBlockDef[] = [
     key: "home_about",
     label: "About Byteflow",
     shows:
-      "The About block: headline, the two photo frames, the years badge, the four reasons with arrow buttons and the two buttons under them. The front photo is the founder photo from “About Us — Founder”.",
+      "The About block: headline, intro and two buttons on the left, a large photo with the years and Google rating badges on the right, and four features in a row underneath. The years and the rating come from Contact details & logo.",
     fields: [
       { name: "eyebrow", label: "Small heading", type: "text" },
       { name: "heading", label: "Headline — first line", type: "text", help: "Keep each line short (about 25 characters) so it stays on one line." },
-      { name: "heading_soft", label: "Headline — second line (grey)", type: "text" },
+      { name: "heading_soft", label: "Headline — second line (grey)", type: "text", help: figuresNote },
       { name: "intro", label: "Intro paragraph", type: "textarea" },
-      { name: "image_url", label: "Back image", type: "image", help: "The large image behind the founder photo." },
-      { name: "image_badge", label: "Label on the image", type: "text" },
-      { name: "founded_year", label: "Year founded", type: "text", help: "The years badge counts from this year, so it updates itself every January." },
-      { name: "years_label", label: "Years badge text", type: "text" },
       { name: "primary_label", label: "Main button text", type: "text" },
       { name: "primary_link", label: "Main button link", type: "link" },
-      { name: "secondary_label", label: "Second button text", type: "text" },
-      { name: "secondary_link", label: "Second button link", type: "link" },
+      { name: "secondary_label", label: "Text link", type: "text" },
+      { name: "secondary_link", label: "Text link — where it goes", type: "link" },
+      {
+        name: "image_url",
+        label: "Photo",
+        type: "image",
+        upload: "photo",
+        help: "Shown 4:3 with rounded corners, cropped to fill. Upload a photo about 1600×1200; it is converted to WebP. Until one is uploaded, the built-in dark artwork shows.",
+      },
+      {
+        name: "image_alt",
+        label: "Photo description (alt text)",
+        type: "text",
+        help: "Required for an uploaded photo: say what it shows, e.g. “Byteflow engineers supporting a Dubai office”.",
+      },
+      { name: "image_badge", label: "Label at the top left of the photo", type: "text", help: `Leave blank for none. ${figuresNote}` },
+      {
+        name: "show_years_badge",
+        label: "Years badge on the photo",
+        type: "select",
+        options: [
+          { value: "yes", label: "Show" },
+          { value: "no", label: "Hide" },
+        ],
+      },
+      { name: "years_label", label: "Years badge text", type: "text", help: "The number beside it counts from the year founded in Contact details & logo, so it updates itself every January." },
+      {
+        name: "show_rating_badge",
+        label: "Google rating badge on the photo",
+        type: "select",
+        options: [
+          { value: "yes", label: "Show" },
+          { value: "no", label: "Hide" },
+        ],
+      },
+      { name: "rating_label", label: "Rating badge text", type: "text", help: "Shown after the rating and ★ from Contact details & logo; links to the Google Business profile set there." },
     ],
     lists: [
       {
         name: "highlights",
-        label: "Reasons (with arrow buttons)",
-        itemLabel: "Reason",
-        max: 6,
+        label: "Features (the row of four under the photo)",
+        itemLabel: "Feature",
+        max: 4,
         fields: [
           { name: "title", label: "Title", type: "text" },
-          { name: "description", label: "Description", type: "textarea" },
-          { name: "link", label: "Link", type: "link" },
+          { name: "description", label: "Text (one or two lines)", type: "textarea" },
+          { name: "link", label: "Link on the title (optional)", type: "link" },
+          {
+            name: "icon",
+            label: "Icon",
+            type: "select",
+            options: [
+              { value: "layers", label: "Layers (everything in one place)" },
+              { value: "receipt", label: "Banknote (pricing)" },
+              { value: "clock", label: "Clock (response time)" },
+              { value: "cloud", label: "Cloud" },
+              { value: "shield", label: "Shield (security)" },
+              { value: "chat", label: "Speech bubbles (support)" },
+            ],
+          },
+          {
+            name: "show",
+            label: "Show on the website",
+            type: "select",
+            options: [
+              { value: "yes", label: "Show" },
+              { value: "no", label: "Hide" },
+            ],
+          },
         ],
       },
     ],
@@ -101,13 +241,16 @@ export const homeBlocks: HomeBlockDef[] = [
       fields: {
         eyebrow: "About Byteflow",
         heading: "Your trusted IT partner,",
-        heading_soft: "serving Dubai since 2017.",
+        heading_soft: "serving Dubai since {founded}.",
         intro:
           "We make enterprise-grade IT accessible to every business in the UAE, so you can focus entirely on growth.",
-        founded_year: "2017",
-        image_url: "/images/hero/hero.png",
-        image_badge: "Based in Dubai since 2017",
+        image_url: "/images/hero/hero.webp",
+        image_alt: "Illustration of connected servers and network links",
+        image_badge: "Based in Dubai since {founded}",
+        show_years_badge: "yes",
         years_label: "Years keeping UAE businesses running",
+        show_rating_badge: "yes",
+        rating_label: "Google rating",
         primary_label: "Get in touch",
         primary_link: "/contact-us",
         secondary_label: "More about Byteflow",
@@ -115,10 +258,10 @@ export const homeBlocks: HomeBlockDef[] = [
       },
       lists: {
         highlights: [
-          { title: "Full IT under one roof", description: "Infrastructure, cloud, security, design and marketing, all managed by one expert team with full accountability.", link: "/about-us" },
-          { title: "Zero hidden costs", description: "Fixed monthly or annual packages so you always know what you pay. No surprises, no extra invoices.", link: "/it-amc-services-dubai" },
-          { title: "Rapid on-site response", description: "Certified engineers on-site or remote within 2 hours across Dubai, Sharjah and Abu Dhabi.", link: "/contact-us" },
-          { title: "Microsoft & cloud ready", description: "Official Microsoft 365 setup, cloud migrations and ongoing management for UAE businesses of every size.", link: "/cloud-services-dubai" },
+          { title: "Full IT under one roof", description: "Infrastructure, cloud, security, design and marketing, all managed by one expert team with full accountability.", link: "/about-us", icon: "layers", show: "yes" },
+          { title: "Zero hidden costs", description: "Fixed monthly or annual packages so you always know what you pay. No surprises, no extra invoices.", link: "/it-amc-services-dubai", icon: "receipt", show: "yes" },
+          { title: "Rapid on-site response", description: "Certified engineers on-site or remote within 2 hours across Dubai, Sharjah and Abu Dhabi.", link: "/contact-us", icon: "clock", show: "yes" },
+          { title: "Microsoft & cloud ready", description: "Official Microsoft 365 setup, cloud migrations and ongoing management for UAE businesses of every size.", link: "/cloud-services-dubai", icon: "cloud", show: "yes" },
         ],
       },
     },
@@ -160,7 +303,7 @@ export const homeBlocks: HomeBlockDef[] = [
         heading: "What you can count on,",
         heading_soft: "every time.",
         intro: "Four standards behind every job we take on, whether it's one laptop or a whole office.",
-        seal_text: "Service promise · Byteflow · Since 2017 ·",
+        seal_text: "Service promise · Byteflow · Since {founded} ·",
         footer_text: "Want all four on one fixed monthly fee?",
         footer_strong: "That's what an IT AMC plan is for.",
         link_label: "See IT AMC plans",
@@ -242,106 +385,6 @@ export const homeBlocks: HomeBlockDef[] = [
       lists: {},
     },
   },
-  {
-    // Not part of the home page: the header on every page. Stored with the
-    // home blocks so it is edited on this screen.
-    key: "header_menu",
-    label: "Header menu",
-    shows:
-      "The Services mega menu and the Industries dropdown in the header, on every page. Where they sit in the bar, and the other links, are set under Header & footer links (an entry called “Services” opens this menu; Industries is added after it). The button and the “Not sure which one fits?” line are in Contact details & logo.",
-    fields: [
-      { name: "eyebrow", label: "Intro — small heading", type: "text" },
-      { name: "heading", label: "Intro — heading", type: "text" },
-      { name: "description", label: "Intro — one line of text", type: "textarea" },
-      { name: "link_label", label: "Intro — link text", type: "text" },
-      { name: "link", label: "Intro — link", type: "link", help: "/#services jumps to the services on the home page." },
-      { name: "featured_eyebrow", label: "Featured card — small heading", type: "text" },
-      { name: "featured_title", label: "Featured card — title", type: "text" },
-      { name: "featured_label", label: "Featured card — button text", type: "text" },
-      { name: "featured_link", label: "Featured card — button link", type: "link" },
-      { name: "whatsapp_label", label: "Bottom strip — WhatsApp link text", type: "text", help: "Opens the WhatsApp link from Contact details & logo." },
-      { name: "industries_label", label: "Industries — menu name", type: "text" },
-      { name: "industries_heading", label: "Industries — heading inside the dropdown", type: "text" },
-    ],
-    lists: [
-      {
-        name: "services",
-        label: "Services",
-        itemLabel: "Service",
-        max: 15,
-        help: "Services with the same group name sit in one column, in the order listed. The icon is picked from the link (the service page's own icon).",
-        fields: [
-          { name: "group", label: "Group (column heading)", type: "text" },
-          { name: "title", label: "Service name", type: "text" },
-          { name: "description", label: "One-line description", type: "text" },
-          { name: "link", label: "Link", type: "link" },
-        ],
-      },
-      {
-        name: "stats",
-        label: "Featured card — numbers",
-        itemLabel: "Number",
-        max: 2,
-        fields: [
-          { name: "title", label: "Number (e.g. 2 hrs)", type: "text" },
-          { name: "description", label: "What it means", type: "text" },
-        ],
-      },
-      {
-        name: "industries",
-        label: "Industries",
-        itemLabel: "Industry",
-        max: 12,
-        help: "There are no industry pages yet, so these link to /#industries. Change each link when its page exists.",
-        fields: [
-          { name: "title", label: "Industry", type: "text" },
-          { name: "link", label: "Link", type: "link" },
-        ],
-      },
-    ],
-    defaults: {
-      fields: {
-        eyebrow: "Our services",
-        heading: "Everything IT, under one roof.",
-        description: "Support, cloud, security and creative work from one accountable team.",
-        link_label: "View all services",
-        link: "/#services",
-        featured_eyebrow: "Most popular",
-        featured_title: "IT AMC plans",
-        featured_label: "See plans",
-        featured_link: "/it-amc-services-dubai",
-        whatsapp_label: "WhatsApp us",
-        industries_label: "Industries",
-        industries_heading: "Industries we serve",
-      },
-      lists: {
-        services: [
-          { group: "IT Support & Infrastructure", title: "IT AMC / IT Support", description: "Fixed monthly support plans", link: "/it-amc-services-dubai" },
-          { group: "IT Support & Infrastructure", title: "System Integration", description: "Every device, one system", link: "/system-integration" },
-          { group: "IT Support & Infrastructure", title: "Data Backup & Recovery", description: "Survive ransomware & failure", link: "/data-backup-recovery" },
-          { group: "Cloud & Security", title: "Cloud / Microsoft 365", description: "Migration & management", link: "/cloud-services-dubai" },
-          { group: "Cloud & Security", title: "Cyber Security", description: "Firewalls, endpoint, email", link: "/cyber-security" },
-          { group: "Digital & Creative", title: "Website / Apps / Bots", description: "Built for the UAE market", link: "/website-development" },
-          { group: "Digital & Creative", title: "Landing Page Design", description: "Pages built to convert", link: "/landing-page-designing" },
-          { group: "Digital & Creative", title: "UI/UX & Graphics", description: "Brand & interface design", link: "/graphics-designing" },
-          { group: "Digital & Creative", title: "Digital Marketing", description: "Measurable monthly leads", link: "/digital-marketing" },
-        ],
-        stats: [
-          { title: "2 hrs", description: "On-site response" },
-          { title: "24/7", description: "Monitoring" },
-        ],
-        industries: [
-          { title: "Clinics & Healthcare", link: "/#industries" },
-          { title: "Schools & Education", link: "/#industries" },
-          { title: "Real Estate", link: "/#industries" },
-          { title: "Retail & Ecommerce", link: "/#industries" },
-          { title: "Logistics", link: "/#industries" },
-          { title: "Hospitality", link: "/#industries" },
-          { title: "Corporate Offices & SMEs", link: "/#industries" },
-        ],
-      },
-    },
-  },
 ];
 
 export const homeBlockKeys = homeBlocks.map((block) => block.key);
@@ -350,7 +393,7 @@ export function getHomeBlockDef(key: string | null): HomeBlockDef | undefined {
   return homeBlocks.find((block) => block.key === key);
 }
 
-const LIMITS: Record<HomeFieldType, number> = { text: 200, textarea: 2000, link: 500, image: 500 };
+const LIMITS: Record<HomeFieldType, number> = { text: 200, textarea: 2000, link: 500, image: 500, select: 40 };
 
 /**
  * Links may be site paths, web addresses, phone, email or WhatsApp links;
@@ -366,6 +409,8 @@ function safeUrl(value: string, type: "link" | "image"): string {
 
 function clean(field: HomeField, raw: unknown): string {
   const value = typeof raw === "string" ? raw.trim().slice(0, LIMITS[field.type]) : "";
+  // Only one of its options; anything else is the first (its default).
+  if (field.type === "select") return field.options?.some((option) => option.value === value) ? value : field.options?.[0]?.value ?? "";
   return field.type === "link" || field.type === "image" ? safeUrl(value, field.type) : value;
 }
 
@@ -373,6 +418,21 @@ function clean(field: HomeField, raw: unknown): string {
  * The content to save for a block: only its own fields, trimmed and capped,
  * lists cut to their maximum and stripped of items with no title.
  */
+/**
+ * What a block can't be saved with, beyond what sanitizeHomeBlock already
+ * cleans up; null when it is fine. An uploaded About photo needs its own
+ * description: the built-in artwork's alt text doesn't describe it.
+ */
+export function checkHomeBlock(def: HomeBlockDef, content: Record<string, unknown>): string | null {
+  if (def.key === "home_about") {
+    const image = String(content.image_url ?? "");
+    const alt = String(content.image_alt ?? "").trim();
+    if (image && image !== def.defaults.fields.image_url && (!alt || alt === def.defaults.fields.image_alt))
+      return "Photo description (alt text): describe the uploaded photo, e.g. “Byteflow engineers supporting a Dubai office”.";
+  }
+  return null;
+}
+
 export function sanitizeHomeBlock(def: HomeBlockDef, body: Record<string, unknown>) {
   const content: Record<string, unknown> = {};
   for (const field of def.fields) content[field.name] = clean(field, body?.[field.name]);

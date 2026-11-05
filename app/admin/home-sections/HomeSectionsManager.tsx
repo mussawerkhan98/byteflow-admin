@@ -19,6 +19,28 @@ async function fetchBlock(key: string) {
   return { ok: response.ok, data };
 }
 
+/**
+ * A photo as WebP, at most 2000px on its longer side, so what the website
+ * serves is light whatever was picked. A file that can't be read this way
+ * goes up as it is.
+ */
+async function toWebp(file: File): Promise<File> {
+  try {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, 2000 / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+    canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+    canvas.getContext("2d")?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    bitmap.close();
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/webp", 0.82));
+    if (!blob) return file;
+    return new File([blob], `${file.name.replace(/\.[^.]+$/, "")}.webp`, { type: "image/webp" });
+  } catch {
+    return file;
+  }
+}
+
 function FieldInput({
   field,
   value,
@@ -32,6 +54,16 @@ function FieldInput({
   onUpload?: (file?: File) => void;
   uploading?: boolean;
 }) {
+  if (field.type === "select")
+    return (
+      <select value={value || field.options?.[0]?.value} onChange={(event) => onChange(event.target.value)} className={inputClass}>
+        {field.options?.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    );
   if (field.type === "textarea")
     return (
       <textarea rows={field.name === "points" ? 4 : 3} value={value} onChange={(event) => onChange(event.target.value)} className={inputClass} />
@@ -41,7 +73,7 @@ function FieldInput({
       <div className="mt-2 rounded-xl border border-dashed border-slate-700 bg-slate-950/70 p-4">
         <input
           type="file"
-          accept="image/jpeg,image/png,image/webp,image/gif"
+          accept={field.upload === "logo" ? ".svg,.webp,image/svg+xml,image/webp" : field.upload === "photo" ? "image/jpeg,image/png,image/webp" : "image/jpeg,image/png,image/webp,image/gif"}
           disabled={uploading}
           onChange={(event) => onUpload?.(event.target.files?.[0])}
           className="block w-full text-sm text-slate-400 file:mr-3 file:rounded-lg file:border-0 file:bg-cyan-400 file:px-4 file:py-2 file:font-bold file:text-slate-950"
@@ -49,8 +81,13 @@ function FieldInput({
         {uploading && <span className="mt-2 block text-xs text-cyan-300">Uploading…</span>}
         <input value={value} onChange={(event) => onChange(event.target.value)} placeholder="/images/… or https://…" className={inputClass} />
         {value && (
+          // Site paths (/images/…, /api/media/…) are served by the website, not here.
           // eslint-disable-next-line @next/next/no-img-element -- admin preview of an arbitrary URL
-          <img src={value.startsWith("/images/") ? siteUrl(value) : value} alt="" className="mt-3 h-32 w-48 rounded-lg border border-slate-700 object-cover" />
+          <img
+            src={value.startsWith("/") ? siteUrl(value) : value}
+            alt=""
+            className={`mt-3 h-32 w-48 rounded-lg border border-slate-700 ${field.upload === "logo" ? "bg-white object-contain p-3" : "object-cover"}`}
+          />
         )}
       </div>
     );
@@ -64,7 +101,20 @@ function FieldInput({
   );
 }
 
-function ListEditor({ list, items, onChange }: { list: HomeList; items: Item[]; onChange: (items: Item[]) => void }) {
+function ListEditor({
+  list,
+  items,
+  onChange,
+  onUpload,
+  uploading,
+}: {
+  list: HomeList;
+  items: Item[];
+  onChange: (items: Item[]) => void;
+  /** Uploads a file for one item and resolves to its link, or null. */
+  onUpload: (file: File, field: HomeField, item: Item) => Promise<string | null>;
+  uploading: boolean;
+}) {
   const update = (index: number, name: string, value: string) =>
     onChange(items.map((item, i) => (i === index ? { ...item, [name]: value } : item)));
   const move = (index: number, by: number) => {
@@ -73,7 +123,8 @@ function ListEditor({ list, items, onChange }: { list: HomeList; items: Item[]; 
     next.splice(index + by, 0, item);
     onChange(next);
   };
-  const blank = Object.fromEntries(list.fields.map((field) => [field.name, ""]));
+  // A choice starts on its first option (e.g. "Show"), everything else empty.
+  const blank = Object.fromEntries(list.fields.map((field) => [field.name, field.options?.[0]?.value ?? ""]));
 
   return (
     <fieldset className="md:col-span-2">
@@ -100,9 +151,17 @@ function ListEditor({ list, items, onChange }: { list: HomeList; items: Item[]; 
             </div>
             <div className="mt-3 grid gap-4 md:grid-cols-2">
               {list.fields.map((field) => (
-                <label key={field.name} className={`${labelClass} ${field.type === "textarea" ? "md:col-span-2" : ""}`}>
+                <label key={field.name} className={`${labelClass} ${field.type === "textarea" || field.type === "image" ? "md:col-span-2" : ""}`}>
                   {field.label}
-                  <FieldInput field={field} value={item[field.name] ?? ""} onChange={(value) => update(index, field.name, value)} />
+                  <FieldInput
+                    field={field}
+                    value={item[field.name] ?? ""}
+                    onChange={(value) => update(index, field.name, value)}
+                    onUpload={(file) => {
+                      if (file) void onUpload(file, field, item).then((url) => url && update(index, field.name, url));
+                    }}
+                    uploading={uploading}
+                  />
                 </label>
               ))}
             </div>
@@ -119,7 +178,8 @@ function ListEditor({ list, items, onChange }: { list: HomeList; items: Item[]; 
         </button>
       )}
       <p className="mt-2 text-xs text-slate-500">
-        Up to {list.max}. A {list.itemLabel.toLowerCase()} with no title is left out; if none are left, the website shows its own list.
+        Up to {list.max}. A {list.itemLabel.toLowerCase()} with no title is left out;{" "}
+        {list.startsEmpty ? "with none, this part of the website is hidden." : "if none are left, the website shows its own list."}
       </p>
     </fieldset>
   );
@@ -168,27 +228,35 @@ export default function HomeSectionsManager() {
 
   const change = (name: string, value: string | Item[]) => setForm((current) => ({ ...current, [name]: value }));
 
-  async function upload(name: string, file?: File) {
-    if (!file) return;
+  /** Uploads one file; resolves to its link, or null after saying what went wrong. */
+  async function uploadFile(file: File, field: HomeField, altText = ""): Promise<string | null> {
     setUploading(true);
     setNotice(null);
     try {
       const payload = new FormData();
-      payload.set("file", file);
-      payload.set("altText", "");
+      payload.set("file", field.upload === "photo" ? await toWebp(file) : file);
+      payload.set("altText", altText);
+      if (field.upload === "logo") payload.set("kind", "logo");
       const response = await fetch("/api/admin/upload", { method: "POST", body: payload });
       const data = await response.json();
       if (!response.ok) {
         setNotice({ type: "error", text: data.error ?? "Unable to upload image" });
-        return;
+        return null;
       }
-      change(name, String(data.url));
       setNotice({ type: "ok", text: "Image uploaded. Save to publish it." });
+      return String(data.url);
     } catch {
       setNotice({ type: "error", text: "The image could not be uploaded. Please try again." });
+      return null;
     } finally {
       setUploading(false);
     }
+  }
+
+  async function upload(field: HomeField, file?: File) {
+    if (!file) return;
+    const url = await uploadFile(file, field);
+    if (url) change(field.name, url);
   }
 
   async function save(event: React.FormEvent) {
@@ -281,7 +349,7 @@ export default function HomeSectionsManager() {
                   field={field}
                   value={String(form[field.name] ?? "")}
                   onChange={(value) => change(field.name, value)}
-                  onUpload={(file) => void upload(field.name, file)}
+                  onUpload={(file) => void upload(field, file)}
                   uploading={uploading}
                 />
               </label>
@@ -292,6 +360,9 @@ export default function HomeSectionsManager() {
                 list={list}
                 items={Array.isArray(form[list.name]) ? (form[list.name] as Item[]) : []}
                 onChange={(items) => change(list.name, items)}
+                // A logo's alt text is the client name typed beside it.
+                onUpload={(file, field, item) => uploadFile(file, field, item.title ?? "")}
+                uploading={uploading}
               />
             ))}
           </div>

@@ -6,6 +6,8 @@ import { useEffect, useState } from "react";
 import ResourceManager from "../../[resource]/ResourceManager";
 import { resources } from "../../../lib/cms-config";
 import { siteUrl } from "../../../lib/admin-guide";
+import { heroExtraNames } from "../../../lib/hero-fields";
+import HeroExtras from "../../HeroExtras";
 
 type PageRecord = Record<string, unknown> & {
   id: number;
@@ -75,7 +77,7 @@ export default function PageWorkspace({ pageId }: { pageId: number }) {
     );
     setHeroForm(
       Object.fromEntries(
-        heroFields.map((field) => [field, String(record[field] ?? "")]),
+        [...heroFields, ...heroExtraNames].map((field) => [field, String(record[field] ?? "")]),
       ),
     );
     setLoading(false);
@@ -348,6 +350,12 @@ export default function PageWorkspace({ pageId }: { pageId: number }) {
               className={inputClass}
             />
           </label>
+          {pageRecord?.slug === "home" && (
+            <HeroExtras
+              values={heroForm}
+              onChange={(name, value) => setHeroForm((current) => ({ ...current, [name]: value }))}
+            />
+          )}
           <div className="md:col-span-2">
             <button
               disabled={savingHero}

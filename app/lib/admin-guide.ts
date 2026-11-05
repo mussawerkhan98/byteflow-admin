@@ -40,7 +40,7 @@ export const adminGroups: AdminGroup[] = [
         key: "home-sections",
         label: "Home page sections",
         shows:
-          "The wording, links and lists of the home page blocks: the services intro, About Byteflow, the service promise, How it works and the help panel — plus the header's Services mega menu and Industries dropdown, shown on every page.",
+          "The wording, links and lists of the home page blocks: the trust strip under the banner (numbers and client logos), the services intro, About Byteflow, the service promise, How it works and the help panel.",
         preview: "/",
       },
       {
@@ -93,17 +93,24 @@ export const adminGroups: AdminGroup[] = [
     label: "Whole site",
     sections: [
       {
+        key: "header-menu",
+        label: "Header menu",
+        shows:
+          "The bar at the top of every page: its links and their order, the Services, Industries and Insights mega menus, the button, the phone number and the dark/light switch.",
+        preview: "/",
+      },
+      {
         key: "menus",
         label: "Header & footer links",
         shows:
-          "The navigation links in the website header and footer. In the header, an entry called “Services” opens the mega menu (edited under Home page sections → Header menu), Industries follows it, and a Home link is left out because the logo goes home.",
+          "The links in the website footer. The header's links are under Header menu once its migration has run; until then, the header entries here are still used.",
         preview: "/",
       },
       {
         key: "settings",
         label: "Contact details & logo",
         shows:
-          "Phone, email, address, opening hours, logo and social links used everywhere on the site — plus the header bar: its button (and shorter phone wording), phone display and the note at the bottom of the Services menu.",
+          "Phone, email, address, opening hours, logo and social links used everywhere on the site, and the figures the site quotes (clients, Google rating, reviews, year founded) with the Google Business profile link. Change a figure here and it changes on every page; text elsewhere can quote them as {clients}, {rating}, {reviews}, {founded} or {years}. The header's button and phone switch are under Header menu.",
         preview: "/contact-us",
       },
       {
