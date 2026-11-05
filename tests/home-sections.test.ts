@@ -57,43 +57,16 @@ test("the form starts from the website's wording, and saved values win", () => {
 });
 
 
-test("the trust strip: a choice keeps one of its options, up to four stats", () => {
-  const trust = getHomeBlockDef("home_trust")!;
-  const saved = sanitizeHomeBlock(trust, {
-    stats: [
-      { title: "Clients", figure: "clients", show: "no_logos" },
-      { title: "Odd", figure: "<script>", show: "maybe" },
-      ...Array.from({ length: 5 }, (_, i) => ({ title: `Extra ${i}`, figure: "custom", value: "1" })),
-    ],
-  }).stats as Record<string, string>[];
-  assert.equal(saved.length, 4);
-  assert.equal(saved[0].show, "no_logos");
-  // Anything that isn't an option falls back to the first one.
-  assert.equal(saved[1].figure, "clients");
-  assert.equal(saved[1].show, "yes");
-  assert.deepEqual(Object.keys(saved[0]), ["title", "figure", "value", "show"]);
+test("a choice keeps one of its options; anything else falls back to the first", () => {
+  const about = getHomeBlockDef("home_about")!;
+  const saved = sanitizeHomeBlock(about, { show_quote: "<script>", show_coverage: "no" });
+  assert.equal(saved.show_quote, "yes");
+  assert.equal(saved.show_coverage, "no");
 });
 
-test("client logos: a name is required, links are made safe, eight at most", () => {
-  const trust = getHomeBlockDef("home_trust")!;
-  assert.equal(trust.lists.find((list) => list.name === "logos")?.fields.find((f) => f.name === "image")?.upload, "logo");
-  const saved = sanitizeHomeBlock(trust, {
-    logos: [
-      { title: "", image: "/api/media/3" },
-      { title: "Acme", image: "javascript:alert(1)", link: "javascript:alert(1)", show: "no" },
-      ...Array.from({ length: 9 }, (_, i) => ({ title: `Client ${i}`, image: `/api/media/${i + 10}` })),
-    ],
-  }).logos as Record<string, string>[];
-  assert.equal(saved.length, 8);
-  assert.deepEqual(saved[0], { title: "Acme", image: "", link: "", show: "no" });
-});
-
-test("the trust strip defaults quote the review count, and no logos are invented", () => {
-  const defaults = getHomeBlockDef("home_trust")!.defaults.lists;
-  assert.equal(defaults.stats.find((s) => s.figure === "rating")?.title, "Google rating · {reviews} reviews");
-  assert.equal(defaults.stats.at(-1)?.show, "no_logos");
-  assert.deepEqual(defaults.logos, []);
-  assert.ok(!JSON.stringify(homeBlocks.map((b) => b.defaults)).match(/(2017|500+|574)/));
+test("no default types a figure that the site-wide settings provide", () => {
+  assert.ok(!/\b(2017|500\+|574)\b/.test(JSON.stringify(homeBlocks.map((b) => b.defaults))));
+  assert.equal(getHomeBlockDef("home_about")!.defaults.fields.rating_label, "Google rating · {reviews} reviews");
 });
 
 test("an uploaded About photo can't be saved without its own description", () => {

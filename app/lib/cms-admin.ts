@@ -3,6 +3,7 @@ import { db } from './db'
 import type { Field, Resource } from './cms-config'
 import { sanitizeEditorHtml } from './editor-html'
 import { checkSiteFigures } from './site-figures'
+import { FieldError } from './field-error'
 
 type Data = Record<string, unknown>
 
@@ -136,17 +137,26 @@ const SERVICE_TAB_LIMITS: [string, string, number][] = [
 export function checkServiceTab(data: Record<string, unknown>) {
   for (const [name, label, max] of SERVICE_TAB_LIMITS) {
     const value = String(data[name] ?? '')
-    if (value.length > max) throw new Error(`${label} must be ${max} characters or fewer`)
+    if (value.length > max) throw new FieldError(name, `${label} must be ${max} characters or fewer`)
   }
   const bullets = String(data.highlights ?? '').split(/\r?\n/).map((line) => line.trim()).filter(Boolean)
-  if (bullets.length > 5) throw new Error('Home tab — bullet points: up to 5, one per line')
-  if (bullets.some((line) => line.length > 70)) throw new Error('Home tab — bullet points: keep each one to 70 characters')
+  if (bullets.length > 5) throw new FieldError('highlights', 'Home tab — bullet points: up to 5, one per line')
+  if (bullets.some((line) => line.length > 70)) throw new FieldError('highlights', 'Home tab — bullet points: keep each one to 70 characters')
   if (String(data.image_url ?? '').trim() && !String(data.image_alt ?? '').trim())
-    throw new Error('Image alt text: describe the image, so it is not invisible to screen readers and Google')
+    throw new FieldError('image_alt', 'Alt text required: describe the image, so screen readers and Google can read it')
 }
 
 function clean(resource: Resource, input: Data) {
-  const data = Object.fromEntries(resource.fields.map((field) => [field.name, normalize(field, input[field.name])]))
+  // A problem with one field's value is reported against that field.
+  const data = Object.fromEntries(
+    resource.fields.map((field) => {
+      try {
+        return [field.name, normalize(field, input[field.name])]
+      } catch (error) {
+        throw error instanceof FieldError ? error : new FieldError(field.name, error instanceof Error ? error.message : String(error))
+      }
+    }),
+  )
   if (resource.table === 'services') checkServiceTab(data)
   if (resource.table === 'site_settings') checkSiteFigures(data)
   if (resource.table === 'website_scripts') {

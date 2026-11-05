@@ -40,7 +40,7 @@ export const adminGroups: AdminGroup[] = [
         key: "home-sections",
         label: "Home page sections",
         shows:
-          "The wording, links and lists of the home page blocks: the trust strip under the banner (numbers and client logos), the services intro, About Byteflow, the service promise, How it works and the help panel.",
+          "The wording, links and lists of the home page blocks: the services intro, About Byteflow, the service promise, How it works and the help panel.",
         preview: "/",
       },
       {

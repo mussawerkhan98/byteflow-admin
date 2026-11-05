@@ -1,5 +1,7 @@
 "use client";
 
+import ImageUpload from "../ImageUpload";
+
 import { useEffect, useState } from "react";
 import AdminPageHeader from "../AdminPageHeader";
 
@@ -8,7 +10,6 @@ export default function AboutFounderManager() {
   const [form, setForm] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const [notice, setNotice] = useState<{ type: "ok" | "error"; text: string } | null>(null);
 
   useEffect(() => {
@@ -27,29 +28,6 @@ export default function AboutFounderManager() {
 
   const change = (field: string, value: string) =>
     setForm((current) => ({ ...current, [field]: value }));
-
-  async function upload(file?: File) {
-    if (!file) return;
-    setUploading(true);
-    setNotice(null);
-    try {
-      const payload = new FormData();
-      payload.set("file", file);
-      payload.set("altText", form.image_alt || "Byteflow founder");
-      const response = await fetch("/api/admin/upload", { method: "POST", body: payload });
-      const data = await response.json();
-      if (!response.ok) {
-        setNotice({ type: "error", text: data.error ?? "Unable to upload image" });
-        return;
-      }
-      change("image_url", String(data.url));
-      setNotice({ type: "ok", text: "Photo uploaded. Save to publish it." });
-    } catch {
-      setNotice({ type: "error", text: "The photo could not be uploaded. Please try again." });
-    } finally {
-      setUploading(false);
-    }
-  }
 
   async function save(event: React.FormEvent) {
     event.preventDefault();
@@ -97,43 +75,22 @@ export default function AboutFounderManager() {
           className="mt-7 rounded-2xl border border-white/[.08] bg-[#0d1921] p-6"
         >
           <div className="grid gap-5 md:grid-cols-2">
-            <label className="text-xs font-semibold text-slate-300 md:col-span-2">
-              Photo
-              <div className="mt-2 rounded-xl border border-dashed border-slate-700 bg-slate-950/70 p-4">
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp,image/gif"
-                  disabled={uploading}
-                  onChange={(event) => void upload(event.target.files?.[0])}
-                  className="block w-full text-sm text-slate-400 file:mr-3 file:rounded-lg file:border-0 file:bg-cyan-400 file:px-4 file:py-2 file:font-bold file:text-slate-950"
-                />
-                {uploading && (
-                  <span className="mt-2 block text-xs text-cyan-300">Uploading…</span>
-                )}
-                {form.image_url && (
-                  <div className="mt-4 flex items-end gap-4">
-                    <img
-                      src={form.image_url}
-                      alt="Founder preview"
-                      className="h-40 w-32 rounded-xl border border-slate-700 object-cover"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => change("image_url", "")}
-                      className="rounded-lg border border-red-400/20 px-3 py-2 text-xs text-red-300"
-                    >
-                      Remove photo
-                    </button>
-                  </div>
-                )}
-              </div>
-            </label>
+            <div className="md:col-span-2">
+              <ImageUpload
+                label="Photo"
+                value={form.image_url ?? ""}
+                onChange={(url) => change("image_url", url)}
+                alt={form.image_alt ?? ""}
+                onAltChange={(alt) => change("image_alt", alt)}
+              />
+            </div>
             <label className="text-xs font-semibold text-slate-300">
-              Photo alt text
+              Name (optional)
+              <span className="mt-1 block font-normal text-slate-500">Shown with the quote on the home page. Blank shows the role and company only.</span>
               <input
-                value={form.image_alt ?? ""}
-                onChange={(event) => change("image_alt", event.target.value)}
-                placeholder="Byteflow founder"
+                value={form.name ?? ""}
+                onChange={(event) => change("name", event.target.value)}
+                placeholder="Founder's full name"
                 className={inputClass}
               />
             </label>

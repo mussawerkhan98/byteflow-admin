@@ -1,5 +1,5 @@
 "use client";
-/* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps, @next/next/no-img-element */
+/* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Resource } from "../../lib/cms-config";
 import { getAdminSection } from "../../lib/admin-guide";
@@ -9,6 +9,8 @@ import AdminPageHeader from "../AdminPageHeader";
 import RichTextEditor from "./RichTextEditor";
 import StructuredFieldEditor from "./StructuredFieldEditor";
 import PostEditor from "./PostEditor";
+import ImageUpload from "../ImageUpload";
+import type { UploadKind } from "../../lib/image-rules";
 import {
   categoryOf,
   categoryOptions,
@@ -26,26 +28,13 @@ const isImageField = (name: string) =>
   !/(^|_)(alt|caption)(_|$)/.test(name) &&
   /(^|_)(image|logo|favicon)(_|$)/.test(name);
 const isUploadField = (name: string) => isImageField(name) || name === "icon";
+/** What each image field takes (app/lib/image-rules.ts). */
+const uploadKind = (name: string): UploadKind =>
+  name === "icon" ? "icon" : name === "og_image" ? "og" : name === "favicon_url" ? "favicon" : name === "logo_url" ? "logo" : "image";
+/** Pictures that only set a mood: they may be marked decorative, with no alt text. */
+const backgroundField = (name: string) => /(^|_)background(_|$)/.test(name);
 /** Section types the website actually reads. Anything else renders nowhere. */
 const LIVE_SECTION_TYPES = ["custom", "hero", "founder", ...homeBlockKeys];
-
-async function optimizeImage(file: File) {
-  if (file.type === "image/gif" || file.size < 500 * 1024) return file;
-  const bitmap = await createImageBitmap(file);
-  const scale = Math.min(1, 1600 / Math.max(bitmap.width, bitmap.height));
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.max(1, Math.round(bitmap.width * scale));
-  canvas.height = Math.max(1, Math.round(bitmap.height * scale));
-  canvas.getContext("2d")?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-  bitmap.close();
-  const blob = await new Promise<Blob | null>((resolve) =>
-    canvas.toBlob(resolve, "image/webp", 0.82),
-  );
-  if (!blob || blob.size >= file.size) return file;
-  return new File([blob], `${file.name.replace(/\.[^.]+$/, "")}.webp`, {
-    type: "image/webp",
-  });
-}
 
 /** One row in a resource list — factored out so it can be rendered either
  * flat or grouped under a per-page heading without duplicating the JSX. */
@@ -213,7 +202,8 @@ export default function ResourceManager({
   const [form, setForm] = useState<RecordValue>(initial),
     [loading, setLoading] = useState(true),
     [saving, setSaving] = useState(false);
-  const [uploadingField, setUploadingField] = useState<string | null>(null);
+  // Save errors by field name, shown next to the field (the rest of the form is kept).
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [viewing, setViewing] = useState<RecordValue | null>(null);
   const [pageOptions, setPageOptions] = useState<PageOption[]>([]);
   const [missingBuiltins, setMissingBuiltins] = useState(0);
@@ -457,6 +447,7 @@ export default function ResourceManager({
     }
     setSaving(true);
     setNotice(null);
+    setFieldErrors({});
     try {
       const response = await fetch(`/api/admin/${resourceKey}`, {
         method: isUpdate ? "PUT" : "POST",
@@ -465,7 +456,12 @@ export default function ResourceManager({
       });
       const data = await response.json();
       if (!response.ok) {
-        setNotice({ type: "error", text: data.error ?? "Please check the form and try again." });
+        const message = data.error ?? "Please check the form and try again.";
+        if (typeof data.field === "string") {
+          setFieldErrors({ [data.field]: message });
+          const label = config.fields.find((field) => field.name === data.field)?.label ?? data.field;
+          setNotice({ type: "error", text: `${label}: ${message}` });
+        } else setNotice({ type: "error", text: message });
         return;
       }
       setNotice({ type: "ok", text: `${config.singular} saved successfully.` });
@@ -503,49 +499,6 @@ export default function ResourceManager({
     });
     await load();
   }
-  async function uploadFieldImage(fieldName: string, file?: File) {
-    if (!file) return;
-    setUploadingField(fieldName);
-    setNotice(null);
-    try {
-      const uploadFile = fieldName === "icon" ? file : await optimizeImage(file);
-      const payload = new FormData();
-      payload.set("file", uploadFile);
-      if (fieldName === "icon") payload.set("kind", "icon");
-      payload.set(
-        "altText",
-        String(
-          form.image_alt ??
-            form.alt_text ??
-            form.title ??
-            form.name ??
-            config.singular,
-        ),
-      );
-      const response = await fetch("/api/admin/upload", {
-        method: "POST",
-        body: payload,
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        setNotice({
-          type: "error",
-          text: data.error ?? "Unable to upload file",
-        });
-        return;
-      }
-      change(fieldName, data.url);
-      setNotice({
-        type: "ok",
-        text: `${fieldName === "icon" ? "SVG icon" : "Image"} uploaded. Save changes to apply it to this record.`,
-      });
-    } catch {
-      setNotice({ type: "error", text: "The image could not be prepared or uploaded. Please try again." });
-    } finally {
-      setUploadingField(null);
-    }
-  }
-
   const noticeBox = notice && (
     <p
       role="status"
@@ -568,8 +521,7 @@ export default function ResourceManager({
           onSubmit={save}
           onCancel={cancel}
           saving={saving}
-          uploading={uploadingField === "image_url"}
-          onUpload={(file) => void uploadFieldImage("image_url", file)}
+          fieldErrors={fieldErrors}
           categories={categoryOptions(records)
             .map((option) => option.label)
             .filter((label) => label !== "Uncategorised")}
@@ -668,6 +620,25 @@ export default function ResourceManager({
           <div className="mt-6 grid gap-6 md:grid-cols-2">
             {config.fields.map((field) => {
               if (field.name === "page_id" && lockedPageId) return null;
+              const hasAltField = config.fields.some((other) => other.name === "image_alt");
+              if (field.name === "image_alt" && hasAltField && config.fields.some((other) => other.name === "image_url")) return null;
+              if (isUploadField(field.name)) {
+                const bindAlt = field.name === "image_url" && hasAltField;
+                return (
+                  <div key={field.name} className="md:col-span-2">
+                    <ImageUpload
+                      label={`${field.label}${field.required ? " *" : ""}`}
+                      kind={uploadKind(field.name)}
+                      value={String(form[field.name] ?? "")}
+                      onChange={(url) => change(field.name, url)}
+                      {...(bindAlt ? { alt: String(form.image_alt ?? ""), onAltChange: (alt: string) => change("image_alt", alt) } : {})}
+                      allowDecorative={backgroundField(field.name)}
+                      help={field.help}
+                      error={fieldErrors[field.name] ?? (bindAlt ? fieldErrors.image_alt : undefined)}
+                    />
+                  </div>
+                );
+              }
               return (
               <label
                 key={field.name}
@@ -675,48 +646,7 @@ export default function ResourceManager({
               >
                 {field.label}
                 {field.required && <span className="text-cyan-400"> *</span>}
-                {isUploadField(field.name) ? (
-                  <div className="mt-2 rounded-xl border border-dashed border-slate-700 bg-slate-950/70 p-4">
-                    <input
-                      type="file"
-                      accept={
-                        field.name === "icon"
-                          ? "image/svg+xml,.svg"
-                          : "image/jpeg,image/png,image/webp,image/gif"
-                      }
-                      disabled={uploadingField === field.name}
-                      onChange={(event) =>
-                        void uploadFieldImage(
-                          field.name,
-                          event.target.files?.[0],
-                        )
-                      }
-                      className="block w-full text-sm text-slate-400 file:mr-3 file:rounded-lg file:border-0 file:bg-cyan-400 file:px-4 file:py-2 file:font-bold file:text-slate-950"
-                    />
-                    {uploadingField === field.name && (
-                      <span className="mt-2 block text-xs text-cyan-300">
-                        Uploading {field.name === "icon" ? "SVG icon" : "image"}…
-                      </span>
-                    )}
-                    {String(form[field.name] ?? "") && (
-                      <div className="mt-4 flex items-end gap-4">
-                        <img
-                          className="h-28 w-40 rounded-lg border border-slate-700 bg-slate-900 object-contain"
-                          src={String(form[field.name])}
-                          alt="Selected image preview"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => change(field.name, "")}
-                          className="rounded-lg border border-red-500/30 px-3 py-2 text-xs text-red-300"
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ) : field.type === "richtext" ? (
-                  <RichTextEditor
+                {field.type === "richtext" ? (                  <RichTextEditor
                     required={field.required}
                     value={String(form[field.name] ?? "")}
                     onChange={(value) => change(field.name, value)}
@@ -806,6 +736,11 @@ export default function ResourceManager({
                 {field.help && (
                   <span className="mt-1 block text-xs font-normal text-slate-500">
                     {field.help}
+                  </span>
+                )}
+                {fieldErrors[field.name] && (
+                  <span role="alert" className="mt-1 block text-xs font-semibold text-red-300">
+                    {fieldErrors[field.name]}
                   </span>
                 )}
               </label>

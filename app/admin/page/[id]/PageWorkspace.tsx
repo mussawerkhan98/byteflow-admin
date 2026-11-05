@@ -1,5 +1,7 @@
 "use client";
-/* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps, @next/next/no-img-element */
+
+import ImageUpload from "../../ImageUpload";
+/* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -46,8 +48,6 @@ export default function PageWorkspace({ pageId }: { pageId: number }) {
   const [heroForm, setHeroForm] = useState<Record<string, string>>({});
   const [savingBasics, setSavingBasics] = useState(false);
   const [savingHero, setSavingHero] = useState(false);
-  const [uploadingHero, setUploadingHero] = useState(false);
-  const [uploadingOg, setUploadingOg] = useState(false);
   const [notice, setNotice] = useState<{
     type: "ok" | "error";
     text: string;
@@ -137,43 +137,6 @@ export default function PageWorkspace({ pageId }: { pageId: number }) {
       setNotice({ type: "error", text: "We could not save your changes. Check your connection and try again." });
     } finally {
       setSavingHero(false);
-    }
-  }
-
-  async function uploadImage(
-    kind: "hero_background_image" | "og_image",
-    file?: File,
-  ) {
-    if (!file) return;
-    const setUploading = kind === "hero_background_image" ? setUploadingHero : setUploadingOg;
-    setUploading(true);
-    setNotice(null);
-    try {
-      const payload = new FormData();
-      payload.set("file", file);
-      payload.set(
-        "altText",
-        String(heroForm.hero_heading || basicsForm.meta_title || pageRecord?.name || "Page image"),
-      );
-      const response = await fetch("/api/admin/upload", {
-        method: "POST",
-        body: payload,
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        setNotice({ type: "error", text: data.error ?? "Unable to upload file" });
-        return;
-      }
-      if (kind === "hero_background_image") {
-        setHeroForm((current) => ({ ...current, hero_background_image: data.url }));
-      } else {
-        setBasicsForm((current) => ({ ...current, og_image: data.url }));
-      }
-      setNotice({ type: "ok", text: "Image uploaded. Save to publish it." });
-    } catch {
-      setNotice({ type: "error", text: "The image could not be uploaded. Please try again." });
-    } finally {
-      setUploading(false);
     }
   }
 
@@ -275,41 +238,15 @@ export default function PageWorkspace({ pageId }: { pageId: number }) {
               className={inputClass}
             />
           </label>
-          <label className="text-xs font-semibold text-slate-300 md:col-span-2">
-            Background image
-            <div className="mt-2 rounded-xl border border-dashed border-slate-700 bg-slate-950/70 p-4">
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/webp,image/gif"
-                disabled={uploadingHero}
-                onChange={(event) =>
-                  void uploadImage("hero_background_image", event.target.files?.[0])
-                }
-                className="block w-full text-sm text-slate-400 file:mr-3 file:rounded-lg file:border-0 file:bg-cyan-400 file:px-4 file:py-2 file:font-bold file:text-slate-950"
-              />
-              {uploadingHero && (
-                <span className="mt-2 block text-xs text-cyan-300">Uploading…</span>
-              )}
-              {heroForm.hero_background_image && (
-                <div className="mt-4 flex items-end gap-4">
-                  <img
-                    src={heroForm.hero_background_image}
-                    alt="Hero preview"
-                    className="h-28 w-40 rounded-lg border border-slate-700 object-cover"
-                  />
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setHeroForm((current) => ({ ...current, hero_background_image: "" }))
-                    }
-                    className="rounded-lg border border-red-500/30 px-3 py-2 text-xs text-red-300"
-                  >
-                    Remove
-                  </button>
-                </div>
-              )}
-            </div>
-          </label>
+          <div className="md:col-span-2">
+            <ImageUpload
+              label="Background image"
+              value={heroForm.hero_background_image ?? ""}
+              onChange={(url) => setHeroForm((current) => ({ ...current, hero_background_image: url }))}
+              allowDecorative
+              help="Shown darkened behind the whole banner, so it is usually decorative. For a clear picture beside the text on the home page, use “Picture on the right” in Home page extras below."
+            />
+          </div>
           <label className="text-xs font-semibold text-slate-300">
             Primary button label
             <input
@@ -374,33 +311,24 @@ export default function PageWorkspace({ pageId }: { pageId: number }) {
           when this page is shared or indexed.
         </p>
         <form onSubmit={saveBasics} className="mt-6 grid gap-5 md:grid-cols-2">
-          {basicsFields.map((field) => (
+          {basicsFields.map((field) =>
+            field.name === "og_image" ? (
+              <div key={field.name} className="md:col-span-2">
+                <ImageUpload
+                  kind="og"
+                  label={field.label}
+                  value={basicsForm.og_image ?? ""}
+                  onChange={(url) => setBasicsForm((current) => ({ ...current, og_image: url }))}
+                  help="Shown when the page is shared on social media. At least 1200×630; a 1200×630 JPG copy is what gets used, since not every platform shows WebP."
+                />
+              </div>
+            ) : (
             <label
               key={field.name}
               className={`${field.type === "textarea" ? "md:col-span-2" : ""} text-xs font-semibold text-slate-300`}
             >
               {field.label}
-              {field.name === "og_image" ? (
-                <div className="mt-2 rounded-xl border border-dashed border-slate-700 bg-slate-950/70 p-4">
-                  <input
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp,image/gif"
-                    disabled={uploadingOg}
-                    onChange={(event) => void uploadImage("og_image", event.target.files?.[0])}
-                    className="block w-full text-sm text-slate-400 file:mr-3 file:rounded-lg file:border-0 file:bg-cyan-400 file:px-4 file:py-2 file:font-bold file:text-slate-950"
-                  />
-                  {uploadingOg && (
-                    <span className="mt-2 block text-xs text-cyan-300">Uploading…</span>
-                  )}
-                  {basicsForm.og_image && (
-                    <img
-                      src={basicsForm.og_image}
-                      alt="Open Graph preview"
-                      className="mt-4 h-24 w-40 rounded-lg border border-slate-700 object-cover"
-                    />
-                  )}
-                </div>
-              ) : field.type === "textarea" ? (
+              {field.type === "textarea" ? (
                 <textarea
                   rows={3}
                   value={basicsForm[field.name] ?? ""}

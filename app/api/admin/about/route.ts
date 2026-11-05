@@ -7,6 +7,8 @@ const FOUNDER_FIELDS = [
   "story",
   "image_url",
   "image_alt",
+  // Optional: shown with the quote on the home page About block.
+  "name",
   "role",
   "company",
   "linkedin_url",

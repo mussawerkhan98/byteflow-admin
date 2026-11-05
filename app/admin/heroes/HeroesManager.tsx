@@ -1,5 +1,7 @@
 "use client";
 
+import ImageUpload from "../ImageUpload";
+
 import { useEffect, useState } from "react";
 import AdminPageHeader from "../AdminPageHeader";
 import HeroExtras from "../HeroExtras";
@@ -27,7 +29,6 @@ export default function HeroesManager() {
   const [form, setForm] = useState<Record<string, string>>({});
   const [notice, setNotice] = useState("");
   const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     void fetch("/api/admin/heroes")
@@ -44,23 +45,6 @@ export default function HeroesManager() {
       ),
     );
     setNotice("");
-  }
-
-  async function upload(file?: File) {
-    if (!file) return;
-    setUploading(true);
-    const payload = new FormData();
-    payload.set("file", file);
-    payload.set("altText", String(form.hero_heading || "Page hero background"));
-    const response = await fetch("/api/admin/upload", {
-      method: "POST",
-      body: payload,
-    });
-    const data = await response.json();
-    setUploading(false);
-    if (!response.ok) return setNotice(data.error);
-    setForm((current) => ({ ...current, hero_background_image: data.url }));
-    setNotice("Image uploaded. Save the hero to publish it.");
   }
 
   async function save(event: React.FormEvent) {
@@ -146,39 +130,15 @@ export default function HeroesManager() {
                 className={inputClass}
               />
             </label>
-            <label className="text-xs font-semibold text-slate-300 md:col-span-2">
-              Background image
-              <div className="mt-2 rounded-xl border border-dashed border-slate-700 bg-slate-950/70 p-4">
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp,image/gif"
-                  disabled={uploading}
-                  onChange={(event) => void upload(event.target.files?.[0])}
-                  className="block w-full text-sm text-slate-400 file:mr-3 file:rounded-lg file:border-0 file:bg-cyan-400 file:px-4 file:py-2 file:font-bold file:text-slate-950"
-                />
-                {uploading && (
-                  <span className="mt-2 block text-xs text-cyan-300">
-                    Uploading…
-                  </span>
-                )}
-                {form.hero_background_image && (
-                  <div className="mt-4">
-                    <img
-                      src={form.hero_background_image}
-                      alt="Hero preview"
-                      className="h-44 w-full rounded-xl border border-slate-700 object-cover"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => change("hero_background_image", "")}
-                      className="mt-3 rounded-lg border border-red-400/20 px-3 py-2 text-xs text-red-300"
-                    >
-                      Remove image
-                    </button>
-                  </div>
-                )}
-              </div>
-            </label>
+            <div className="md:col-span-2">
+              <ImageUpload
+                label="Background image"
+                value={form.hero_background_image ?? ""}
+                onChange={(url) => change("hero_background_image", url)}
+                allowDecorative
+                help="Shown darkened behind the whole banner, so it is usually decorative. For a clear picture beside the text on the home page, use “Picture on the right” in Home page extras below."
+              />
+            </div>
             <label className="text-xs font-semibold text-slate-300">
               Primary button label
               <input

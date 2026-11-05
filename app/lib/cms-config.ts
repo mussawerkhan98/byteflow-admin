@@ -132,7 +132,6 @@ export const resources = {
           "custom",
           "hero",
           "founder",
-          "home_trust",
           "home_services_intro",
           "home_about",
           "home_promise",
@@ -369,12 +368,12 @@ export const resources = {
       { name: "footer_text", label: "Footer text", type: "textarea", help: figuresHelp },
       { name: "copyright_text", label: "Copyright text", type: "text" },
       // Site-wide figures: one value each, quoted everywhere on the website
-      // (trust strip, hero, About, testimonials, footer, meta descriptions).
+      // (hero, About, testimonials, footer, meta descriptions).
       {
         name: "client_count",
         label: "Figures — number of clients",
         type: "text",
-        help: "Shown exactly as typed, e.g. 574 or 500+. Used in the trust strip, About, footer and descriptions. Blank shows 574.",
+        help: "Shown exactly as typed, e.g. 574 or 500+. Used in the About section, footer and descriptions. Blank shows 574.",
       },
       {
         name: "google_rating",
@@ -386,7 +385,7 @@ export const resources = {
         name: "google_review_count",
         label: "Figures — number of Google reviews",
         type: "text",
-        help: "e.g. 52 or 50+. Shown as “Google rating · … reviews” in the trust strip and beside the testimonials. Blank shows 50+.",
+        help: "e.g. 52 or 50+. Shown as “Google rating · … reviews” in the About section and beside the testimonials. Blank shows 50+.",
       },
       {
         name: "founded_year",
@@ -398,7 +397,7 @@ export const resources = {
         name: "google_business_url",
         label: "Google Business profile link",
         type: "url",
-        help: "The rating in the trust strip links here. Use the share link of your Google Business profile (https://…). Blank leaves the rating unlinked.",
+        help: "The “Read reviews” link in the About section goes here. Use the share link of your Google Business profile (https://…). Blank leaves the rating unlinked.",
       },
       { name: "facebook_url", label: "Facebook URL", type: "url" },
       { name: "instagram_url", label: "Instagram URL", type: "url" },

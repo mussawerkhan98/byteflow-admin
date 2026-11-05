@@ -1,9 +1,15 @@
 import { isAdminAuthenticated, isAdministrator } from '../../../lib/auth'
 import { createRecord, deleteRecord, listRecords, reorderRecord, updateRecord } from '../../../lib/cms-admin'
 import { getResource } from '../../../lib/cms-config'
+import { FieldError } from '../../../lib/field-error'
 
 function errorResponse(error: unknown) {
   const technical = error instanceof Error ? error.message : ''
+  // A problem with one field goes back with that field's name, so the form
+  // can show it next to the field.
+  if (error instanceof FieldError) return Response.json({ error: error.message, field: error.field }, { status: 400 })
+  // The visitor sees a plain message; the server log keeps the real one.
+  console.error('Admin save failed:', technical || error)
   if (/FOREIGN KEY constraint failed/i.test(technical)) return Response.json({ error: 'Please choose a valid related page or parent item.' }, { status: 400 })
   if (/UNIQUE constraint/i.test(technical)) return Response.json({ error: 'That value already exists. Please use a different one.' }, { status: 409 })
   const notNull = /NOT NULL constraint failed: \w+\.(\w+)/i.exec(technical)
