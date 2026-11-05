@@ -23,6 +23,10 @@ const upgrades = [
   "ALTER TABLE site_settings ADD COLUMN header_cta_label TEXT NOT NULL DEFAULT ''", "ALTER TABLE site_settings ADD COLUMN header_cta_link TEXT NOT NULL DEFAULT ''",
   "ALTER TABLE site_settings ADD COLUMN header_dropdown_note TEXT NOT NULL DEFAULT ''", "ALTER TABLE site_settings ADD COLUMN header_dropdown_cta TEXT NOT NULL DEFAULT ''",
   "ALTER TABLE site_settings ADD COLUMN header_cta_short_label TEXT NOT NULL DEFAULT ''",
+  // Media details recorded by the upload pipeline (media-store.ts MEDIA_COLUMNS).
+  'ALTER TABLE media ADD COLUMN width INTEGER', 'ALTER TABLE media ADD COLUMN height INTEGER',
+  "ALTER TABLE media ADD COLUMN title TEXT NOT NULL DEFAULT ''", 'ALTER TABLE media ADD COLUMN decorative INTEGER NOT NULL DEFAULT 0',
+  "ALTER TABLE media ADD COLUMN role TEXT NOT NULL DEFAULT 'served'", 'ALTER TABLE media ADD COLUMN original_id INTEGER',
   // Site-wide figures (cms-admin.ts SETTINGS_COLUMNS).
   "ALTER TABLE site_settings ADD COLUMN client_count TEXT NOT NULL DEFAULT ''", "ALTER TABLE site_settings ADD COLUMN google_rating TEXT NOT NULL DEFAULT ''",
   "ALTER TABLE site_settings ADD COLUMN google_review_count TEXT NOT NULL DEFAULT ''", "ALTER TABLE site_settings ADD COLUMN founded_year TEXT NOT NULL DEFAULT ''",

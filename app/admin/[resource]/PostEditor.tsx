@@ -14,6 +14,7 @@ import {
   toDateInput,
 } from "../../lib/post-checklist";
 import RichTextEditor from "./RichTextEditor";
+import ImageUpload from "../ImageUpload";
 
 type RecordValue = Record<string, unknown>;
 
@@ -158,8 +159,7 @@ export default function PostEditor({
   onSubmit,
   onCancel,
   saving,
-  uploading,
-  onUpload,
+  fieldErrors,
   categories,
   otherPosts,
   notice,
@@ -170,8 +170,8 @@ export default function PostEditor({
   onSubmit: (event: React.FormEvent) => void;
   onCancel: () => void;
   saving: boolean;
-  uploading: boolean;
-  onUpload: (file?: File) => void;
+  /** Save errors by field name, shown next to the field. */
+  fieldErrors: Record<string, string>;
   categories: string[];
   /** The other posts, for the duplicate title/description/address check. */
   otherPosts: OtherPost[];
@@ -291,47 +291,16 @@ export default function PostEditor({
 
           {/* 2 ── Cover */}
           <Card step={2} title="Cover image" description="The large picture under the title. Also used when the post is shared.">
-            <div className="rounded-xl border border-dashed border-slate-700 bg-slate-950/70 p-4">
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/webp,image/gif"
-                disabled={uploading}
-                onChange={(event) => onUpload(event.target.files?.[0])}
-                className="block w-full text-sm text-slate-400 file:mr-3 file:rounded-lg file:border-0 file:bg-cyan-400 file:px-4 file:py-2 file:font-bold file:text-slate-950"
-              />
-              {uploading && <span className="mt-2 block text-xs text-cyan-300">Uploading image…</span>}
-              <span className="mt-2 block text-xs text-slate-500">
-                A wide image (16:9, at least 1200px) works best. Large photos are resized automatically.
-              </span>
-              {value("image_url") && (
-                <div className="mt-4 flex flex-wrap items-end gap-4">
-                  <img
-                    src={previewSrc(value("image_url"))}
-                    alt=""
-                    className="aspect-video w-64 rounded-lg border border-slate-700 bg-slate-900 object-cover"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => change("image_url", "")}
-                    className="rounded-lg border border-red-500/30 px-3 py-2 text-xs text-red-300"
-                  >
-                    Remove
-                  </button>
-                </div>
-              )}
-            </div>
-            <Field
-              label="Describe the image (alt text)"
-              counter={{ value: value("image_alt").length, max: 125 }}
-              help="What the picture shows, for screen readers and Google Images. Left empty, the post title is used."
-            >
-              <input
-                value={value("image_alt")}
-                onChange={(event) => change("image_alt", event.target.value)}
-                placeholder="e.g. IT engineer installing a network rack in a Dubai office"
-                className={inputClass}
-              />
-            </Field>
+            <ImageUpload
+              label="Cover picture"
+              value={value("image_url")}
+              onChange={(url) => change("image_url", url)}
+              alt={value("image_alt")}
+              onAltChange={(alt) => change("image_alt", alt)}
+              altMax={125}
+              help="A wide image (16:9, at least 1200px) works best. The alt text says what it shows, for screen readers and Google Images."
+              error={fieldErrors.image_url ?? fieldErrors.image_alt}
+            />
           </Card>
 
           {/* 3 ── Content */}
@@ -579,7 +548,7 @@ export default function PostEditor({
             Cancel
           </button>
           <button
-            disabled={saving || uploading}
+            disabled={saving}
             className="rounded-xl bg-gradient-to-r from-cyan-300 to-blue-500 px-6 py-2.5 text-sm font-bold text-slate-950 transition hover:brightness-110 disabled:opacity-50"
           >
             {saving ? "Saving…" : "Save changes"}

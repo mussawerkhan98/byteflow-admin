@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import ImageUpload from "../ImageUpload";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus, faTrash } from "@fortawesome/free-solid-svg-icons";
 
@@ -27,27 +27,11 @@ export default function StructuredFieldEditor({
   value,
   onChange,
 }: Props) {
-  const [uploading, setUploading] = useState(false);
 
   if (fieldName === "content" && sectionType === "custom") {
     const content = parse<Record<string, string>>(value, {});
     const update = (key: string, nextValue: string) =>
       onChange(JSON.stringify({ ...content, [key]: nextValue }));
-    const uploadImage = async (file?: File) => {
-      if (!file) return;
-      setUploading(true);
-      try {
-        const payload = new FormData();
-        payload.set("file", file);
-        payload.set("altText", content.heading || "Page section image");
-        const response = await fetch("/api/admin/upload", { method: "POST", body: payload });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || "Upload failed");
-        update("image_url", String(data.url));
-      } finally {
-        setUploading(false);
-      }
-    };
     return (
       <div className="mt-2 grid gap-3 rounded-xl border border-slate-700 bg-slate-950/50 p-4 sm:grid-cols-2">
         <p className="text-xs text-slate-500 sm:col-span-2">
@@ -90,36 +74,9 @@ export default function StructuredFieldEditor({
             className={inputClass}
           />
         </label>
-        <label className="sm:col-span-2">
-          <span className="mb-1 block text-xs text-slate-400">Image (optional)</span>
-          <div className="space-y-2">
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp,image/gif"
-              disabled={uploading}
-              onChange={(event) => void uploadImage(event.target.files?.[0])}
-              className={inputClass}
-            />
-            {uploading && <span className="block text-xs text-cyan-300">Uploading image…</span>}
-            {content.image_url && (
-              <div className="flex items-end gap-3">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={content.image_url}
-                  alt="Section preview"
-                  className="h-24 w-36 rounded-lg border border-slate-700 object-cover"
-                />
-                <button
-                  type="button"
-                  onClick={() => update("image_url", "")}
-                  className="rounded-lg border border-red-400/20 px-3 py-2 text-xs text-red-300"
-                >
-                  Remove image
-                </button>
-              </div>
-            )}
-          </div>
-        </label>
+        <div className="sm:col-span-2">
+          <ImageUpload label="Image (optional)" value={content.image_url ?? ""} onChange={(url) => update("image_url", url)} />
+        </div>
         <label>
           <span className="mb-1 block text-xs text-slate-400">Button text (optional)</span>
           <input
@@ -149,6 +106,7 @@ export default function StructuredFieldEditor({
       ["story", "Story (separate paragraphs with a blank line)", "Founder story"],
       ["image_url", "Owner image URL", "/images/owner/owner.png"],
       ["image_alt", "Image alt text", "Byteflow founder"],
+      ["name", "Name (optional, shown with the quote on the home page)", ""],
       ["role", "Role", "Founder & CEO"],
       ["company", "Company", "Byteflow Information Technology"],
       ["linkedin_url", "LinkedIn URL", "https://…"],
@@ -157,33 +115,24 @@ export default function StructuredFieldEditor({
     ];
     const update = (key: string, nextValue: string) =>
       onChange(JSON.stringify({ ...content, [key]: nextValue }));
-    const uploadOwnerImage = async (file?: File) => {
-      if (!file) return;
-      setUploading(true);
-      try {
-        const payload = new FormData();
-        payload.set("file", file);
-        payload.set("altText", content.image_alt || "Byteflow founder");
-        const response = await fetch("/api/admin/upload", { method: "POST", body: payload });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || "Upload failed");
-        update("image_url", String(data.url));
-      } finally {
-        setUploading(false);
-      }
-    };
     return (
       <div className="mt-2 grid gap-3 rounded-xl border border-slate-700 bg-slate-950/50 p-4 sm:grid-cols-2">
-        {fields.map(([key, label, placeholder]) => (
+        {fields.map(([key, label, placeholder]) =>
+          // The photo's alt text is edited inside its upload field.
+          key === "image_alt" ? null : key === "image_url" ? (
+            <div key={key} className="sm:col-span-2">
+              <ImageUpload
+                label="Founder photo"
+                value={content.image_url ?? ""}
+                onChange={(url) => update("image_url", url)}
+                alt={content.image_alt ?? ""}
+                onAltChange={(alt) => update("image_alt", alt)}
+              />
+            </div>
+          ) : (
           <label key={key} className={key === "story" || key === "heading" ? "sm:col-span-2" : ""}>
             <span className="mb-1 block text-xs text-slate-400">{label}</span>
-            {key === "image_url" ? (
-              <div className="space-y-2">
-                <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={uploading} onChange={(event) => void uploadOwnerImage(event.target.files?.[0])} className={inputClass} />
-                <input value={content[key] ?? ""} placeholder={placeholder} onChange={(event) => update(key, event.target.value)} className={inputClass} />
-                {uploading && <span className="block text-xs text-cyan-300">Uploading owner image…</span>}
-              </div>
-            ) : key === "story" ? (
+            {key === "story" ? (
               <textarea rows={7} value={content[key] ?? ""} placeholder={placeholder} onChange={(event) => update(key, event.target.value)} className={inputClass} />
             ) : (
               <input value={content[key] ?? ""} placeholder={placeholder} onChange={(event) => update(key, event.target.value)} className={inputClass} />

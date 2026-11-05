@@ -11,11 +11,14 @@ import {
   type ChildKind,
 } from "../../lib/editor-blocks";
 import { sanitizeEditorHtml, textToEditorHtml } from "../../lib/editor-html";
+import { acceptFor, formatBytes } from "../../lib/image-rules";
+import { uploadImage } from "../ImageUpload";
 import {
   faArrowRotateLeft,
   faArrowRotateRight,
   faBold,
   faEraser,
+  faImage,
   faItalic,
   faLink,
   faListOl,
@@ -41,6 +44,74 @@ export default function RichTextEditor({
   // button by itself, which is not something the writer asked for.
   const armed = useRef<EventTarget | null>(null);
   const [sourceMode, setSourceMode] = useState(false);
+  // A picture waiting for its alt text before it is uploaded and inserted,
+  // and where in the text it goes.
+  const [pending, setPending] = useState<{ file: File; preview: string } | null>(null);
+  const [imageAlt, setImageAlt] = useState("");
+  const [imageDecorative, setImageDecorative] = useState(false);
+  const [imageError, setImageError] = useState("");
+  const [imageBusy, setImageBusy] = useState(false);
+  const [pasteNote, setPasteNote] = useState("");
+  const savedRange = useRef<Range | null>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
+
+  /** The caret's place in the editor, or null when it is elsewhere. */
+  function editorRange() {
+    const selection = window.getSelection();
+    const root = editor.current;
+    if (!root || !selection || selection.rangeCount === 0) return null;
+    const range = selection.getRangeAt(0);
+    return root.contains(range.commonAncestorContainer) ? range.cloneRange() : null;
+  }
+
+  function queueImage(file: File, at: Range | null) {
+    if (pending) URL.revokeObjectURL(pending.preview);
+    savedRange.current = at;
+    setPending({ file, preview: URL.createObjectURL(file) });
+    setImageAlt("");
+    setImageDecorative(false);
+    setImageError("");
+  }
+
+  function closeImage() {
+    if (pending) URL.revokeObjectURL(pending.preview);
+    setPending(null);
+    setImageError("");
+  }
+
+  const attr = (value: string) => value.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+  async function insertImage() {
+    const root = editor.current;
+    if (!pending || !root) return;
+    setImageBusy(true);
+    setImageError("");
+    try {
+      const result = await uploadImage(pending.file, { kind: "image", alt: imageAlt, decorative: imageDecorative });
+      const size = result.width && result.height ? ` width="${result.width}" height="${result.height}"` : "";
+      const html = `<img src="${attr(result.url)}" alt="${attr(result.alt)}"${size}>`;
+      root.focus();
+      const selection = window.getSelection();
+      const range = savedRange.current && root.contains(savedRange.current.commonAncestorContainer) ? savedRange.current : null;
+      if (selection) {
+        selection.removeAllRanges();
+        if (range) selection.addRange(range);
+        else {
+          const end = document.createRange();
+          end.selectNodeContents(root);
+          end.collapse(false);
+          selection.addRange(end);
+        }
+      }
+      document.execCommand("insertHTML", false, html);
+      onChange(root.innerHTML);
+      closeImage();
+    } catch (problem) {
+      setImageError(problem instanceof Error ? problem.message : "The image could not be uploaded.");
+    } finally {
+      setImageBusy(false);
+    }
+  }
 
   useEffect(() => {
     if (editor.current && editor.current.innerHTML !== value) {
@@ -344,10 +415,19 @@ export default function RichTextEditor({
     const root = editor.current;
     if (!root) return;
     event.preventDefault();
+    setPasteNote("");
+    const picture = Array.from(event.clipboardData.files).find((file) => file.type.startsWith("image/"));
     const html = event.clipboardData.getData("text/html");
-    const clean = html
+    if (picture && !html) {
+      queueImage(picture, editorRange());
+      return;
+    }
+    const sanitized = html
       ? sanitizeEditorHtml(html)
       : textToEditorHtml(event.clipboardData.getData("text/plain"));
+    const clean = sanitized.replace(/<img\b[^>]*\ssrc="data:[^"]*"[^>]*>/gi, "");
+    if (clean !== sanitized)
+      setPasteNote("Pictures in the pasted text were left out. Add them with the Image button so they get alt text and are converted to WebP.");
     const selection = window.getSelection();
     if (!clean || !selection || selection.rangeCount === 0) return;
     const range = selection.getRangeAt(0);
@@ -592,6 +672,17 @@ export default function RichTextEditor({
         </button>
         <button
           type="button"
+          title="Insert image (JPG, PNG, WebP or AVIF; converted to WebP)"
+          onClick={() => {
+            savedRange.current = editorRange();
+            fileInput.current?.click();
+          }}
+          className={toolClass}
+        >
+          <FontAwesomeIcon icon={faImage} />
+        </button>
+        <button
+          type="button"
           title="Clear formatting"
           onClick={clearFormatting}
           className={toolClass}
@@ -613,6 +704,69 @@ export default function RichTextEditor({
           HTML
         </button>
       </div>
+      <input
+        ref={fileInput}
+        type="file"
+        accept={acceptFor("image")}
+        className="hidden"
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          if (file) queueImage(file, savedRange.current);
+          event.target.value = "";
+        }}
+      />
+      {pending && (
+        <div role="group" aria-label="Insert image" className="border-b border-slate-800 bg-slate-900/80 p-4 text-xs font-normal text-slate-300">
+          <div className="flex flex-wrap gap-4">
+            {/* eslint-disable-next-line @next/next/no-img-element -- local preview of the chosen file */}
+            <img src={pending.preview} alt="" className="h-20 w-28 rounded-lg border border-slate-700 object-cover" />
+            <div className="min-w-60 flex-1">
+              <p className="text-slate-400">
+                {pending.file.name} · {formatBytes(pending.file.size)}. It will be converted to WebP and resized to 2400px at most.
+              </p>
+              <label className="mt-2 block font-semibold">
+                Alt text <span className="text-cyan-400">*</span>
+                <input
+                  autoFocus
+                  value={imageDecorative ? "" : imageAlt}
+                  disabled={imageDecorative}
+                  onChange={(event) => setImageAlt(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      void insertImage();
+                    }
+                  }}
+                  placeholder={imageDecorative ? "Decorative: no alt text" : "What the picture shows, e.g. Server rack in a Dubai office"}
+                  className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none focus:border-cyan-400 disabled:opacity-50"
+                />
+              </label>
+              <label className="mt-2 flex items-center gap-2">
+                <input type="checkbox" checked={imageDecorative} onChange={(event) => setImageDecorative(event.target.checked)} />
+                Decorative (adds nothing a reader would miss)
+              </label>
+              {imageError && (
+                <p role="alert" className="mt-2 font-semibold text-red-300">
+                  {imageError}
+                </p>
+              )}
+              <div className="mt-3 flex gap-2">
+                <button type="button" disabled={imageBusy} onClick={() => void insertImage()} className="rounded-lg bg-cyan-400 px-4 py-2 font-bold text-slate-950 disabled:opacity-50">
+                  {imageBusy ? "Uploading…" : "Insert image"}
+                </button>
+                <button type="button" disabled={imageBusy} onClick={closeImage} className="rounded-lg border border-slate-700 px-4 py-2 text-slate-300">
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {pasteNote && (
+        <p role="status" className="border-b border-slate-800 bg-amber-400/10 px-4 py-2 text-xs font-normal text-amber-200">
+          {pasteNote}
+        </p>
+      )}
       <div
         ref={editor}
         contentEditable
@@ -623,6 +777,16 @@ export default function RichTextEditor({
         data-placeholder="Write the blog post content…"
         onInput={(event) => onChange(event.currentTarget.innerHTML)}
         onPaste={paste}
+        onDragOver={(event) => {
+          if (Array.from(event.dataTransfer.items).some((item) => item.kind === "file")) event.preventDefault();
+        }}
+        onDrop={(event) => {
+          const picture = Array.from(event.dataTransfer.files).find((file) => file.type.startsWith("image/"));
+          if (!picture) return;
+          event.preventDefault();
+          const at = document.caretRangeFromPoint?.(event.clientX, event.clientY) ?? editorRange();
+          queueImage(picture, at);
+        }}
         hidden={sourceMode}
         className="rich-text-editor min-h-80 rounded-b-xl px-5 py-4 text-sm font-normal leading-7 text-slate-200 outline-none"
       />
