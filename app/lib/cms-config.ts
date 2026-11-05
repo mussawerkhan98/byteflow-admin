@@ -26,6 +26,14 @@ export type Resource = {
   singleton?: boolean;
 };
 
+/**
+ * The site-wide figures (Contact details & logo) can be quoted in text, so a
+ * number typed once stays the same on every page. The website fills these in
+ * (byteflow, app/lib/site-figures.ts).
+ */
+export const figuresHelp =
+  "To quote the site-wide figures, type {clients}, {rating}, {reviews}, {founded} or {years} (years in business); they are set under Contact details & logo.";
+
 export const resources = {
   pages: {
     table: "pages",
@@ -35,8 +43,8 @@ export const resources = {
     fields: [
       { name: "name", label: "Page name", type: "text", required: true },
       { name: "slug", label: "Slug", type: "text", required: true },
-      { name: "meta_title", label: "Meta title", type: "text" },
-      { name: "meta_description", label: "Meta description", type: "textarea" },
+      { name: "meta_title", label: "Meta title", type: "text", help: figuresHelp },
+      { name: "meta_description", label: "Meta description", type: "textarea", help: figuresHelp },
       { name: "canonical_url", label: "Canonical URL", type: "url" },
       { name: "og_title", label: "Open Graph title", type: "text" },
       {
@@ -47,7 +55,7 @@ export const resources = {
       { name: "og_image", label: "Open Graph image", type: "text" },
       { name: "hero_label", label: "Hero eyebrow / label", type: "text" },
       { name: "hero_heading", label: "Hero heading", type: "text" },
-      { name: "hero_description", label: "Hero description", type: "textarea" },
+      { name: "hero_description", label: "Hero description", type: "textarea", help: figuresHelp },
       {
         name: "hero_background_image",
         label: "Hero background image",
@@ -124,6 +132,7 @@ export const resources = {
           "custom",
           "hero",
           "founder",
+          "home_trust",
           "home_services_intro",
           "home_about",
           "home_promise",
@@ -164,18 +173,67 @@ export const resources = {
     fields: [
       { name: "title", label: "Title", type: "text", required: true },
       { name: "slug", label: "Slug", type: "text", required: true },
-      { name: "excerpt", label: "Short description", type: "textarea" },
+      {
+        name: "excerpt",
+        label: "Short description",
+        type: "textarea",
+        help: "Also the paragraph on this service's tab in the home page Services section. Keep it to two or three sentences.",
+      },
       { name: "description", label: "Full description", type: "textarea" },
+      {
+        name: "eyebrow",
+        label: "Home tab — small heading",
+        type: "text",
+        help: "The letter-spaced line above the service name on its home page tab, e.g. “Keep your business running”. Up to 40 characters. Blank uses the website's own.",
+      },
+      {
+        name: "tagline",
+        label: "Home tab — subtitle",
+        type: "text",
+        help: "One line in cyan under the service name. Up to 80 characters. Blank uses the service page's tagline.",
+      },
+      {
+        name: "highlights",
+        label: "Home tab — bullet points",
+        type: "textarea",
+        help: "One per line, up to 5, each up to 70 characters. Blank uses the first four features from the service page.",
+      },
       {
         name: "icon",
         label: "Icon",
         type: "text",
         help: "An SVG file up to 256 KB, shown on the service card. Exports from Figma, Illustrator and Inkscape all work as they come.",
       },
-      { name: "image_url", label: "Image URL", type: "text" },
-      { name: "image_alt", label: "Image alt text", type: "text" },
-      { name: "cta_label", label: "CTA label", type: "text" },
-      { name: "cta_link", label: "CTA link", type: "text" },
+      {
+        name: "image_url",
+        label: "Image",
+        type: "text",
+        help: "The large picture on this service's home page tab (shown 4:3, cropped to fill). Upload a photo about 1200×900; it is converted to WebP. Blank shows the service icon on navy.",
+      },
+      {
+        name: "image_alt",
+        label: "Image alt text",
+        type: "text",
+        help: "Describe what the photo shows, for screen readers and Google. Up to 125 characters.",
+      },
+      {
+        name: "image_caption",
+        label: "Home tab — image caption",
+        type: "text",
+        help: "The small dark label on the picture, e.g. “Monitored 24/7. Fixed in hours.” Up to 48 characters. Blank uses the service page's headline figure.",
+      },
+      {
+        name: "cta_label",
+        label: "Home tab — button text",
+        type: "text",
+        help: "Blank shows “Discuss this service”. Up to 28 characters.",
+      },
+      {
+        name: "cta_link",
+        label: "Home tab — button link",
+        type: "url",
+        help: "A page on this site (/contact-us) or a full https:// address. Blank links to /contact-us.",
+      },
       { name: "sort_order", label: "Display order", type: "number" },
       { name: "featured", label: "Featured", type: "boolean" },
       {
@@ -303,49 +361,45 @@ export const resources = {
       { name: "logo_url", label: "Logo", type: "text" },
       { name: "favicon_url", label: "Favicon", type: "text" },
       { name: "header_phone", label: "Header phone", type: "text" },
-      {
-        name: "header_show_phone",
-        label: "Header bar — show the phone number",
-        type: "boolean",
-        help: "Shows the header phone beside the menu on wide screens.",
-      },
-      {
-        name: "header_menu_uppercase",
-        label: "Header bar — menu links in CAPITALS",
-        type: "boolean",
-        help: "HOME · ABOUT US · SERVICES… The links themselves are edited under Header & footer links.",
-      },
-      {
-        name: "header_cta_label",
-        label: "Header bar — button text",
-        type: "text",
-        help: "The cyan button at the right of the top bar and in the mobile menu. Leave blank for “Contact us”.",
-      },
-      {
-        name: "header_cta_link",
-        label: "Header bar — button link",
-        type: "url",
-        help: "Leave blank for /contact-us. A menu link to the same page is hidden, since the button already shows it.",
-      },
-      {
-        name: "header_dropdown_note",
-        label: "Services dropdown — small text",
-        type: "text",
-        help: "The grey line in the box at the bottom of the Services dropdown. Leave blank for “Not sure which one fits?”.",
-      },
-      {
-        name: "header_dropdown_cta",
-        label: "Services dropdown — link text",
-        type: "text",
-        help: "The bold link under it, which goes to the button link above. Leave blank for “Ask an engineer”.",
-      },
       { name: "whatsapp_number", label: "WhatsApp number", type: "text" },
       { name: "whatsapp_link", label: "WhatsApp link", type: "url" },
       { name: "primary_email", label: "Primary email", type: "email" },
       { name: "physical_address", label: "Physical address", type: "textarea" },
       { name: "business_hours", label: "Business hours", type: "textarea" },
-      { name: "footer_text", label: "Footer text", type: "textarea" },
+      { name: "footer_text", label: "Footer text", type: "textarea", help: figuresHelp },
       { name: "copyright_text", label: "Copyright text", type: "text" },
+      // Site-wide figures: one value each, quoted everywhere on the website
+      // (trust strip, hero, About, testimonials, footer, meta descriptions).
+      {
+        name: "client_count",
+        label: "Figures — number of clients",
+        type: "text",
+        help: "Shown exactly as typed, e.g. 574 or 500+. Used in the trust strip, About, footer and descriptions. Blank shows 574.",
+      },
+      {
+        name: "google_rating",
+        label: "Figures — Google rating",
+        type: "text",
+        help: "Out of 5, e.g. 4.9. Blank shows 4.9.",
+      },
+      {
+        name: "google_review_count",
+        label: "Figures — number of Google reviews",
+        type: "text",
+        help: "e.g. 52 or 50+. Shown as “Google rating · … reviews” in the trust strip and beside the testimonials. Blank shows 50+.",
+      },
+      {
+        name: "founded_year",
+        label: "Figures — year founded",
+        type: "text",
+        help: "e.g. 2017. Years in business are counted from it automatically. Blank shows 2017.",
+      },
+      {
+        name: "google_business_url",
+        label: "Google Business profile link",
+        type: "url",
+        help: "The rating in the trust strip links here. Use the share link of your Google Business profile (https://…). Blank leaves the rating unlinked.",
+      },
       { name: "facebook_url", label: "Facebook URL", type: "url" },
       { name: "instagram_url", label: "Instagram URL", type: "url" },
       { name: "linkedin_url", label: "LinkedIn URL", type: "url" },

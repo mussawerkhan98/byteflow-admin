@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import AdminPageHeader from "../AdminPageHeader";
+import HeroExtras from "../HeroExtras";
+import { heroExtraNames } from "../../lib/hero-fields";
 
 type PageHero = Record<string, string | number> & {
   id: number;
@@ -38,7 +40,7 @@ export default function HeroesManager() {
     const page = pages.find((item) => item.id === Number(id));
     setForm(
       Object.fromEntries(
-        heroFields.map((field) => [field, String(page?.[field] ?? "")]),
+        [...heroFields, ...heroExtraNames].map((field) => [field, String(page?.[field] ?? "")]),
       ),
     );
     setNotice("");
@@ -217,6 +219,9 @@ export default function HeroesManager() {
                 className={inputClass}
               />
             </label>
+            {pages.find((item) => item.id === Number(selectedId))?.slug === "home" && (
+              <HeroExtras values={form} onChange={change} />
+            )}
           </div>
           <button
             disabled={saving}

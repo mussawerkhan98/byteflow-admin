@@ -22,8 +22,10 @@ export async function storeMedia(options: {
   mimeType: string
   sizeBytes: number
   altText: string
+  /** Recorded when known, so the website can size the image before it loads. */
+  size?: { width: number; height: number } | null
 }): Promise<string> {
-  const { filename, dataUrl, mimeType, sizeBytes, altText } = options
+  const { filename, dataUrl, mimeType, sizeBytes, altText, size } = options
   // media.url is UNIQUE, so re-uploading a byte-identical file would other-
   // wise fail the insert. Point at the row that is already there instead.
   const existing = await db.execute({
@@ -33,9 +35,23 @@ export async function storeMedia(options: {
   const found = existing.rows[0]
   if (found) return `/api/media/${Number(found.id)}`
 
-  const inserted = await db.execute({
-    sql: 'INSERT INTO media (filename, url, mime_type, size_bytes, alt_text) VALUES (?, ?, ?, ?, ?)',
-    args: [filename, dataUrl, mimeType, sizeBytes, altText],
-  })
+  const plain = () =>
+    db.execute({
+      sql: 'INSERT INTO media (filename, url, mime_type, size_bytes, alt_text) VALUES (?, ?, ?, ?, ?)',
+      args: [filename, dataUrl, mimeType, sizeBytes, altText],
+    })
+  // width/height are newer columns; a database without them still takes the
+  // upload, just without its size.
+  const inserted = size
+    ? await db
+        .execute({
+          sql: 'INSERT INTO media (filename, url, mime_type, size_bytes, alt_text, width, height) VALUES (?, ?, ?, ?, ?, ?, ?)',
+          args: [filename, dataUrl, mimeType, sizeBytes, altText, size.width, size.height],
+        })
+        .catch((error) => {
+          if (/no such column|has no column/i.test(String(error))) return plain()
+          throw error
+        })
+    : await plain()
   return `/api/media/${Number(inserted.lastInsertRowid)}`
 }

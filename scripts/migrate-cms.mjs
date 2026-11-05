@@ -22,6 +22,19 @@ const upgrades = [
   'ALTER TABLE site_settings ADD COLUMN header_show_phone INTEGER NOT NULL DEFAULT 1', 'ALTER TABLE site_settings ADD COLUMN header_menu_uppercase INTEGER NOT NULL DEFAULT 1',
   "ALTER TABLE site_settings ADD COLUMN header_cta_label TEXT NOT NULL DEFAULT ''", "ALTER TABLE site_settings ADD COLUMN header_cta_link TEXT NOT NULL DEFAULT ''",
   "ALTER TABLE site_settings ADD COLUMN header_dropdown_note TEXT NOT NULL DEFAULT ''", "ALTER TABLE site_settings ADD COLUMN header_dropdown_cta TEXT NOT NULL DEFAULT ''",
+  "ALTER TABLE site_settings ADD COLUMN header_cta_short_label TEXT NOT NULL DEFAULT ''",
+  // Site-wide figures (cms-admin.ts SETTINGS_COLUMNS).
+  "ALTER TABLE site_settings ADD COLUMN client_count TEXT NOT NULL DEFAULT ''", "ALTER TABLE site_settings ADD COLUMN google_rating TEXT NOT NULL DEFAULT ''",
+  "ALTER TABLE site_settings ADD COLUMN google_review_count TEXT NOT NULL DEFAULT ''", "ALTER TABLE site_settings ADD COLUMN founded_year TEXT NOT NULL DEFAULT ''",
+  "ALTER TABLE site_settings ADD COLUMN google_business_url TEXT NOT NULL DEFAULT ''",
+  // Home page hero extras (app/lib/hero-fields.ts). Blank shows the website's own wording.
+  "ALTER TABLE pages ADD COLUMN hero_highlight TEXT NOT NULL DEFAULT ''", "ALTER TABLE pages ADD COLUMN hero_trust_line TEXT NOT NULL DEFAULT ''",
+  "ALTER TABLE pages ADD COLUMN hero_image TEXT NOT NULL DEFAULT ''", "ALTER TABLE pages ADD COLUMN hero_image_alt TEXT NOT NULL DEFAULT ''",
+  "ALTER TABLE pages ADD COLUMN hero_strip_text TEXT NOT NULL DEFAULT ''", "ALTER TABLE pages ADD COLUMN hero_strip_link_label TEXT NOT NULL DEFAULT ''",
+  "ALTER TABLE pages ADD COLUMN hero_strip_link TEXT NOT NULL DEFAULT ''",
+  // Home page Services tabs (cms-admin.ts SERVICE_COLUMNS).
+  "ALTER TABLE services ADD COLUMN eyebrow TEXT NOT NULL DEFAULT ''", "ALTER TABLE services ADD COLUMN tagline TEXT NOT NULL DEFAULT ''",
+  "ALTER TABLE services ADD COLUMN highlights TEXT NOT NULL DEFAULT ''", "ALTER TABLE services ADD COLUMN image_caption TEXT NOT NULL DEFAULT ''",
 ]
 for (const statement of upgrades) { try { await db.execute(statement) } catch (error) { if (!/duplicate column name/i.test(String(error))) throw error } }
 console.log('CMS schema migration completed.')

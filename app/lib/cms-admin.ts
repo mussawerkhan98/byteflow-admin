@@ -2,6 +2,7 @@ import 'server-only'
 import { db } from './db'
 import type { Field, Resource } from './cms-config'
 import { sanitizeEditorHtml } from './editor-html'
+import { checkSiteFigures } from './site-figures'
 
 type Data = Record<string, unknown>
 
@@ -28,6 +29,20 @@ const SETTINGS_COLUMNS = [
   "ALTER TABLE site_settings ADD COLUMN header_cta_link TEXT NOT NULL DEFAULT ''",
   "ALTER TABLE site_settings ADD COLUMN header_dropdown_note TEXT NOT NULL DEFAULT ''",
   "ALTER TABLE site_settings ADD COLUMN header_dropdown_cta TEXT NOT NULL DEFAULT ''",
+  "ALTER TABLE site_settings ADD COLUMN header_cta_short_label TEXT NOT NULL DEFAULT ''",
+  // Site-wide figures (website: app/lib/site-figures.ts). Blank shows its defaults.
+  "ALTER TABLE site_settings ADD COLUMN client_count TEXT NOT NULL DEFAULT ''",
+  "ALTER TABLE site_settings ADD COLUMN google_rating TEXT NOT NULL DEFAULT ''",
+  "ALTER TABLE site_settings ADD COLUMN google_review_count TEXT NOT NULL DEFAULT ''",
+  "ALTER TABLE site_settings ADD COLUMN founded_year TEXT NOT NULL DEFAULT ''",
+  "ALTER TABLE site_settings ADD COLUMN google_business_url TEXT NOT NULL DEFAULT ''",
+]
+/** The home page Services tab wording (website: app/lib/service-tabs.ts). */
+const SERVICE_COLUMNS = [
+  "ALTER TABLE services ADD COLUMN eyebrow TEXT NOT NULL DEFAULT ''",
+  "ALTER TABLE services ADD COLUMN tagline TEXT NOT NULL DEFAULT ''",
+  "ALTER TABLE services ADD COLUMN highlights TEXT NOT NULL DEFAULT ''",
+  "ALTER TABLE services ADD COLUMN image_caption TEXT NOT NULL DEFAULT ''",
 ]
 const columnsReady = new Map<string, Promise<void>>()
 
@@ -57,6 +72,7 @@ async function ensureColumns(table: string, statements: string[]) {
 async function ensureResourceTable(resource: Resource) {
   if (resource.table === 'posts') return ensureColumns('posts', POST_COLUMNS)
   if (resource.table === 'site_settings') return ensureColumns('site_settings', SETTINGS_COLUMNS)
+  if (resource.table === 'services') return ensureColumns('services', SERVICE_COLUMNS)
   if (resource.table !== 'website_scripts') return
   await db.execute(`CREATE TABLE IF NOT EXISTS website_scripts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -108,8 +124,31 @@ function normalize(field: Field, value: unknown) {
   return text
 }
 
+/** Limits that keep a service's home page tab from breaking its layout. */
+const SERVICE_TAB_LIMITS: [string, string, number][] = [
+  ['eyebrow', 'Home tab — small heading', 40],
+  ['tagline', 'Home tab — subtitle', 80],
+  ['image_caption', 'Home tab — image caption', 48],
+  ['image_alt', 'Image alt text', 125],
+  ['cta_label', 'Home tab — button text', 28],
+]
+
+export function checkServiceTab(data: Record<string, unknown>) {
+  for (const [name, label, max] of SERVICE_TAB_LIMITS) {
+    const value = String(data[name] ?? '')
+    if (value.length > max) throw new Error(`${label} must be ${max} characters or fewer`)
+  }
+  const bullets = String(data.highlights ?? '').split(/\r?\n/).map((line) => line.trim()).filter(Boolean)
+  if (bullets.length > 5) throw new Error('Home tab — bullet points: up to 5, one per line')
+  if (bullets.some((line) => line.length > 70)) throw new Error('Home tab — bullet points: keep each one to 70 characters')
+  if (String(data.image_url ?? '').trim() && !String(data.image_alt ?? '').trim())
+    throw new Error('Image alt text: describe the image, so it is not invisible to screen readers and Google')
+}
+
 function clean(resource: Resource, input: Data) {
   const data = Object.fromEntries(resource.fields.map((field) => [field.name, normalize(field, input[field.name])]))
+  if (resource.table === 'services') checkServiceTab(data)
+  if (resource.table === 'site_settings') checkSiteFigures(data)
   if (resource.table === 'website_scripts') {
     const code = String(data.code ?? '')
     if (code.length > 100_000) throw new Error('Script or HTML snippet must be 100,000 characters or fewer')
