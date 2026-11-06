@@ -111,7 +111,7 @@ export const homeBlocks: HomeBlockDef[] = [
     key: "home_needs",
     label: "Where does your IT need help?",
     shows:
-      "The warm off-white band after Selected work: three common starting points, each linking to a service, and the process line under them.",
+      "The bright band after Selected work (light in both themes): three common starting points as cards, each linking to a service with that service's icon, and the numbered process steps under them.",
     fields: [
       { name: "eyebrow", label: "Small heading", type: "text" },
       { name: "heading", label: "Heading", type: "text" },
