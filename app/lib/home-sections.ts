@@ -85,7 +85,7 @@ export const homeBlocks: HomeBlockDef[] = [
     key: "home_work",
     label: "Selected work heading",
     shows:
-      "The heading above the project cards after Services. The projects are picked on the Projects screen with “Feature on homepage”.",
+      "The heading above the project cards after Services. The projects are picked on the Projects screen with “Feature on homepage” (with none ticked, the first four published projects show); the first is the large lead card with its results.",
     fields: [
       { name: "eyebrow", label: "Small heading", type: "text" },
       { name: "heading", label: "Heading — first part", type: "text", help: headingHelp },

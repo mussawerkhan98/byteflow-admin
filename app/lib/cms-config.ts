@@ -508,7 +508,7 @@ export const resources = {
         name: "home_featured",
         label: "Feature on homepage",
         type: "boolean",
-        help: "Shows this project in Selected Work on the homepage. Up to four are shown, lowest homepage order first. The card uses this project's title, deliverables and tags.",
+        help: "Shows this project in Selected Work on the homepage. Up to four are shown, lowest homepage order first; the first is the large lead card. The card uses this project's title, deliverables, results and tags. With no project ticked, the first four published projects show.",
       },
       {
         name: "home_order",
