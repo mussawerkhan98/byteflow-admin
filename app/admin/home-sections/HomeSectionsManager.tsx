@@ -285,23 +285,37 @@ export default function HomeSectionsManager() {
     [],
   );
 
+  // The section the form is for. A load that answers after another tab was
+  // opened is ignored, so one section's words never fill another's form
+  // (and get saved there).
+  const requested = useRef(homeBlocks[0].key);
+  const load = useCallback(
+    (key: string) => {
+      requested.current = key;
+      void fetchBlock(key)
+        .then((result) => {
+          if (requested.current === key) apply(result);
+        })
+        .catch(() => {
+          if (requested.current === key) setNotice({ type: "error", text: "This section could not be loaded. Check your connection." });
+        })
+        .finally(() => {
+          if (requested.current === key) setLoading(false);
+        });
+    },
+    [apply],
+  );
+
   // First tab on arrival. Switching tabs loads from the click handler below.
-  useEffect(() => {
-    void fetchBlock(homeBlocks[0].key)
-      .then(apply)
-      .catch(() => setNotice({ type: "error", text: "This section could not be loaded. Check your connection." }))
-      .finally(() => setLoading(false));
-  }, [apply]);
+  useEffect(() => load(homeBlocks[0].key), [load]);
 
   function open(key: string) {
     if (key === active) return;
     setActive(key);
     setLoading(true);
     setNotice(null);
-    void fetchBlock(key)
-      .then(apply)
-      .catch(() => setNotice({ type: "error", text: "This section could not be loaded. Check your connection." }))
-      .finally(() => setLoading(false));
+    clearedTab.current = null;
+    load(key);
   }
 
   const change = (name: string, value: string | Item[]) => setForm((current) => ({ ...current, [name]: value }));

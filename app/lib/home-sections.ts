@@ -111,7 +111,7 @@ export const homeBlocks: HomeBlockDef[] = [
     key: "home_needs",
     label: "Where does your IT need help?",
     shows:
-      "The warm off-white band after Selected work: three common starting points, each linking to a service, and the process line under them.",
+      "The bright band after Selected work (light in both themes): three common starting points as cards, each linking to a service with that service's icon, and the numbered process steps under them.",
     fields: [
       { name: "eyebrow", label: "Small heading", type: "text" },
       { name: "heading", label: "Heading", type: "text" },
@@ -300,6 +300,18 @@ export const homeBlocks: HomeBlockDef[] = [
       { name: "link_label", label: "Link text", type: "text" },
       { name: "link", label: "Link", type: "link" },
       { name: "note", label: "Small note under the logos", type: "text" },
+      {
+        name: "platforms_label",
+        label: "Figure 1 — label",
+        type: "text",
+        help: "Shown under the number of different platforms in the logos below (counted automatically).",
+      },
+      {
+        name: "areas_label",
+        label: "Figure 2 — label",
+        type: "text",
+        help: "Shown under the number of tabs with logos (counted automatically).",
+      },
     ],
     lists: [
       {
@@ -353,6 +365,8 @@ export const homeBlocks: HomeBlockDef[] = [
         link_label: "Discuss your project",
         link: "/contact-us",
         note: "Technology choices depend on your setup and budget.",
+        platforms_label: "Platforms we support",
+        areas_label: "Areas of your IT",
       },
       lists: {
         tabs: [
