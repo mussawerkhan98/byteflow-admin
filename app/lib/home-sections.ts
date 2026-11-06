@@ -430,6 +430,8 @@ export const homeBlocks: HomeBlockDef[] = [
       { name: "list_label", label: "List — label above it", type: "text" },
       { name: "read_label", label: "Featured article — link text", type: "text" },
       { name: "topics_label", label: "Topics — label", type: "text" },
+      { name: "picked_badge", label: "Featured article — badge when you pick it", type: "text" },
+      { name: "latest_badge", label: "Featured article — badge on “Latest”", type: "text" },
     ],
     lists: [
       {
@@ -466,6 +468,8 @@ export const homeBlocks: HomeBlockDef[] = [
         list_label: "More articles",
         read_label: "Read article",
         topics_label: "Browse by topic",
+        picked_badge: "Editor's pick",
+        latest_badge: "Latest",
       },
       lists: {
         topics: [
@@ -476,6 +480,68 @@ export const homeBlocks: HomeBlockDef[] = [
           { title: "Marketing", category: "Digital Marketing", show: "yes" },
         ],
       },
+    },
+  },
+  {
+    key: "home_reviews",
+    label: "Client reviews",
+    shows:
+      "The reviews section: heading and rating on the left, the spotlight review on the right, and the moving wall of reviews below. The reviews themselves come from Customer reviews: tick “Featured” on one to make it the spotlight (otherwise the longest is), and set its Source to Google to show the Google badge.",
+    fields: [
+      { name: "eyebrow", label: "Small heading", type: "text" },
+      { name: "heading", label: "Heading — first part", type: "text", help: headingHelp },
+      { name: "heading_soft", label: "Heading — second part", type: "text" },
+      { name: "intro", label: "Text", type: "textarea" },
+      { name: "rating_label", label: "Rating — label", type: "text", help: "Under the Google rating (set in Contact details & logo)." },
+      { name: "count_label", label: "Rating — review count", type: "text", help: figuresNote },
+      {
+        name: "google_label",
+        label: "Google button text",
+        type: "text",
+        help: "Links to the Google Business URL in Contact details & logo; hidden while that is empty.",
+      },
+    ],
+    lists: [],
+    defaults: {
+      fields: {
+        eyebrow: "Client reviews",
+        heading: "Trusted by businesses",
+        heading_soft: "across the UAE.",
+        intro: "Real words from the businesses we look after, from one-person offices to multi-site teams.",
+        rating_label: "Google rating",
+        count_label: "{reviews} Google reviews",
+        google_label: "Read all reviews on Google",
+      },
+      lists: {},
+    },
+  },
+  {
+    key: "home_contact",
+    label: "Contact & get started",
+    shows:
+      "The last section of the home page: heading, call and WhatsApp buttons and the promise line, above the contact details and enquiry form. The phone number, WhatsApp link, email and address come from Contact details & logo.",
+    fields: [
+      { name: "eyebrow", label: "Small heading", type: "text" },
+      { name: "heading", label: "Heading — first part", type: "text", help: headingHelp },
+      { name: "heading_soft", label: "Heading — second part (cyan)", type: "text" },
+      { name: "intro", label: "Text", type: "textarea" },
+      { name: "call_label", label: "Call button text", type: "text" },
+      { name: "whatsapp_label", label: "WhatsApp button text", type: "text" },
+      { name: "promises", label: "Promises", type: "textarea", help: "One per line; each shows with a check mark." },
+    ],
+    lists: [],
+    defaults: {
+      fields: {
+        eyebrow: "Get started today",
+        heading: "Ready to upgrade your IT setup?",
+        heading_soft: "Let's talk.",
+        intro:
+          "Let our certified engineers handle everything, from network setup to cloud migration and cybersecurity. Send a message or call: one call is all it takes.",
+        call_label: "Call us now",
+        whatsapp_label: "WhatsApp us",
+        promises: "No contracts required\nFree consultation\nResponse within 2 hours",
+      },
+      lists: {},
     },
   },
   {
