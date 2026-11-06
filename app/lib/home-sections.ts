@@ -300,6 +300,18 @@ export const homeBlocks: HomeBlockDef[] = [
       { name: "link_label", label: "Link text", type: "text" },
       { name: "link", label: "Link", type: "link" },
       { name: "note", label: "Small note under the logos", type: "text" },
+      {
+        name: "platforms_label",
+        label: "Figure 1 — label",
+        type: "text",
+        help: "Shown under the number of different platforms in the logos below (counted automatically).",
+      },
+      {
+        name: "areas_label",
+        label: "Figure 2 — label",
+        type: "text",
+        help: "Shown under the number of tabs with logos (counted automatically).",
+      },
     ],
     lists: [
       {
@@ -353,6 +365,8 @@ export const homeBlocks: HomeBlockDef[] = [
         link_label: "Discuss your project",
         link: "/contact-us",
         note: "Technology choices depend on your setup and budget.",
+        platforms_label: "Platforms we support",
+        areas_label: "Areas of your IT",
       },
       lists: {
         tabs: [
