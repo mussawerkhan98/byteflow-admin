@@ -10,8 +10,11 @@
  * Pure data and functions, so the save rules can be tested directly.
  */
 
-/** "service": one of the published services, saved by its slug. */
-export type HomeFieldType = "text" | "textarea" | "link" | "image" | "select" | "service";
+/**
+ * "service": one of the published services, saved by its slug.
+ * "tab": one of the titles in the same block's "tabs" list, saved as that title.
+ */
+export type HomeFieldType = "text" | "textarea" | "link" | "image" | "select" | "service" | "tab";
 
 export type HomeField = {
   name: string;
@@ -283,6 +286,108 @@ export const homeBlocks: HomeBlockDef[] = [
     },
   },
   {
+    key: "home_tech",
+    label: "Technologies",
+    shows:
+      "The dark navy band after the Service promise: heading and text on the left, and on the right one tab per area (Microsoft, Security …) with the vendors' logos. A tab with no logo to show is hidden.",
+    fields: [
+      { name: "eyebrow", label: "Small tag", type: "text" },
+      { name: "heading", label: "Heading — first part (white)", type: "text" },
+      { name: "heading_soft", label: "Heading — second part (cyan)", type: "text" },
+      { name: "intro", label: "Text", type: "textarea" },
+      { name: "link_label", label: "Link text", type: "text" },
+      { name: "link", label: "Link", type: "link" },
+      { name: "note", label: "Small note under the logos", type: "text" },
+    ],
+    lists: [
+      {
+        name: "tabs",
+        label: "Tabs",
+        itemLabel: "Tab",
+        max: 8,
+        help: "In this order. Renaming a tab moves its logos with it.",
+        fields: [
+          { name: "title", label: "Tab name", type: "text" },
+          { name: "description", label: "Line above the logos", type: "text" },
+          {
+            name: "show",
+            label: "On the website",
+            type: "select",
+            options: [
+              { value: "yes", label: "Show" },
+              { value: "no", label: "Hide" },
+            ],
+          },
+        ],
+      },
+      {
+        name: "logos",
+        label: "Logos",
+        itemLabel: "Logo",
+        max: 80,
+        help: "Only vendors you really work with. Each shows under its tab, in this order. Without a logo picture, the tile shows the name's initials.",
+        fields: [
+          { name: "title", label: "Vendor name", type: "text" },
+          { name: "tab", label: "Tab", type: "tab" },
+          {
+            name: "show",
+            label: "On the website",
+            type: "select",
+            options: [
+              { value: "yes", label: "Show" },
+              { value: "no", label: "Hide" },
+            ],
+          },
+          { name: "logo", label: "Logo", type: "image", upload: "logo", help: "SVG works best. Leave empty to show the name's initials." },
+        ],
+      },
+    ],
+    defaults: {
+      fields: {
+        eyebrow: "Technologies",
+        heading: "The tools behind",
+        heading_soft: "reliable IT.",
+        intro: "Proven platforms we install, configure and support, chosen to fit your business rather than our habits.",
+        link_label: "Discuss your project",
+        link: "/contact-us",
+        note: "Technology choices depend on your setup and budget.",
+      },
+      lists: {
+        tabs: [
+          { title: "Microsoft", description: "Email, files, meetings and cloud for your whole team.", show: "yes" },
+          { title: "Security", description: "Firewalls, CCTV and access control that protect people and data.", show: "yes" },
+          { title: "Networking", description: "Switching, routing and Wi-Fi for offices of every size.", show: "yes" },
+          { title: "Backup", description: "Copies of your data you can restore when something goes wrong.", show: "yes" },
+          { title: "Cloud", description: "Cloud platforms we migrate to and manage.", show: "yes" },
+          { title: "Web", description: "Websites, apps and tools built for the UAE market.", show: "yes" },
+        ],
+        logos: [
+          { title: "Microsoft 365", tab: "Microsoft", logo: "", show: "yes" },
+          { title: "Microsoft Azure", tab: "Microsoft", logo: "", show: "yes" },
+          { title: "Microsoft Teams", tab: "Microsoft", logo: "", show: "yes" },
+          { title: "SharePoint", tab: "Microsoft", logo: "", show: "yes" },
+          { title: "Exchange Online", tab: "Microsoft", logo: "", show: "yes" },
+          { title: "Fortinet", tab: "Security", logo: "", show: "yes" },
+          { title: "Hikvision", tab: "Security", logo: "", show: "yes" },
+          { title: "ZKTeco", tab: "Security", logo: "", show: "yes" },
+          { title: "Cisco", tab: "Networking", logo: "", show: "yes" },
+          { title: "Ubiquiti", tab: "Networking", logo: "", show: "yes" },
+          { title: "HPE Aruba", tab: "Networking", logo: "", show: "yes" },
+          { title: "Fortinet", tab: "Networking", logo: "", show: "yes" },
+          { title: "Microsoft Azure", tab: "Cloud", logo: "", show: "yes" },
+          { title: "Microsoft 365", tab: "Cloud", logo: "", show: "yes" },
+          { title: "Google Workspace", tab: "Cloud", logo: "", show: "yes" },
+          { title: "React", tab: "Web", logo: "", show: "yes" },
+          { title: "Node.js", tab: "Web", logo: "", show: "yes" },
+          { title: "Laravel", tab: "Web", logo: "", show: "yes" },
+          { title: "Python", tab: "Web", logo: "", show: "yes" },
+          { title: "Flutter", tab: "Web", logo: "", show: "yes" },
+          { title: "WordPress", tab: "Web", logo: "", show: "yes" },
+        ],
+      },
+    },
+  },
+  {
     key: "home_process",
     label: "How it works",
     shows:
@@ -356,7 +461,7 @@ export function getHomeBlockDef(key: string | null): HomeBlockDef | undefined {
   return homeBlocks.find((block) => block.key === key);
 }
 
-const LIMITS: Record<HomeFieldType, number> = { text: 200, textarea: 2000, link: 500, image: 500, select: 40, service: 100 };
+const LIMITS: Record<HomeFieldType, number> = { text: 200, textarea: 2000, link: 500, image: 500, select: 40, service: 100, tab: 200 };
 
 /**
  * Links may be site paths, web addresses, phone, email or WhatsApp links;

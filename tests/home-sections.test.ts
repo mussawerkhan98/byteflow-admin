@@ -105,3 +105,26 @@ test("the three default scenarios match the website's", () => {
     ],
   );
 });
+
+test("Technologies: logos keep their tab and logo, unsafe logo links are dropped", () => {
+  const tech = getHomeBlockDef("home_tech")!;
+  const saved = sanitizeHomeBlock(tech, {
+    tabs: [{ title: " Backup ", description: "Restores", show: "yes" }],
+    logos: [
+      { title: "Veeam", tab: " Backup ", logo: "/api/media/7/veeam.svg", show: "yes" },
+      { title: "Bad", tab: "Backup", logo: "javascript:alert(1)", show: "no" },
+      { title: "", tab: "Backup", logo: "" },
+    ],
+  });
+  assert.deepEqual(saved.tabs, [{ title: "Backup", description: "Restores", show: "yes" }]);
+  assert.deepEqual(saved.logos, [
+    { title: "Veeam", tab: "Backup", show: "yes", logo: "/api/media/7/veeam.svg" },
+    { title: "Bad", tab: "Backup", show: "no", logo: "" },
+  ]);
+});
+
+test("Technologies: every default logo names one of the default tabs", () => {
+  const tech = getHomeBlockDef("home_tech")!;
+  const tabs = new Set(tech.defaults.lists.tabs.map((tab) => tab.title));
+  for (const logo of tech.defaults.lists.logos) assert.ok(tabs.has(logo.tab), logo.title);
+});

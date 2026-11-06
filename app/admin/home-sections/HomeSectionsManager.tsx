@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import AdminPageHeader from "../AdminPageHeader";
 import { homeBlocks, type HomeField, type HomeList } from "../../lib/home-sections";
 import ImageUpload from "../ImageUpload";
@@ -27,12 +27,27 @@ function FieldInput({
   value,
   onChange,
   services,
+  tabs,
 }: {
   field: HomeField;
   value: string;
   onChange: (value: string) => void;
   services: ServiceOption[];
+  tabs: string[];
 }) {
+  if (field.type === "tab")
+    return (
+      <select value={value} onChange={(event) => onChange(event.target.value)} className={inputClass}>
+        <option value="">Choose a tab</option>
+        {/* A tab removed since: kept, but the logo shows nowhere until it gets a tab. */}
+        {value && !tabs.includes(value) && <option value={value}>{value} (no such tab: not shown)</option>}
+        {tabs.map((tab) => (
+          <option key={tab} value={tab}>
+            {tab}
+          </option>
+        ))}
+      </select>
+    );
   if (field.type === "service")
     return (
       <select value={value} onChange={(event) => onChange(event.target.value)} className={inputClass}>
@@ -75,11 +90,13 @@ function ListEditor({
   items,
   onChange,
   services,
+  tabs,
 }: {
   list: HomeList;
   items: Item[];
   onChange: (items: Item[]) => void;
   services: ServiceOption[];
+  tabs: string[];
 }) {
   const titleField = list.fields.find((field) => field.name === "title");
   const hasImage = list.fields.some((field) => field.type === "image");
@@ -136,7 +153,7 @@ function ListEditor({
                   <label key={field.name} className={`${labelClass} ${field.type === "textarea" ? "md:col-span-2" : ""}`}>
                     {field.label}
                     {field.help && <span className="mt-1 block font-normal text-slate-500">{field.help}</span>}
-                    <FieldInput field={field} value={item[field.name] ?? ""} onChange={(value) => update(index, field.name, value)} services={services} />
+                    <FieldInput field={field} value={item[field.name] ?? ""} onChange={(value) => update(index, field.name, value)} services={services} tabs={tabs} />
                   </label>
                 ),
               )}
@@ -169,6 +186,7 @@ export default function HomeSectionsManager() {
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState<Notice>(null);
   const [services, setServices] = useState<ServiceOption[]>([]);
+  const clearedTab = useRef<{ index: number; name: string } | null>(null);
   const def = homeBlocks.find((block) => block.key === active)!;
   const needsServices = def.lists.some((list) => list.fields.some((field) => field.type === "service"));
 
@@ -219,6 +237,39 @@ export default function HomeSectionsManager() {
   }
 
   const change = (name: string, value: string | Item[]) => setForm((current) => ({ ...current, [name]: value }));
+
+  // The tab names a "tab" field can pick from (Technologies → Logos).
+  const tabItems = Array.isArray(form.tabs) ? form.tabs : [];
+  const tabNames = [...new Set(tabItems.map((tab) => tab.title?.trim()).filter(Boolean))];
+
+  /**
+   * Tabs edited; a renamed tab takes its logos with it. A name cleared before
+   * the new one is typed is remembered, so the logos follow once it is.
+   */
+  function changeTabs(items: Item[]) {
+    const before = tabItems;
+    // Only a rename in place: same tab count, one row with a new title.
+    const changed = before.length === items.length ? items.flatMap((item, i) => (before[i].title !== item.title ? [i] : [])) : [];
+    let move: [string, string] | null = null;
+    if (changed.length === 1) {
+      const i = changed[0];
+      const from = before[i].title?.trim() || (clearedTab.current?.index === i ? clearedTab.current.name : "");
+      const to = items[i].title?.trim() ?? "";
+      if (!to) clearedTab.current = from ? { index: i, name: from } : null;
+      else {
+        clearedTab.current = null;
+        if (from && from !== to) move = [from, to];
+      }
+    } else clearedTab.current = null;
+    setForm((current) => {
+      const next: FormValues = { ...current, tabs: items };
+      if (move && Array.isArray(current.logos)) {
+        const [from, to] = move;
+        next.logos = current.logos.map((logo) => (logo.tab?.trim() === from ? { ...logo, tab: to } : logo));
+      }
+      return next;
+    });
+  }
 
   async function save(event: React.FormEvent) {
     event.preventDefault();
@@ -322,7 +373,7 @@ export default function HomeSectionsManager() {
                 <label key={field.name} className={`${labelClass} ${field.type === "textarea" ? "md:col-span-2" : ""}`}>
                   {field.label}
                   {field.help && <span className="mt-1 block font-normal text-slate-500">{field.help}</span>}
-                  <FieldInput field={field} value={String(form[field.name] ?? "")} onChange={(value) => change(field.name, value)} services={services} />
+                  <FieldInput field={field} value={String(form[field.name] ?? "")} onChange={(value) => change(field.name, value)} services={services} tabs={tabNames} />
                 </label>
               );
             })}
@@ -331,8 +382,9 @@ export default function HomeSectionsManager() {
                 key={list.name}
                 list={list}
                 items={Array.isArray(form[list.name]) ? (form[list.name] as Item[]) : []}
-                onChange={(items) => change(list.name, items)}
+                onChange={(items) => (list.name === "tabs" ? changeTabs(items) : change(list.name, items))}
                 services={services}
+                tabs={tabNames}
               />
             ))}
           </div>
