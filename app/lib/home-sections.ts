@@ -13,8 +13,10 @@
 /**
  * "service": one of the published services, saved by its slug.
  * "tab": one of the titles in the same block's "tabs" list, saved as that title.
+ * "post": "latest", or one published blog post, saved by its slug.
+ * "category": a blog category the published posts use, saved as written.
  */
-export type HomeFieldType = "text" | "textarea" | "link" | "image" | "select" | "service" | "tab";
+export type HomeFieldType = "text" | "textarea" | "link" | "image" | "select" | "service" | "tab" | "post" | "category";
 
 export type HomeField = {
   name: string;
@@ -388,6 +390,81 @@ export const homeBlocks: HomeBlockDef[] = [
     },
   },
   {
+    key: "home_insights",
+    label: "Insights",
+    shows:
+      "The soft green-grey band after Technologies: the latest blog posts, magazine style. One featured article on the left, a short list of the next newest on the right, and topic links below that open the blog on that category. Posts come from Blog posts automatically.",
+    fields: [
+      { name: "eyebrow", label: "Small heading", type: "text" },
+      { name: "heading", label: "Heading — first part", type: "text", help: headingHelp },
+      { name: "heading_soft", label: "Heading — second part", type: "text" },
+      { name: "intro", label: "Text", type: "textarea" },
+      { name: "link_label", label: "Link text", type: "text" },
+      { name: "link", label: "Link", type: "link" },
+      {
+        name: "featured",
+        label: "Featured article",
+        type: "post",
+        help: "“Latest” always features the newest published post. A picked post that is later unpublished falls back to the latest.",
+      },
+      {
+        name: "list_count",
+        label: "Articles in the list on the right",
+        type: "select",
+        options: ["1", "2", "3", "4", "5"].map((value) => ({ value, label: value })),
+      },
+      { name: "list_label", label: "List — label above it", type: "text" },
+      { name: "read_label", label: "Featured article — link text", type: "text" },
+      { name: "topics_label", label: "Topics — label", type: "text" },
+    ],
+    lists: [
+      {
+        name: "topics",
+        label: "Topics",
+        itemLabel: "Topic",
+        max: 8,
+        help: "The chips under the articles, in this order. Each opens the blog on its category; a topic whose category has no published post is hidden.",
+        fields: [
+          { name: "title", label: "Chip text", type: "text" },
+          { name: "category", label: "Blog category", type: "category" },
+          {
+            name: "show",
+            label: "On the website",
+            type: "select",
+            options: [
+              { value: "yes", label: "Show" },
+              { value: "no", label: "Hide" },
+            ],
+          },
+        ],
+      },
+    ],
+    defaults: {
+      fields: {
+        eyebrow: "Insights",
+        heading: "Better IT decisions",
+        heading_soft: "start here.",
+        intro: "Practical guides on IT support, security, cloud and the web for businesses in Dubai and the UAE.",
+        link_label: "View all articles",
+        link: "/blog",
+        featured: "latest",
+        list_count: "3",
+        list_label: "More articles",
+        read_label: "Read article",
+        topics_label: "Browse by topic",
+      },
+      lists: {
+        topics: [
+          { title: "IT Support", category: "IT Support", show: "yes" },
+          { title: "Cyber Security", category: "Cyber Security", show: "yes" },
+          { title: "Cloud", category: "Cloud", show: "yes" },
+          { title: "Web", category: "Web Development", show: "yes" },
+          { title: "Marketing", category: "Digital Marketing", show: "yes" },
+        ],
+      },
+    },
+  },
+  {
     key: "home_process",
     label: "How it works",
     shows:
@@ -461,7 +538,7 @@ export function getHomeBlockDef(key: string | null): HomeBlockDef | undefined {
   return homeBlocks.find((block) => block.key === key);
 }
 
-const LIMITS: Record<HomeFieldType, number> = { text: 200, textarea: 2000, link: 500, image: 500, select: 40, service: 100, tab: 200 };
+const LIMITS: Record<HomeFieldType, number> = { text: 200, textarea: 2000, link: 500, image: 500, select: 40, service: 100, tab: 200, post: 200, category: 200 };
 
 /**
  * Links may be site paths, web addresses, phone, email or WhatsApp links;
@@ -481,6 +558,8 @@ function clean(field: HomeField, raw: unknown): string {
   if (field.type === "select") return field.options?.some((option) => option.value === value) ? value : field.options?.[0]?.value ?? "";
   // A service slug, or nothing: the website looks the service up when it shows the link.
   if (field.type === "service") return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value) ? value : "";
+  // A post slug, or "latest" (also for anything that isn't a slug).
+  if (field.type === "post") return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value) ? value : "latest";
   return field.type === "link" || field.type === "image" ? safeUrl(value, field.type) : value;
 }
 
