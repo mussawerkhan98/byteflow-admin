@@ -545,6 +545,42 @@ export const homeBlocks: HomeBlockDef[] = [
     },
   },
   {
+    key: "home_faq",
+    label: "FAQ section (all pages)",
+    shows:
+      "The words around the questions on every page that has FAQs: heading and intro, the “All” filter, and the “Still have questions?” card with call and WhatsApp buttons (numbers from Contact details & logo). The questions themselves are under FAQs.",
+    fields: [
+      { name: "eyebrow", label: "Small heading", type: "text" },
+      { name: "heading", label: "Heading — first part", type: "text", help: headingHelp },
+      { name: "heading_soft", label: "Heading — second part (cyan)", type: "text" },
+      { name: "intro", label: "Text", type: "textarea" },
+      { name: "all_label", label: "Filter — “all” button", type: "text" },
+      { name: "help_title", label: "Help card — heading", type: "text" },
+      { name: "help_text", label: "Help card — text", type: "textarea" },
+      { name: "call_label", label: "Help card — call button", type: "text" },
+      { name: "whatsapp_label", label: "Help card — WhatsApp button", type: "text" },
+      { name: "search_label", label: "Search box — placeholder", type: "text" },
+      { name: "empty_text", label: "Search — when nothing matches", type: "textarea" },
+    ],
+    lists: [],
+    defaults: {
+      fields: {
+        eyebrow: "FAQ",
+        heading: "Questions we get",
+        heading_soft: "asked all the time.",
+        intro: "Everything you need to know about working with Byteflow. Can't find what you're looking for? Just call us.",
+        all_label: "All questions",
+        help_title: "Still have questions?",
+        help_text: "Talk to a real engineer: call us or send a WhatsApp message.",
+        call_label: "Call us",
+        whatsapp_label: "WhatsApp us",
+        search_label: "Search questions",
+        empty_text: "No questions match your search. Call or message us and we will answer it directly.",
+      },
+      lists: {},
+    },
+  },
+  {
     key: "home_process",
     label: "How it works",
     shows:
