@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import AdminPageHeader from "../AdminPageHeader";
 import { homeBlocks, type HomeField, type HomeList } from "../../lib/home-sections";
 import ImageUpload from "../ImageUpload";
@@ -11,6 +11,19 @@ type FormValues = Record<string, string | Item[]>;
 type Notice = { type: "ok" | "error"; text: string } | null;
 /** The published services a "service" field can link to. */
 type ServiceOption = { slug: string; title: string };
+/** The published blog posts a "post" or "category" field picks from, newest first. */
+type PostOption = { slug: string; title: string; category: string };
+
+/** Each category the posts use, once, as first written. */
+const postCategories = (posts: PostOption[]) => {
+  const seen = new Map<string, string>();
+  for (const post of posts) {
+    const key = post.category.trim().replace(/\s+/g, " ").toLowerCase();
+    if (key && !seen.has(key)) seen.set(key, post.category.trim().replace(/\s+/g, " "));
+  }
+  return [...seen.values()].sort((a, b) => a.localeCompare(b));
+};
+const sameText = (a: string, b: string) => a.trim().replace(/\s+/g, " ").toLowerCase() === b.trim().replace(/\s+/g, " ").toLowerCase();
 
 const inputClass =
   "mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-3 text-sm outline-none focus:border-cyan-400";
@@ -27,12 +40,58 @@ function FieldInput({
   value,
   onChange,
   services,
+  tabs,
+  posts,
 }: {
   field: HomeField;
   value: string;
   onChange: (value: string) => void;
   services: ServiceOption[];
+  tabs: string[];
+  posts: PostOption[];
 }) {
+  if (field.type === "post")
+    return (
+      <select value={value || "latest"} onChange={(event) => onChange(event.target.value)} className={inputClass}>
+        <option value="latest">Latest: always the newest published post</option>
+        {/* A post unpublished since: kept, but the website features the latest. */}
+        {value && value !== "latest" && !posts.some((post) => post.slug === value) && (
+          <option value={value}>{value} (not published: the latest shows)</option>
+        )}
+        {posts.map((post) => (
+          <option key={post.slug} value={post.slug}>
+            {post.title}
+          </option>
+        ))}
+      </select>
+    );
+  if (field.type === "category") {
+    const categories = postCategories(posts);
+    return (
+      <select value={categories.find((category) => sameText(category, value)) ?? value} onChange={(event) => onChange(event.target.value)} className={inputClass}>
+        <option value="">Choose a category</option>
+        {value && !categories.some((category) => sameText(category, value)) && <option value={value}>{value} (no published posts: hidden)</option>}
+        {categories.map((category) => (
+          <option key={category} value={category}>
+            {category}
+          </option>
+        ))}
+      </select>
+    );
+  }
+  if (field.type === "tab")
+    return (
+      <select value={value} onChange={(event) => onChange(event.target.value)} className={inputClass}>
+        <option value="">Choose a tab</option>
+        {/* A tab removed since: kept, but the logo shows nowhere until it gets a tab. */}
+        {value && !tabs.includes(value) && <option value={value}>{value} (no such tab: not shown)</option>}
+        {tabs.map((tab) => (
+          <option key={tab} value={tab}>
+            {tab}
+          </option>
+        ))}
+      </select>
+    );
   if (field.type === "service")
     return (
       <select value={value} onChange={(event) => onChange(event.target.value)} className={inputClass}>
@@ -75,11 +134,15 @@ function ListEditor({
   items,
   onChange,
   services,
+  tabs,
+  posts,
 }: {
   list: HomeList;
   items: Item[];
   onChange: (items: Item[]) => void;
   services: ServiceOption[];
+  tabs: string[];
+  posts: PostOption[];
 }) {
   const titleField = list.fields.find((field) => field.name === "title");
   const hasImage = list.fields.some((field) => field.type === "image");
@@ -136,7 +199,7 @@ function ListEditor({
                   <label key={field.name} className={`${labelClass} ${field.type === "textarea" ? "md:col-span-2" : ""}`}>
                     {field.label}
                     {field.help && <span className="mt-1 block font-normal text-slate-500">{field.help}</span>}
-                    <FieldInput field={field} value={item[field.name] ?? ""} onChange={(value) => update(index, field.name, value)} services={services} />
+                    <FieldInput field={field} value={item[field.name] ?? ""} onChange={(value) => update(index, field.name, value)} services={services} tabs={tabs} posts={posts} />
                   </label>
                 ),
               )}
@@ -169,8 +232,12 @@ export default function HomeSectionsManager() {
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState<Notice>(null);
   const [services, setServices] = useState<ServiceOption[]>([]);
+  const clearedTab = useRef<{ index: number; name: string } | null>(null);
   const def = homeBlocks.find((block) => block.key === active)!;
   const needsServices = def.lists.some((list) => list.fields.some((field) => field.type === "service"));
+  const [posts, setPosts] = useState<PostOption[]>([]);
+  const postsLoaded = useRef(false);
+  const needsPosts = [...def.fields, ...def.lists.flatMap((list) => list.fields)].some((field) => field.type === "post" || field.type === "category");
 
   // Loaded once, the first time a section with a service picker is opened.
   useEffect(() => {
@@ -186,6 +253,25 @@ export default function HomeSectionsManager() {
       )
       .catch(() => setNotice({ type: "error", text: "The services list could not be loaded. Check your connection." }));
   }, [needsServices, services.length]);
+
+  // Loaded once, the first time a section that picks a post or category is opened.
+  useEffect(() => {
+    if (!needsPosts || postsLoaded.current) return;
+    postsLoaded.current = true;
+    void fetch("/api/admin/posts")
+      .then((response) => response.json())
+      .then((data: { records?: Record<string, unknown>[] }) =>
+        setPosts(
+          (data.records ?? [])
+            .filter((row) => Number(row.published) === 1 || row.published === true)
+            .map((row) => ({ slug: String(row.slug), title: String(row.title), category: String(row.category ?? "") })),
+        ),
+      )
+      .catch(() => {
+        postsLoaded.current = false;
+        setNotice({ type: "error", text: "The blog posts could not be loaded. Check your connection." });
+      });
+  }, [needsPosts]);
 
   const apply = useCallback(
     ({ ok, data }: { ok: boolean; data: { error?: string; saved?: boolean; content?: FormValues } }) => {
@@ -219,6 +305,39 @@ export default function HomeSectionsManager() {
   }
 
   const change = (name: string, value: string | Item[]) => setForm((current) => ({ ...current, [name]: value }));
+
+  // The tab names a "tab" field can pick from (Technologies → Logos).
+  const tabItems = Array.isArray(form.tabs) ? form.tabs : [];
+  const tabNames = [...new Set(tabItems.map((tab) => tab.title?.trim()).filter(Boolean))];
+
+  /**
+   * Tabs edited; a renamed tab takes its logos with it. A name cleared before
+   * the new one is typed is remembered, so the logos follow once it is.
+   */
+  function changeTabs(items: Item[]) {
+    const before = tabItems;
+    // Only a rename in place: same tab count, one row with a new title.
+    const changed = before.length === items.length ? items.flatMap((item, i) => (before[i].title !== item.title ? [i] : [])) : [];
+    let move: [string, string] | null = null;
+    if (changed.length === 1) {
+      const i = changed[0];
+      const from = before[i].title?.trim() || (clearedTab.current?.index === i ? clearedTab.current.name : "");
+      const to = items[i].title?.trim() ?? "";
+      if (!to) clearedTab.current = from ? { index: i, name: from } : null;
+      else {
+        clearedTab.current = null;
+        if (from && from !== to) move = [from, to];
+      }
+    } else clearedTab.current = null;
+    setForm((current) => {
+      const next: FormValues = { ...current, tabs: items };
+      if (move && Array.isArray(current.logos)) {
+        const [from, to] = move;
+        next.logos = current.logos.map((logo) => (logo.tab?.trim() === from ? { ...logo, tab: to } : logo));
+      }
+      return next;
+    });
+  }
 
   async function save(event: React.FormEvent) {
     event.preventDefault();
@@ -322,7 +441,7 @@ export default function HomeSectionsManager() {
                 <label key={field.name} className={`${labelClass} ${field.type === "textarea" ? "md:col-span-2" : ""}`}>
                   {field.label}
                   {field.help && <span className="mt-1 block font-normal text-slate-500">{field.help}</span>}
-                  <FieldInput field={field} value={String(form[field.name] ?? "")} onChange={(value) => change(field.name, value)} services={services} />
+                  <FieldInput field={field} value={String(form[field.name] ?? "")} onChange={(value) => change(field.name, value)} services={services} tabs={tabNames} posts={posts} />
                 </label>
               );
             })}
@@ -331,8 +450,10 @@ export default function HomeSectionsManager() {
                 key={list.name}
                 list={list}
                 items={Array.isArray(form[list.name]) ? (form[list.name] as Item[]) : []}
-                onChange={(items) => change(list.name, items)}
+                onChange={(items) => (list.name === "tabs" ? changeTabs(items) : change(list.name, items))}
                 services={services}
+                tabs={tabNames}
+                posts={posts}
               />
             ))}
           </div>

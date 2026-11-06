@@ -105,3 +105,44 @@ test("the three default scenarios match the website's", () => {
     ],
   );
 });
+
+test("Technologies: logos keep their tab and logo, unsafe logo links are dropped", () => {
+  const tech = getHomeBlockDef("home_tech")!;
+  const saved = sanitizeHomeBlock(tech, {
+    tabs: [{ title: " Backup ", description: "Restores", show: "yes" }],
+    logos: [
+      { title: "Veeam", tab: " Backup ", logo: "/api/media/7/veeam.svg", show: "yes" },
+      { title: "Bad", tab: "Backup", logo: "javascript:alert(1)", show: "no" },
+      { title: "", tab: "Backup", logo: "" },
+    ],
+  });
+  assert.deepEqual(saved.tabs, [{ title: "Backup", description: "Restores", show: "yes" }]);
+  assert.deepEqual(saved.logos, [
+    { title: "Veeam", tab: "Backup", show: "yes", logo: "/api/media/7/veeam.svg" },
+    { title: "Bad", tab: "Backup", show: "no", logo: "" },
+  ]);
+});
+
+test("Technologies: every default logo names one of the default tabs", () => {
+  const tech = getHomeBlockDef("home_tech")!;
+  const tabs = new Set(tech.defaults.lists.tabs.map((tab) => tab.title));
+  for (const logo of tech.defaults.lists.logos) assert.ok(tabs.has(logo.tab), logo.title);
+});
+
+test("Insights: the featured article is a post slug or “latest”", () => {
+  const insights = getHomeBlockDef("home_insights")!;
+  const featured = (value: string) => sanitizeHomeBlock(insights, { featured: value }).featured;
+  assert.equal(featured("crm-data-migration-checklist"), "crm-data-migration-checklist");
+  assert.equal(featured("latest"), "latest");
+  assert.equal(featured("javascript:alert(1)"), "latest");
+  assert.equal(featured(""), "latest");
+  // The list length is one of its choices.
+  assert.equal(sanitizeHomeBlock(insights, { list_count: "4" }).list_count, "4");
+  assert.equal(sanitizeHomeBlock(insights, { list_count: "40" }).list_count, "1");
+});
+
+test("Insights: topics keep their category as written", () => {
+  const insights = getHomeBlockDef("home_insights")!;
+  const saved = sanitizeHomeBlock(insights, { topics: [{ title: "Web", category: " Web Development ", show: "yes" }, { title: "", category: "Cloud" }] });
+  assert.deepEqual(saved.topics, [{ title: "Web", category: "Web Development", show: "yes" }]);
+});
