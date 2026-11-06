@@ -516,6 +516,35 @@ export const homeBlocks: HomeBlockDef[] = [
     },
   },
   {
+    key: "home_contact",
+    label: "Contact & get started",
+    shows:
+      "The last section of the home page: heading, call and WhatsApp buttons and the promise line, above the contact details and enquiry form. The phone number, WhatsApp link, email and address come from Contact details & logo.",
+    fields: [
+      { name: "eyebrow", label: "Small heading", type: "text" },
+      { name: "heading", label: "Heading — first part", type: "text", help: headingHelp },
+      { name: "heading_soft", label: "Heading — second part (cyan)", type: "text" },
+      { name: "intro", label: "Text", type: "textarea" },
+      { name: "call_label", label: "Call button text", type: "text" },
+      { name: "whatsapp_label", label: "WhatsApp button text", type: "text" },
+      { name: "promises", label: "Promises", type: "textarea", help: "One per line; each shows with a check mark." },
+    ],
+    lists: [],
+    defaults: {
+      fields: {
+        eyebrow: "Get started today",
+        heading: "Ready to upgrade your IT setup?",
+        heading_soft: "Let's talk.",
+        intro:
+          "Let our certified engineers handle everything, from network setup to cloud migration and cybersecurity. Send a message or call: one call is all it takes.",
+        call_label: "Call us now",
+        whatsapp_label: "WhatsApp us",
+        promises: "No contracts required\nFree consultation\nResponse within 2 hours",
+      },
+      lists: {},
+    },
+  },
+  {
     key: "home_process",
     label: "How it works",
     shows:
