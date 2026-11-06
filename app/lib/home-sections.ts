@@ -430,6 +430,8 @@ export const homeBlocks: HomeBlockDef[] = [
       { name: "list_label", label: "List — label above it", type: "text" },
       { name: "read_label", label: "Featured article — link text", type: "text" },
       { name: "topics_label", label: "Topics — label", type: "text" },
+      { name: "picked_badge", label: "Featured article — badge when you pick it", type: "text" },
+      { name: "latest_badge", label: "Featured article — badge on “Latest”", type: "text" },
     ],
     lists: [
       {
@@ -466,6 +468,8 @@ export const homeBlocks: HomeBlockDef[] = [
         list_label: "More articles",
         read_label: "Read article",
         topics_label: "Browse by topic",
+        picked_badge: "Editor's pick",
+        latest_badge: "Latest",
       },
       lists: {
         topics: [
