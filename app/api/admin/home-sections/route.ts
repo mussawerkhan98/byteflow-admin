@@ -1,5 +1,6 @@
 import { isAdminAuthenticated } from "../../../lib/auth";
 import { db } from "../../../lib/db";
+import { refreshSiteContent } from "../../../lib/site-revalidate";
 import {
   checkHomeBlock,
   getHomeBlockDef,
@@ -46,6 +47,7 @@ export async function GET(request: Request) {
 export async function PUT(request: Request) {
   if (!(await isAdminAuthenticated()))
     return Response.json({ error: "Unauthorized" }, { status: 401 });
+  refreshSiteContent();
   const def = blockFrom(request);
   if (!def) return unknownBlock();
   const content = sanitizeHomeBlock(def, (await request.json()) as Record<string, unknown>);
@@ -71,6 +73,7 @@ export async function PUT(request: Request) {
 export async function DELETE(request: Request) {
   if (!(await isAdminAuthenticated()))
     return Response.json({ error: "Unauthorized" }, { status: 401 });
+  refreshSiteContent();
   const def = blockFrom(request);
   if (!def) return unknownBlock();
   const { pageId } = await findBlock(def.key);

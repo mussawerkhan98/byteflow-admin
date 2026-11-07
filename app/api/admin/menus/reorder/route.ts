@@ -1,9 +1,11 @@
 import { isAdminAuthenticated } from '../../../../lib/auth'
 import { db } from '../../../../lib/db'
+import { refreshSiteContent } from '../../../../lib/site-revalidate'
 
 type Item={id:number;parent_id:number|null;sort_order:number;area:'header'|'footer'}
 export async function POST(request:Request){
   if(!(await isAdminAuthenticated()))return Response.json({error:'Unauthorized'},{status:401})
+  refreshSiteContent()
   const body=await request.json().catch(()=>null) as {items?:Item[]}|null
   if(!Array.isArray(body?.items)||body.items.length>200)return Response.json({error:'Invalid menu order'},{status:400})
   const ids=new Set(body.items.map(item=>Number(item.id)))

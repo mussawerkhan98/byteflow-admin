@@ -1,4 +1,5 @@
 import "server-only";
+import { after } from "next/server";
 import { siteUrl } from "./admin-guide";
 
 /**
@@ -24,6 +25,18 @@ export async function revalidateSite(tag: string): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+/** Everything else the website's pages show; its /api/revalidate route lists it too. */
+export const SITE_CONTENT_TAG = "site-content";
+
+/**
+ * Tells the website its page content changed, once this response has been
+ * sent, so the save is not held up by it. Called on every save, even one
+ * that fails: the website then just reads the database once more.
+ */
+export function refreshSiteContent() {
+  after(() => revalidateSite(SITE_CONTENT_TAG));
 }
 
 /**

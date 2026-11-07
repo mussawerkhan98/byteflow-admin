@@ -1,6 +1,7 @@
 import { isAdminAuthenticated } from "../../../lib/auth";
 import { builtinServices } from "../../../lib/builtin-services";
 import { db } from "../../../lib/db";
+import { refreshSiteContent } from "../../../lib/site-revalidate";
 
 /** Which of the website's built-in services are missing from the database. */
 async function missingSlugs() {
@@ -22,6 +23,7 @@ export async function GET() {
 export async function POST() {
   if (!(await isAdminAuthenticated()))
     return Response.json({ error: "Unauthorized" }, { status: 401 });
+  refreshSiteContent();
   const missing = await missingSlugs();
   if (!missing.length) return Response.json({ imported: 0 });
 
