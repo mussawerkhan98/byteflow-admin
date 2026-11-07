@@ -208,7 +208,7 @@ export default function MenuBuilder() {
       <div className="mt-7 grid gap-7 xl:grid-cols-[360px_1fr]">
         <form
           onSubmit={saveItem}
-          className="h-fit rounded-2xl border border-white/[.08] bg-[#0d1921] p-5"
+          className="h-fit rounded-2xl border border-white/[.08] bg-(--admin-panel) p-5"
         >
           <h2 className="font-bold text-white">
             {editing ? "Edit menu item" : "Add menu item"}
@@ -317,7 +317,7 @@ export default function MenuBuilder() {
             )}
           </div>
         </form>
-        <section className="rounded-2xl border border-white/[.08] bg-[#0d1921] p-5">
+        <section className="rounded-2xl border border-white/[.08] bg-(--admin-panel) p-5">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <h2 className="font-bold text-white">Menu structure</h2>

@@ -79,7 +79,7 @@ export default function HeroesManager() {
           {notice}
         </p>
       )}
-      <section className="mt-7 rounded-2xl border border-white/[.08] bg-[#0d1921] p-6">
+      <section className="mt-7 rounded-2xl border border-white/[.08] bg-(--admin-panel) p-6">
         <label className="text-xs font-semibold text-slate-300">
           Display hero on page
           <select
@@ -99,7 +99,7 @@ export default function HeroesManager() {
       {selectedId && (
         <form
           onSubmit={save}
-          className="mt-6 rounded-2xl border border-white/[.08] bg-[#0d1921] p-6"
+          className="mt-6 rounded-2xl border border-white/[.08] bg-(--admin-panel) p-6"
         >
           <div className="grid gap-5 md:grid-cols-2">
             <label className="text-xs font-semibold text-slate-300">

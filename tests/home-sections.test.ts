@@ -1,7 +1,9 @@
 import { strict as assert } from "node:assert";
 import { test } from "node:test";
 import {
+  checkHomeBlock,
   getHomeBlockDef,
+  groupedFields,
   homeBlockFormValues,
   homeBlocks,
   sanitizeHomeBlock,
@@ -145,4 +147,37 @@ test("Insights: topics keep their category as written", () => {
   const insights = getHomeBlockDef("home_insights")!;
   const saved = sanitizeHomeBlock(insights, { topics: [{ title: "Web", category: " Web Development ", show: "yes" }, { title: "", category: "Cloud" }] });
   assert.deepEqual(saved.topics, [{ title: "Web", category: "Web Development", show: "yes" }]);
+});
+
+test("the tabs are in the home page's own order", () => {
+  assert.deepEqual(homeBlocks.map((b) => b.key), [
+    "home_services_intro", "home_work", "home_needs", "home_about", "home_promise", "home_tech",
+    "home_insights", "home_process", "home_help", "home_reviews", "home_contact", "home_faq",
+  ]);
+});
+
+test("every field sits under exactly one heading, the heading fields first", () => {
+  for (const block of homeBlocks) {
+    const groups = groupedFields(block);
+    assert.deepEqual(groups.flatMap((g) => g.fields.map((f) => f.name)).sort(), block.fields.map((f) => f.name).sort(), block.key);
+    if (block.fields.some((f) => f.name === "heading" && !f.group) && block.key !== "home_help") assert.equal(groups[0].label, "Heading", block.key);
+  }
+  assert.deepEqual(groupedFields(getHomeBlockDef("home_needs")!).map((g) => g.label), ["Heading", "Button on the right", "Bottom line"]);
+});
+
+test("a list picture can't be saved without its description; logos keep using their name", () => {
+  for (const [key, list] of [["home_needs", "scenarios"], ["home_about", "highlights"], ["home_process", "steps"]] as const) {
+    const def = getHomeBlockDef(key)!;
+    const save = (item: Record<string, string>) => checkHomeBlock(def, sanitizeHomeBlock(def, { [list]: [{ title: "First" }, item] }));
+    assert.match(save({ title: "Second", image: "/api/media/9/x.webp" }) ?? "", /2: describe the picture/, key);
+    assert.equal(save({ title: "Second", image: "/api/media/9/x.webp", image_alt: "Engineer fitting a rack" }), null, key);
+    assert.equal(save({ title: "Second" }), null, key);
+  }
+  const tech = getHomeBlockDef("home_tech")!;
+  assert.equal(checkHomeBlock(tech, sanitizeHomeBlock(tech, { logos: [{ title: "Microsoft", logo: "/api/media/3/ms.svg" }] })), null);
+});
+
+test("sections whose pictures live on another screen say where", () => {
+  assert.equal(getHomeBlockDef("home_work")!.picturesElsewhere?.href, "/admin/projects");
+  assert.equal(getHomeBlockDef("home_needs")!.picturesElsewhere, undefined);
 });

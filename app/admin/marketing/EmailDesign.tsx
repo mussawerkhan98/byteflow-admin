@@ -113,7 +113,7 @@ export default function EmailDesign() {
       )}
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)]">
-        <div className="rounded-2xl border border-white/[.08] bg-[#0d1921] p-5">
+        <div className="rounded-2xl border border-white/[.08] bg-(--admin-panel) p-5">
           <h2 className="border-b border-white/[.06] pb-4 text-lg font-bold text-white">
             Settings
           </h2>
@@ -213,7 +213,7 @@ export default function EmailDesign() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-white/[.08] bg-[#0d1921] p-5">
+        <div className="rounded-2xl border border-white/[.08] bg-(--admin-panel) p-5">
           <h2 className="border-b border-white/[.06] pb-4 text-lg font-bold text-white">
             Preview
           </h2>
@@ -225,7 +225,7 @@ export default function EmailDesign() {
             title="Email preview"
             srcDoc={preview}
             sandbox=""
-            className="mt-4 h-[560px] w-full rounded-lg border border-slate-800 bg-white"
+            className="mt-4 h-[560px] w-full rounded-lg border border-slate-800 bg-[#fff]"
           />
         </div>
       </div>

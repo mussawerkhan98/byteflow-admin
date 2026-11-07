@@ -130,7 +130,7 @@ export default function UsersManager() {
 
       <form
         onSubmit={save}
-        className="mt-7 rounded-2xl border border-white/[.08] bg-[#0d1921] p-6"
+        className="mt-7 rounded-2xl border border-white/[.08] bg-(--admin-panel) p-6"
       >
         <div className="mb-5 flex items-center justify-between">
           <div>
@@ -226,7 +226,7 @@ export default function UsersManager() {
         </button>
       </form>
 
-      <div className="mt-8 overflow-hidden rounded-2xl border border-white/[.08] bg-[#0d1921]">
+      <div className="mt-8 overflow-hidden rounded-2xl border border-white/[.08] bg-(--admin-panel)">
         <div className="flex items-center justify-between border-b border-white/[.06] px-5 py-4">
           <div>
             <h2 className="text-sm font-bold text-white">User accounts</h2>

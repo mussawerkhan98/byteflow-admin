@@ -13,7 +13,7 @@ type RunResult = {
 };
 
 const card =
-  "rounded-2xl border border-white/[.07] bg-[#0d1921] p-6";
+  "rounded-2xl border border-white/[.07] bg-(--admin-panel) p-6";
 
 export default function ImageStorageManager({ initial }: { initial: Survey | null }) {
   const [survey, setSurvey] = useState<Survey | null>(initial);

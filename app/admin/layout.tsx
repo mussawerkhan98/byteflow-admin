@@ -9,5 +9,5 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     getCurrentAdminUser(),
   ])
   const logoUrl=String(settings.rows[0]?.logo_url||'')
-  return <div className="min-h-screen bg-[#091218] text-slate-100"><AdminSidebar logoUrl={logoUrl||undefined} currentUser={currentUser}/><main className="min-w-0 lg:pl-[268px]"><div className="mx-auto max-w-[1500px] p-5 sm:p-7 lg:p-10 xl:p-12">{children}</div></main></div>
+  return <div className="admin-shell min-h-screen bg-(--admin-page) text-slate-100"><AdminSidebar logoUrl={logoUrl||undefined} currentUser={currentUser}/><main className="min-w-0 lg:pl-[268px]"><div className="mx-auto max-w-[1500px] p-5 sm:p-7 lg:p-10 xl:p-12">{children}</div></main></div>
 }

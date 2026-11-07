@@ -27,6 +27,8 @@ export type HomeField = {
   options?: { value: string; label: string }[];
   /** "image" only: "logo" takes SVG or WebP as is; "photo" is converted to WebP before upload. */
   upload?: "logo" | "photo";
+  /** The heading this field sits under on the form (see groupedFields). */
+  group?: string;
 };
 
 export type HomeList = {
@@ -49,6 +51,8 @@ export type HomeBlockDef = {
   fields: HomeField[];
   lists: HomeList[];
   defaults: { fields: Record<string, string>; lists: Record<string, Record<string, string>[]> };
+  /** Pictures this section shows that are edited on another screen. */
+  picturesElsewhere?: { text: string; href: string; label: string };
 };
 
 const headingHelp =
@@ -139,6 +143,14 @@ export const homeBlocks: HomeBlockDef[] = [
           { name: "description", label: "Text", type: "textarea" },
           { name: "service", label: "Linked service", type: "service" },
           {
+            name: "image",
+            label: "Picture",
+            type: "image",
+            upload: "photo",
+            help: "Optional. Replaces the drawing at the top of the card (shown about 5:2, cropped to fill). JPG, PNG, WebP or AVIF up to 5 MB, converted to WebP. Empty shows the built-in drawing.",
+          },
+          { name: "image_alt", label: "Picture description (alt text)", type: "text" },
+          {
             name: "show",
             label: "On the website",
             type: "select",
@@ -204,6 +216,14 @@ export const homeBlocks: HomeBlockDef[] = [
               { value: "chat", label: "Support chat" },
             ],
           },
+          {
+            name: "image",
+            label: "Picture",
+            type: "image",
+            upload: "photo",
+            help: "Optional. Replaces the small illustration in the preview card (about 1200×800). Converted to WebP. Empty shows the illustration chosen above.",
+          },
+          { name: "image_alt", label: "Picture description (alt text)", type: "text" },
           {
             name: "show",
             label: "Show on the website",
@@ -483,6 +503,80 @@ export const homeBlocks: HomeBlockDef[] = [
     },
   },
   {
+    key: "home_process",
+    label: "How it works",
+    shows:
+      "The “Our process” timeline: heading, then every step in order on one line (left to right on wide screens, top to bottom on phones), each with its timing, description and check-mark points.",
+    fields: [
+      { name: "eyebrow", label: "Small heading", type: "text" },
+      { name: "heading", label: "Heading — first part", type: "text", help: headingHelp },
+      { name: "heading_soft", label: "Heading — second part", type: "text" },
+      { name: "intro", label: "Intro paragraph", type: "textarea" },
+    ],
+    lists: [
+      {
+        name: "steps",
+        label: "Steps",
+        itemLabel: "Step",
+        max: 8,
+        help: "Shown in this order and numbered 01, 02… Five fit best on one line; more still work.",
+        fields: [
+          { name: "title", label: "Step title", type: "text" },
+          { name: "when", label: "When (e.g. Within 24 hours)", type: "text" },
+          { name: "description", label: "Description", type: "textarea" },
+          { name: "points", label: "Check-mark points — one per line", type: "textarea" },
+          {
+            name: "image",
+            label: "Picture",
+            type: "image",
+            upload: "photo",
+            help: "Optional. Shown across the top of the step's card (16:9, cropped to fill). Converted to WebP. Empty shows the card without a picture.",
+          },
+          { name: "image_alt", label: "Picture description (alt text)", type: "text" },
+        ],
+      },
+    ],
+    defaults: {
+      fields: {
+        eyebrow: "Our process",
+        heading: "From first call",
+        heading_soft: "to full delivery.",
+        intro: "A simple, transparent process so you always know exactly where things stand.",
+      },
+      lists: {
+        steps: [
+          { title: "Free consultation", when: "Your first call", description: "Reach out by phone, WhatsApp or the contact form. We listen to your setup, team size and pain points — no jargon, no sales pressure.", points: "Phone, WhatsApp or form\nYour setup and team size\nNo sales pressure" },
+          { title: "Custom proposal", when: "Within 24 hours", description: "Within 24 hours you receive a clear, itemised proposal — scope, timeline and fixed pricing. No hidden costs, no vague estimates.", points: "Itemised scope\nClear timeline\nFixed pricing" },
+          { title: "Onboarding & setup", when: "On-site or remote", description: "Our certified engineers arrive on-site or connect remotely. We configure your network, servers, cloud or software with zero disruption to your workday.", points: "Network & servers\nCloud & software\nNo disruption to your day" },
+          { title: "Testing & handover", when: "Before sign-off", description: "Everything is tested end-to-end before we hand over. We walk your team through what was done, answer every question and make sure you are 100% comfortable.", points: "End-to-end testing\nTeam walkthrough\nEvery question answered" },
+          { title: "Ongoing support", when: "24/7, for as long as you need", description: "We monitor your systems 24/7 and fix issues before they affect your business. One call or message and our engineers are on it — on-site within 2 hours.", points: "24/7 monitoring\nIssues fixed early\nOn-site within 2 hours" },
+        ],
+      },
+    },
+  },
+  {
+    key: "home_help",
+    label: "Help panel",
+    shows:
+      "The “Not sure which service you need?” panel under How it works. Its phone button uses the header phone from “Contact details & logo”.",
+    fields: [
+      { name: "heading", label: "Heading", type: "text" },
+      { name: "description", label: "Text", type: "textarea" },
+      { name: "button_label", label: "Button text", type: "text" },
+      { name: "button_link", label: "Button link", type: "link" },
+    ],
+    lists: [],
+    defaults: {
+      fields: {
+        heading: "Not sure which service you need?",
+        description: "Our team will guide you. Tell us what's slowing your business down and we'll point you to the right fit.",
+        button_label: "Talk to our team",
+        button_link: "/contact-us",
+      },
+      lists: {},
+    },
+  },
+  {
     key: "home_reviews",
     label: "Client reviews",
     shows:
@@ -580,73 +674,76 @@ export const homeBlocks: HomeBlockDef[] = [
       lists: {},
     },
   },
-  {
-    key: "home_process",
-    label: "How it works",
-    shows:
-      "The “Our process” explorer: heading, and the steps visitors click through (each with its timing, description and check-mark points).",
-    fields: [
-      { name: "eyebrow", label: "Small heading", type: "text" },
-      { name: "heading", label: "Heading — first part", type: "text", help: headingHelp },
-      { name: "heading_soft", label: "Heading — second part", type: "text" },
-      { name: "intro", label: "Intro paragraph", type: "textarea" },
-    ],
-    lists: [
-      {
-        name: "steps",
-        label: "Steps",
-        itemLabel: "Step",
-        max: 8,
-        help: "Icons follow the step order: chat, document, screen, check, shield.",
-        fields: [
-          { name: "title", label: "Step title", type: "text" },
-          { name: "when", label: "When (e.g. Within 24 hours)", type: "text" },
-          { name: "description", label: "Description", type: "textarea" },
-          { name: "points", label: "Check-mark points — one per line", type: "textarea" },
-        ],
-      },
-    ],
-    defaults: {
-      fields: {
-        eyebrow: "Our process",
-        heading: "From first call",
-        heading_soft: "to full delivery.",
-        intro: "A simple, transparent process so you always know exactly where things stand.",
-      },
-      lists: {
-        steps: [
-          { title: "Free consultation", when: "Your first call", description: "Reach out by phone, WhatsApp or the contact form. We listen to your setup, team size and pain points — no jargon, no sales pressure.", points: "Phone, WhatsApp or form\nYour setup and team size\nNo sales pressure" },
-          { title: "Custom proposal", when: "Within 24 hours", description: "Within 24 hours you receive a clear, itemised proposal — scope, timeline and fixed pricing. No hidden costs, no vague estimates.", points: "Itemised scope\nClear timeline\nFixed pricing" },
-          { title: "Onboarding & setup", when: "On-site or remote", description: "Our certified engineers arrive on-site or connect remotely. We configure your network, servers, cloud or software with zero disruption to your workday.", points: "Network & servers\nCloud & software\nNo disruption to your day" },
-          { title: "Testing & handover", when: "Before sign-off", description: "Everything is tested end-to-end before we hand over. We walk your team through what was done, answer every question and make sure you are 100% comfortable.", points: "End-to-end testing\nTeam walkthrough\nEvery question answered" },
-          { title: "Ongoing support", when: "24/7, for as long as you need", description: "We monitor your systems 24/7 and fix issues before they affect your business. One call or message and our engineers are on it — on-site within 2 hours.", points: "24/7 monitoring\nIssues fixed early\nOn-site within 2 hours" },
-        ],
-      },
-    },
-  },
-  {
-    key: "home_help",
-    label: "Help panel",
-    shows:
-      "The “Not sure which service you need?” panel under How it works. Its phone button uses the header phone from “Contact details & logo”.",
-    fields: [
-      { name: "heading", label: "Heading", type: "text" },
-      { name: "description", label: "Text", type: "textarea" },
-      { name: "button_label", label: "Button text", type: "text" },
-      { name: "button_link", label: "Button link", type: "link" },
-    ],
-    lists: [],
-    defaults: {
-      fields: {
-        heading: "Not sure which service you need?",
-        description: "Our team will guide you. Tell us what's slowing your business down and we'll point you to the right fit.",
-        button_label: "Talk to our team",
-        button_link: "/contact-us",
-      },
-      lists: {},
-    },
-  },
 ];
+
+/**
+ * The headings a block's fields sit under on the form, by field name. A
+ * field not listed sits under "Heading" when it is one of the usual heading
+ * fields, otherwise under "More".
+ */
+const FIELD_GROUPS: Record<string, Record<string, string>> = {
+  home_work: { link_label: "Button", link: "Button" },
+  home_needs: {
+    link_label: "Button on the right",
+    link: "Button on the right",
+    steps: "Bottom line",
+    steps_link_label: "Bottom line",
+    steps_link: "Bottom line",
+  },
+  home_promise: {
+    seal_text: "Seal",
+    footer_text: "Footer line",
+    footer_strong: "Footer line",
+    link_label: "Footer line",
+    link_href: "Footer line",
+  },
+  home_tech: { link_label: "Button", link: "Button", note: "Labels", platforms_label: "Labels", areas_label: "Labels" },
+  home_insights: {
+    link_label: "Button",
+    link: "Button",
+    featured: "Articles",
+    list_count: "Articles",
+    list_label: "Labels",
+    read_label: "Labels",
+    topics_label: "Labels",
+    picked_badge: "Labels",
+    latest_badge: "Labels",
+  },
+  home_reviews: { rating_label: "Rating labels", count_label: "Rating labels", google_label: "Rating labels" },
+  home_contact: { call_label: "Buttons", whatsapp_label: "Buttons", promises: "Promises" },
+  home_faq: {
+    all_label: "Search and topics",
+    search_label: "Search and topics",
+    empty_text: "Search and topics",
+    help_title: "Help bar",
+    help_text: "Help bar",
+    call_label: "Help bar",
+    whatsapp_label: "Help bar",
+  },
+  home_help: { heading: "Panel", description: "Panel", button_label: "Button", button_link: "Button" },
+};
+const HEADING_FIELDS = new Set(["eyebrow", "heading", "heading_soft", "intro"]);
+
+/** A block's fields under their headings, in the order the headings first appear. */
+export function groupedFields(def: HomeBlockDef): { label: string; fields: HomeField[] }[] {
+  const groups: { label: string; fields: HomeField[] }[] = [];
+  for (const field of def.fields) {
+    const label = field.group ?? FIELD_GROUPS[def.key]?.[field.name] ?? (HEADING_FIELDS.has(field.name) ? "Heading" : "More");
+    let group = groups.find((g) => g.label === label);
+    if (!group) groups.push((group = { label, fields: [] }));
+    group.fields.push(field);
+  }
+  return groups;
+}
+
+/** Sections whose pictures are uploaded on another screen, and where. */
+const PICTURES_ELSEWHERE: Record<string, HomeBlockDef["picturesElsewhere"]> = {
+  home_services_intro: { text: "Each service's picture and icon are uploaded on the Services screen.", href: "/admin/services", label: "Open Services" },
+  home_work: { text: "Each project's card picture is uploaded on the Projects screen (Homepage card — image).", href: "/admin/projects", label: "Open Projects" },
+  home_insights: { text: "Article pictures are each blog post's featured image.", href: "/admin/posts", label: "Open Blog posts" },
+  home_reviews: { text: "Reviewer photos are uploaded with each review.", href: "/admin/testimonials", label: "Open Customer reviews" },
+};
+for (const block of homeBlocks) block.picturesElsewhere ??= PICTURES_ELSEWHERE[block.key];
 
 export const homeBlockKeys = homeBlocks.map((block) => block.key);
 
@@ -683,6 +780,25 @@ function clean(field: HomeField, raw: unknown): string {
  * The content to save for a block: only its own fields, trimmed and capped,
  * lists cut to their maximum and stripped of items with no title.
  */
+/**
+ * What a block can't be saved with, beyond what sanitizeHomeBlock already
+ * cleans up; null when it is fine. A list item's uploaded picture needs its
+ * own description (`<picture>_alt`).
+ */
+export function checkHomeBlock(def: HomeBlockDef, content: Record<string, unknown>): string | null {
+  for (const list of def.lists) {
+    const items = Array.isArray(content[list.name]) ? (content[list.name] as Record<string, string>[]) : [];
+    for (const field of list.fields.filter((f) => f.type === "image")) {
+      const altName = `${field.name}_alt`;
+      if (!list.fields.some((f) => f.name === altName)) continue;
+      const index = items.findIndex((item) => item[field.name] && !String(item[altName] ?? "").trim());
+      if (index >= 0)
+        return `${list.itemLabel} ${index + 1}: describe the picture (alt text), so screen readers and Google can read it.`;
+    }
+  }
+  return null;
+}
+
 export function sanitizeHomeBlock(def: HomeBlockDef, body: Record<string, unknown>) {
   const content: Record<string, unknown> = {};
   for (const field of def.fields) content[field.name] = clean(field, body?.[field.name]);

@@ -520,7 +520,7 @@ export default function HeaderMenuManager() {
             </div>
           )}
 
-          <form key={tab} onSubmit={save} className="mt-7 rounded-2xl border border-white/[.08] bg-[#0d1921] p-6">
+          <form key={tab} onSubmit={save} className="mt-7 rounded-2xl border border-white/[.08] bg-(--admin-panel) p-6">
             <div className="grid gap-8 md:grid-cols-2">
               {tab === "bar" && (
                 <>

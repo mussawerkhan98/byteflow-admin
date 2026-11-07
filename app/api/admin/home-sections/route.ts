@@ -1,6 +1,7 @@
 import { isAdminAuthenticated } from "../../../lib/auth";
 import { db } from "../../../lib/db";
 import {
+  checkHomeBlock,
   getHomeBlockDef,
   homeBlockFormValues,
   sanitizeHomeBlock,
@@ -48,6 +49,8 @@ export async function PUT(request: Request) {
   const def = blockFrom(request);
   if (!def) return unknownBlock();
   const content = sanitizeHomeBlock(def, (await request.json()) as Record<string, unknown>);
+  const problem = checkHomeBlock(def, content);
+  if (problem) return Response.json({ error: problem }, { status: 400 });
   const { pageId, section } = await findBlock(def.key);
   if (!pageId) return Response.json({ error: MISSING_PAGE_ERROR }, { status: 404 });
   if (section) {

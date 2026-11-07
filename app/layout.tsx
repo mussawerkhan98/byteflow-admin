@@ -13,9 +13,17 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 }
 
+// Before paint, so a light-mode admin never flashes dark (AdminThemeToggle
+// stores the choice).
+const themeScript = `try{if(localStorage.getItem('admin-theme')==='light')document.documentElement.setAttribute('data-admin-theme','light')}catch(e){}`
+
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${manrope.variable} h-full antialiased`}>
+    // The script sets data-admin-theme before React hydrates; that one difference is expected.
+    <html lang="en" className={`${manrope.variable} h-full antialiased`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body className="min-h-full bg-[#f5f7fa] text-slate-900" style={{ fontFamily: 'var(--font-admin), sans-serif' }}>
         {children}
       </body>

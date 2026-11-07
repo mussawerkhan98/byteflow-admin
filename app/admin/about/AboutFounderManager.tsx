@@ -72,7 +72,7 @@ export default function AboutFounderManager() {
       ) : (
         <form
           onSubmit={save}
-          className="mt-7 rounded-2xl border border-white/[.08] bg-[#0d1921] p-6"
+          className="mt-7 rounded-2xl border border-white/[.08] bg-(--admin-panel) p-6"
         >
           <div className="grid gap-5 md:grid-cols-2">
             <div className="md:col-span-2">

@@ -208,7 +208,7 @@ export default function MarketingContacts({ hideHeader }: { hideHeader?: boolean
         <form
           ref={formRef}
           onSubmit={save}
-          className="mt-7 rounded-2xl border border-white/[.08] bg-[#0d1921] p-5 shadow-2xl sm:p-7"
+          className="mt-7 rounded-2xl border border-white/[.08] bg-(--admin-panel) p-5 shadow-2xl sm:p-7"
         >
           <h2 className="border-b border-white/[.06] pb-4 text-lg font-bold text-white">
             {editing.id ? "Edit contact" : "New contact"}
@@ -295,7 +295,7 @@ export default function MarketingContacts({ hideHeader }: { hideHeader?: boolean
         </form>
       )}
 
-      <section className="mt-7 rounded-2xl border border-white/[.08] bg-[#0d1921] p-5 sm:p-6">
+      <section className="mt-7 rounded-2xl border border-white/[.08] bg-(--admin-panel) p-5 sm:p-6">
         <div className="grid gap-3 sm:grid-cols-3">
           <input
             value={search}
@@ -406,7 +406,7 @@ export default function MarketingContacts({ hideHeader }: { hideHeader?: boolean
 
 function Stat({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-xl border border-white/[.08] bg-[#0d1921] p-4">
+    <div className="rounded-xl border border-white/[.08] bg-(--admin-panel) p-4">
       <p className="text-2xl font-black text-cyan-300">{value}</p>
       <p className="mt-1 text-xs text-slate-400">{label}</p>
     </div>
@@ -492,7 +492,7 @@ function ImportDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/70 p-4">
-      <div className="mt-10 w-full max-w-2xl rounded-2xl border border-white/[.08] bg-[#0d1921] p-6">
+      <div className="mt-10 w-full max-w-2xl rounded-2xl border border-white/[.08] bg-(--admin-panel) p-6">
         <h2 className="text-lg font-bold text-white">Import contacts from CSV</h2>
         <p className="mt-2 text-xs text-slate-400">
           Columns are matched loosely — email, name, phone, country, region/city and

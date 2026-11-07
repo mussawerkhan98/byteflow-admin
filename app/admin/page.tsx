@@ -129,7 +129,7 @@ export default async function Dashboard() {
           </Link>
         </div>
       </div>
-      <section className="mt-10 rounded-2xl border border-white/[.07] bg-[#0d1921] p-6">
+      <section className="mt-10 rounded-2xl border border-white/[.07] bg-(--admin-panel) p-6">
         <h2 className="text-sm font-bold text-white">
           What do you want to change?
         </h2>
@@ -170,7 +170,7 @@ export default async function Dashboard() {
           <Link
             href={`/admin/${item.href}`}
             key={item.href}
-            className="group relative overflow-hidden rounded-2xl border border-white/[.07] bg-[#0d1921] p-5 transition-all hover:-translate-y-0.5 hover:border-white/[.13] hover:shadow-2xl"
+            className="group relative overflow-hidden rounded-2xl border border-white/[.07] bg-(--admin-panel) p-5 transition-all hover:-translate-y-0.5 hover:border-white/[.13] hover:shadow-2xl"
           >
             <div
               className={`absolute inset-x-0 top-0 h-px bg-gradient-to-r ${tones[item.color]} via-current to-transparent opacity-60`}
@@ -200,7 +200,7 @@ export default async function Dashboard() {
         ))}
       </div>
       <div className="mt-8 grid gap-6 xl:grid-cols-[1.35fr_.65fr]">
-        <section className="rounded-2xl border border-white/[.07] bg-[#0d1921]">
+        <section className="rounded-2xl border border-white/[.07] bg-(--admin-panel)">
           <div className="flex items-center justify-between border-b border-white/[.06] px-5 py-4">
             <div>
               <h2 className="text-sm font-bold text-white">Recent enquiries</h2>
@@ -264,7 +264,7 @@ export default async function Dashboard() {
             </div>
           )}
         </section>
-        <section className="rounded-2xl border border-white/[.07] bg-gradient-to-br from-[#0d1921] to-[#0a151c] p-6">
+        <section className="rounded-2xl border border-white/[.07] bg-gradient-to-br from-(--admin-panel) to-(--admin-panel-end) p-6">
           <p className="text-[10px] font-bold uppercase tracking-[.2em] text-cyan-400">
             Quick start
           </p>
