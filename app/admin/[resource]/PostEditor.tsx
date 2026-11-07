@@ -68,7 +68,7 @@ function Card({
   children: ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-white/[.08] bg-[#0d1921] p-5 shadow-xl sm:p-7">
+    <section className="rounded-2xl border border-white/[.08] bg-(--admin-panel) p-5 shadow-xl sm:p-7">
       <div className="flex items-start gap-4">
         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-300 to-blue-500 text-sm font-bold text-slate-950">
           {step}
@@ -413,7 +413,7 @@ export default function PostEditor({
               />
             </Field>
             <div className="grid gap-4 md:grid-cols-2">
-              <div className="rounded-xl bg-white p-4 text-left">
+              <div className="rounded-xl bg-[#fff] p-4 text-left">
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Google preview</p>
                 <p className="mt-2 truncate text-xs text-slate-600">byteflow.ae › {slug || "page-address"}</p>
                 <p className="mt-1 line-clamp-2 text-lg leading-snug text-[#1a0dab]">{seoTitle || "Post title"}</p>
@@ -473,7 +473,7 @@ export default function PostEditor({
 
         {/* Sidebar */}
         <aside className="grid gap-5 lg:sticky lg:top-6">
-          <div className="rounded-2xl border border-white/[.08] bg-[#0d1921] p-5">
+          <div className="rounded-2xl border border-white/[.08] bg-(--admin-panel) p-5">
             <h3 className="text-base font-bold text-white">SEO checklist</h3>
             <p className="mt-1 text-xs leading-relaxed text-slate-500">
               Based on Google Search Central and Semrush’s on-page checklist. A guide for writing a clear, helpful
@@ -518,7 +518,7 @@ export default function PostEditor({
               ))}
             </ul>
           </div>
-          <div className="rounded-2xl bg-gradient-to-br from-[#0b2a3c] to-[#0a1a2b] p-5 ring-1 ring-cyan-400/15">
+          <div className="rounded-2xl bg-gradient-to-br from-(--admin-feature) to-(--admin-feature-end) p-5 ring-1 ring-cyan-400/15">
             <h3 className="text-base font-bold text-white">Quick tips</h3>
             <ul className="mt-3 grid list-disc gap-2 pl-4 text-sm leading-relaxed text-slate-300">
               <li>Answer the main question in the first paragraph. Visitors and AI search read that first.</li>
@@ -531,7 +531,7 @@ export default function PostEditor({
       </div>
 
       {/* Save bar */}
-      <div className="sticky bottom-0 z-20 -mx-4 mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-white/[.08] bg-[#071118]/95 px-4 py-4 backdrop-blur sm:-mx-6 sm:px-6">
+      <div className="sticky bottom-0 z-20 -mx-4 mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-white/[.08] bg-(--admin-sunken)/95 px-4 py-4 backdrop-blur sm:-mx-6 sm:px-6">
         <p className="text-sm text-slate-400">
           SEO checklist: {checklist.counts.passed} passed, {checklist.counts.attention} need attention
           <span className="mx-2 text-slate-600">·</span>

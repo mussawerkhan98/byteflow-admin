@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import AdminPageHeader from "../AdminPageHeader";
-import { homeBlocks, type HomeField, type HomeList } from "../../lib/home-sections";
+import { groupedFields, homeBlocks, type HomeField, type HomeList } from "../../lib/home-sections";
 import ImageUpload from "../ImageUpload";
 import { siteUrl } from "../../lib/admin-guide";
 
@@ -145,7 +146,16 @@ function ListEditor({
   posts: PostOption[];
 }) {
   const titleField = list.fields.find((field) => field.name === "title");
-  const hasImage = list.fields.some((field) => field.type === "image");
+  // A picture with its own "<name>_alt" field edits that; otherwise (logos)
+  // the alt text is the item's title, so the title box is folded into it.
+  const altFieldOf = (name: string) => (list.fields.some((field) => field.name === `${name}_alt`) ? `${name}_alt` : null);
+  const pictureAlts = new Set(list.fields.filter((field) => field.type === "image").map((field) => altFieldOf(field.name)).filter(Boolean));
+  const titleIsAlt = list.fields.some((field) => field.type === "image" && !altFieldOf(field.name));
+  // The click on a summary's button must not also fold or unfold the item.
+  const act = (event: React.MouseEvent, action: () => void) => {
+    event.preventDefault();
+    action();
+  };
   const update = (index: number, name: string, value: string) =>
     onChange(items.map((item, i) => (i === index ? { ...item, [name]: value } : item)));
   const move = (index: number, by: number) => {
@@ -163,48 +173,62 @@ function ListEditor({
       {list.help && <p className="mt-1 text-xs text-slate-500">{list.help}</p>}
       <div className="mt-4 space-y-4">
         {items.map((item, index) => (
-          <div key={index} className="rounded-xl border border-white/[.08] bg-slate-950/40 p-4">
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-xs font-bold uppercase tracking-wider text-cyan-300">
-                {list.itemLabel} {index + 1}
-              </p>
-              <div className="flex gap-2 text-xs">
-                <button type="button" disabled={index === 0} onClick={() => move(index, -1)} className="rounded-lg border border-slate-700 px-2.5 py-1.5 text-slate-300 disabled:opacity-30">
+          // Folded by default after the first, so a long list stays easy to scan.
+          <details key={index} open={index === 0} className="group/item rounded-xl border border-white/[.08] bg-slate-950/40">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 [&::-webkit-details-marker]:hidden">
+              <span className="flex min-w-0 items-center gap-3">
+                <svg aria-hidden="true" viewBox="0 0 16 16" className="h-3.5 w-3.5 shrink-0 text-slate-500 transition-transform group-open/item:rotate-90" fill="none" stroke="currentColor" strokeWidth={2}>
+                  <path d="M6 3.5l4.5 4.5L6 12.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <span className="shrink-0 text-xs font-bold uppercase tracking-wider text-cyan-300">
+                  {list.itemLabel} {index + 1}
+                </span>
+                {item.title && <span className="truncate text-sm font-semibold text-slate-200">{item.title}</span>}
+                {item.show === "no" && <span className="shrink-0 rounded-full border border-slate-700 px-2 py-0.5 text-[10px] font-bold uppercase text-slate-500">Hidden</span>}
+              </span>
+              <span className="flex shrink-0 gap-2 text-xs">
+                <button type="button" disabled={index === 0} onClick={(event) => act(event, () => move(index, -1))} className="rounded-lg border border-slate-700 px-2.5 py-1.5 text-slate-300 disabled:opacity-30">
                   ↑ Up
                 </button>
-                <button type="button" disabled={index === items.length - 1} onClick={() => move(index, 1)} className="rounded-lg border border-slate-700 px-2.5 py-1.5 text-slate-300 disabled:opacity-30">
+                <button type="button" disabled={index === items.length - 1} onClick={(event) => act(event, () => move(index, 1))} className="rounded-lg border border-slate-700 px-2.5 py-1.5 text-slate-300 disabled:opacity-30">
                   ↓ Down
                 </button>
-                <button type="button" onClick={() => onChange(items.filter((_, i) => i !== index))} className="rounded-lg border border-red-400/20 px-2.5 py-1.5 text-red-300">
+                <button type="button" onClick={(event) => act(event, () => onChange(items.filter((_, i) => i !== index)))} className="rounded-lg border border-red-400/20 px-2.5 py-1.5 text-red-300">
                   Remove
                 </button>
-              </div>
-            </div>
-            <div className="mt-3 grid gap-4 md:grid-cols-2">
-              {list.fields.map((field) =>
-                field.type === "image" ? (
-                  <div key={field.name} className="md:col-span-2">
-                    <ImageUpload
-                      label={field.label}
-                      kind={field.upload === "logo" ? "logo" : "image"}
-                      value={item[field.name] ?? ""}
-                      onChange={(url) => update(index, field.name, url)}
-                      alt={item.title ?? ""}
-                      onAltChange={(alt) => update(index, "title", alt)}
-                      altLabel={titleField?.label}
-                      help={field.help}
-                    />
-                  </div>
-                ) : hasImage && field.name === "title" ? null : (
+              </span>
+            </summary>
+            <div className="grid gap-4 border-t border-white/[.06] px-4 pb-4 pt-4 md:grid-cols-2">
+              {list.fields.map((field) => {
+                if (field.type === "image") {
+                  const altName = altFieldOf(field.name);
+                  return (
+                    <div key={field.name} className="md:col-span-2">
+                      <ImageUpload
+                        label={field.label}
+                        kind={field.upload === "logo" ? "logo" : "image"}
+                        value={item[field.name] ?? ""}
+                        onChange={(url) => update(index, field.name, url)}
+                        alt={item[altName ?? "title"] ?? ""}
+                        onAltChange={(alt) => update(index, altName ?? "title", alt)}
+                        altLabel={altName ? undefined : titleField?.label}
+                        altMax={altName ? 125 : undefined}
+                        help={field.help}
+                      />
+                    </div>
+                  );
+                }
+                if (pictureAlts.has(field.name) || (titleIsAlt && field.name === "title")) return null;
+                return (
                   <label key={field.name} className={`${labelClass} ${field.type === "textarea" ? "md:col-span-2" : ""}`}>
                     {field.label}
                     {field.help && <span className="mt-1 block font-normal text-slate-500">{field.help}</span>}
                     <FieldInput field={field} value={item[field.name] ?? ""} onChange={(value) => update(index, field.name, value)} services={services} tabs={tabs} posts={posts} />
                   </label>
-                ),
-              )}
+                );
+              })}
             </div>
-          </div>
+          </details>
         ))}
       </div>
       {items.length < list.max && (
@@ -398,8 +422,9 @@ export default function HomeSectionsManager() {
     <div className="pb-10">
       <AdminPageHeader sectionKey="home-sections" />
 
-      <div role="tablist" aria-label="Home page sections" className="mt-6 flex flex-wrap gap-2">
-        {homeBlocks.map((block) => (
+      <p className="mt-6 text-xs text-slate-500">In the order they appear on the home page.</p>
+      <div role="tablist" aria-label="Home page sections" className="mt-2 flex flex-wrap gap-2">
+        {homeBlocks.map((block, i) => (
           <button
             key={block.key}
             type="button"
@@ -408,12 +433,24 @@ export default function HomeSectionsManager() {
             onClick={() => open(block.key)}
             className={`rounded-lg px-4 py-2 text-xs font-bold transition ${block.key === active ? "bg-cyan-400 text-slate-950" : "border border-slate-700 text-slate-300 hover:border-cyan-400/50"}`}
           >
+            <span className="mr-1.5 tabular-nums opacity-60">{String(i + 1).padStart(2, "0")}</span>
             {block.label}
           </button>
         ))}
       </div>
 
       <p className="mt-4 text-sm text-slate-400">{def.shows}</p>
+      {def.picturesElsewhere && (
+        <p className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-cyan-400/20 bg-cyan-400/[.05] px-3 py-2 text-xs text-slate-300">
+          <span>
+            <span className="font-semibold text-cyan-300">Pictures: </span>
+            {def.picturesElsewhere.text}
+          </span>
+          <Link href={def.picturesElsewhere.href} className="font-semibold text-cyan-300 underline-offset-4 hover:underline">
+            {def.picturesElsewhere.label} →
+          </Link>
+        </p>
+      )}
       <p className="mt-1 text-xs text-slate-500">
         {saved
           ? "You have saved changes for this section."
@@ -433,32 +470,42 @@ export default function HomeSectionsManager() {
       {loading ? (
         <p className="mt-7 text-slate-400">Loading…</p>
       ) : (
-        <form key={active} onSubmit={save} className="mt-7 rounded-2xl border border-white/[.08] bg-[#0d1921] p-6">
-          <div className="grid gap-5 md:grid-cols-2">
-            {def.fields.map((field) => {
-              const hasAlt = def.fields.some((other) => other.name === "image_alt");
-              if (field.type === "image")
-                return (
-                  <div key={field.name} className="md:col-span-2">
-                    <ImageUpload
-                      label={field.label}
-                      kind={field.upload === "logo" ? "logo" : "image"}
-                      value={String(form[field.name] ?? "")}
-                      onChange={(url) => change(field.name, url)}
-                      {...(hasAlt ? { alt: String(form.image_alt ?? ""), onAltChange: (alt: string) => change("image_alt", alt) } : {})}
-                      help={field.help}
-                    />
-                  </div>
-                );
-              if (field.name === "image_alt" && hasAlt && def.fields.some((other) => other.type === "image")) return null;
-              return (
-                <label key={field.name} className={`${labelClass} ${field.type === "textarea" ? "md:col-span-2" : ""}`}>
-                  {field.label}
-                  {field.help && <span className="mt-1 block font-normal text-slate-500">{field.help}</span>}
-                  <FieldInput field={field} value={String(form[field.name] ?? "")} onChange={(value) => change(field.name, value)} services={services} tabs={tabNames} posts={posts} />
-                </label>
-              );
-            })}
+        <form key={active} onSubmit={save} className="mt-7 rounded-2xl border border-white/[.08] bg-(--admin-panel) p-6">
+          <div className="space-y-8">
+            {groupedFields(def).map((group) => (
+              <section key={group.label}>
+                <h3 className="mb-4 flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.14em] text-cyan-300">
+                  {group.label}
+                  <span aria-hidden="true" className="h-px flex-1 bg-white/[.08]" />
+                </h3>
+                <div className="grid gap-5 md:grid-cols-2">
+                  {group.fields.map((field) => {
+                    const hasAlt = def.fields.some((other) => other.name === "image_alt");
+                    if (field.type === "image")
+                      return (
+                        <div key={field.name} className="md:col-span-2">
+                          <ImageUpload
+                            label={field.label}
+                            kind={field.upload === "logo" ? "logo" : "image"}
+                            value={String(form[field.name] ?? "")}
+                            onChange={(url) => change(field.name, url)}
+                            {...(hasAlt ? { alt: String(form.image_alt ?? ""), onAltChange: (alt: string) => change("image_alt", alt) } : {})}
+                            help={field.help}
+                          />
+                        </div>
+                      );
+                    if (field.name === "image_alt" && hasAlt && def.fields.some((other) => other.type === "image")) return null;
+                    return (
+                      <label key={field.name} className={`${labelClass} ${field.type === "textarea" ? "md:col-span-2" : ""}`}>
+                        {field.label}
+                        {field.help && <span className="mt-1 block font-normal text-slate-500">{field.help}</span>}
+                        <FieldInput field={field} value={String(form[field.name] ?? "")} onChange={(value) => change(field.name, value)} services={services} tabs={tabNames} posts={posts} />
+                      </label>
+                    );
+                  })}
+                </div>
+              </section>
+            ))}
             {def.lists.map((list) => (
               <ListEditor
                 key={list.name}

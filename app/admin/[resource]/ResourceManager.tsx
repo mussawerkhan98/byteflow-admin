@@ -599,7 +599,7 @@ export default function ResourceManager({
         <form
           ref={formRef}
           onSubmit={save}
-          className="mt-7 rounded-2xl border border-white/[.08] bg-[#0d1921] p-5 shadow-2xl sm:p-7"
+          className="mt-7 rounded-2xl border border-white/[.08] bg-(--admin-panel) p-5 shadow-2xl sm:p-7"
         >
           <div className="flex items-center justify-between border-b border-white/[.06] pb-5">
             <div>
@@ -940,8 +940,8 @@ export default function ResourceManager({
             if (event.target === event.currentTarget) setViewing(null);
           }}
         >
-          <section className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-white/10 bg-[#0d1921] shadow-2xl">
-            <header className="sticky top-0 flex items-center justify-between border-b border-white/[.07] bg-[#0d1921]/95 px-6 py-5 backdrop-blur">
+          <section className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-white/10 bg-(--admin-panel) shadow-2xl">
+            <header className="sticky top-0 flex items-center justify-between border-b border-white/[.07] bg-(--admin-panel)/95 px-6 py-5 backdrop-blur">
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-[.18em] text-cyan-400">
                   Inquiry details

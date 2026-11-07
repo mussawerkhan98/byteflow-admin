@@ -171,7 +171,7 @@ export default function ImageUpload({
         {preview && (
           <div className="mt-3 flex flex-wrap items-end gap-3">
             {/* eslint-disable-next-line @next/next/no-img-element -- admin preview of an arbitrary URL */}
-            <img src={preview} alt="" className={`h-32 w-48 rounded-lg border border-slate-700 ${contain ? "bg-white object-contain p-3" : "object-cover"}`} />
+            <img src={preview} alt="" className={`h-32 w-48 rounded-lg border border-slate-700 ${contain ? "bg-[#fff] object-contain p-3" : "object-cover"}`} />
             <button type="button" onClick={() => onChange("")} className="rounded-lg border border-red-500/30 px-3 py-2 font-normal text-red-300">
               Remove
             </button>

@@ -562,7 +562,7 @@ export default function RichTextEditor({
         // screen, so every heading or table meant scrolling back up. The bar
         // now rides along, parking below the mobile header and at the top of
         // the window on desktop, and stops at the end of the editor.
-        className="sticky top-16 z-20 flex flex-wrap gap-1 rounded-t-xl border-b border-slate-800 bg-[#101c24] p-2 lg:top-0"
+        className="sticky top-16 z-20 flex flex-wrap gap-1 rounded-t-xl border-b border-slate-800 bg-(--admin-raised) p-2 lg:top-0"
       >
         <button
           type="button"

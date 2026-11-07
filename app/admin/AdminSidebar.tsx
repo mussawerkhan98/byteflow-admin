@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import Image from "next/image";
 import LogoutButton from "./LogoutButton";
+import AdminThemeToggle from "./AdminThemeToggle";
 import type { CurrentAdminUser } from "../lib/auth";
 
 import { adminGroups } from "../lib/admin-guide";
@@ -20,7 +21,7 @@ export default function AdminSidebar({ logoUrl, currentUser }: { logoUrl?: strin
     [open, setOpen] = useState(false);
   return (
     <>
-      <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-white/[.07] bg-[#071016]/95 px-4 text-white backdrop-blur-xl lg:hidden">
+      <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-white/[.07] bg-(--admin-deep)/95 px-4 text-white backdrop-blur-xl lg:hidden">
         <Link href="/admin" className="flex items-center gap-3">
           {logoUrl && (
             <Image
@@ -35,12 +36,15 @@ export default function AdminSidebar({ logoUrl, currentUser }: { logoUrl?: strin
             Byteflow Admin
           </span>
         </Link>
-        <button
-          onClick={() => setOpen(true)}
-          className="rounded-lg border border-white/10 px-3 py-2 text-xs font-semibold"
-        >
-          Menu
-        </button>
+        <div className="flex items-center gap-2">
+          <AdminThemeToggle />
+          <button
+            onClick={() => setOpen(true)}
+            className="rounded-lg border border-white/10 px-3 py-2 text-xs font-semibold"
+          >
+            Menu
+          </button>
+        </div>
       </header>
       {open && (
         <button
@@ -50,7 +54,7 @@ export default function AdminSidebar({ logoUrl, currentUser }: { logoUrl?: strin
         />
       )}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-[268px] flex-col border-r border-white/[.07] bg-[#071016] text-white transition-transform lg:translate-x-0 ${open ? "translate-x-0" : "-translate-x-full"}`}
+        className={`fixed inset-y-0 left-0 z-50 flex w-[268px] flex-col border-r border-white/[.07] bg-(--admin-deep) text-white transition-transform lg:translate-x-0 ${open ? "translate-x-0" : "-translate-x-full"}`}
       >
         <div className="flex h-20 items-center justify-between px-5">
           <Link
@@ -121,7 +125,12 @@ export default function AdminSidebar({ logoUrl, currentUser }: { logoUrl?: strin
               {currentUser?.role === "administrator" ? "Administrator" : "Editor"}
             </p>
           </div>
-          <LogoutButton />
+          <div className="flex items-center gap-2">
+            <div className="flex-1">
+              <LogoutButton />
+            </div>
+            <AdminThemeToggle />
+          </div>
         </div>
       </aside>
     </>

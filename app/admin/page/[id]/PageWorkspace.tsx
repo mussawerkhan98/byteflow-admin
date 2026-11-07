@@ -31,7 +31,7 @@ const heroFields = [
 const inputClass =
   "mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-3 text-sm outline-none focus:border-cyan-400";
 const cardClass =
-  "mt-6 rounded-2xl border border-white/[.08] bg-[#0d1921] p-6";
+  "mt-6 rounded-2xl border border-white/[.08] bg-(--admin-panel) p-6";
 
 /**
  * A page's content used to be split across five separate screens (top

@@ -377,7 +377,7 @@ export default function Promotions() {
         <form
           ref={formRef}
           onSubmit={onSave}
-          className="mt-6 rounded-2xl border border-white/[.08] bg-[#0d1921] p-5 sm:p-7"
+          className="mt-6 rounded-2xl border border-white/[.08] bg-(--admin-panel) p-5 sm:p-7"
         >
           <h2 className="border-b border-white/[.06] pb-4 text-lg font-bold text-white">
             {draft.id ? "Edit promotion" : "New promotion"}
@@ -547,7 +547,7 @@ export default function Promotions() {
         </form>
       )}
 
-      <div className="mt-7 divide-y divide-white/[.06] rounded-2xl border border-white/[.08] bg-[#0d1921]">
+      <div className="mt-7 divide-y divide-white/[.06] rounded-2xl border border-white/[.08] bg-(--admin-panel)">
         {loading && <p className="p-6 text-sm text-slate-500">Loading…</p>}
         {!loading && !campaigns.length && (
           <p className="p-6 text-sm text-slate-500">
@@ -648,7 +648,7 @@ export default function Promotions() {
             title="Email preview"
             sandbox=""
             srcDoc={preview}
-            className="h-[70vh] w-full rounded-lg border border-slate-700 bg-white"
+            className="h-[70vh] w-full rounded-lg border border-slate-700 bg-[#fff]"
           />
         </Modal>
       )}
@@ -805,7 +805,7 @@ function Modal({
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/70 p-4">
-      <div className="mt-8 w-full max-w-3xl rounded-2xl border border-white/[.08] bg-[#0d1921] p-6">
+      <div className="mt-8 w-full max-w-3xl rounded-2xl border border-white/[.08] bg-(--admin-panel) p-6">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-bold text-white">{title}</h2>
           <button onClick={onClose} className="text-sm text-slate-400">
