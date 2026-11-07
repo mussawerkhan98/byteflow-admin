@@ -558,8 +558,17 @@ export const homeBlocks: HomeBlockDef[] = [
     key: "home_help",
     label: "Help panel",
     shows:
-      "The “Not sure which service you need?” panel under How it works. Its phone button uses the header phone from “Contact details & logo”.",
+      "The “Not sure which service you need?” panel under How it works. Its phone button uses the header phone from “Contact details & logo”. Hidden unless switched on: the FAQ's “Still have questions?” bar and the Contact section offer the same call / WhatsApp prompt further down.",
     fields: [
+      {
+        name: "show",
+        label: "On the home page",
+        type: "select",
+        options: [
+          { value: "yes", label: "Show" },
+          { value: "no", label: "Hide" },
+        ],
+      },
       { name: "heading", label: "Heading", type: "text" },
       { name: "description", label: "Text", type: "textarea" },
       { name: "button_label", label: "Button text", type: "text" },
@@ -568,6 +577,7 @@ export const homeBlocks: HomeBlockDef[] = [
     lists: [],
     defaults: {
       fields: {
+        show: "no",
         heading: "Not sure which service you need?",
         description: "Our team will guide you. Tell us what's slowing your business down and we'll point you to the right fit.",
         button_label: "Talk to our team",
@@ -720,7 +730,7 @@ const FIELD_GROUPS: Record<string, Record<string, string>> = {
     call_label: "Help bar",
     whatsapp_label: "Help bar",
   },
-  home_help: { heading: "Panel", description: "Panel", button_label: "Button", button_link: "Button" },
+  home_help: { show: "Visibility", heading: "Panel", description: "Panel", button_label: "Button", button_link: "Button" },
 };
 const HEADING_FIELDS = new Set(["eyebrow", "heading", "heading_soft", "intro"]);
 

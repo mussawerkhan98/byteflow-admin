@@ -27,7 +27,7 @@ test("unknown blocks are refused", () => {
 
 test("only the block's own fields are saved, trimmed", () => {
   const saved = sanitizeHomeBlock(help, { heading: "  Hi  ", other: "x", button_link: "/contact-us" });
-  assert.deepEqual(Object.keys(saved).sort(), ["button_label", "button_link", "description", "heading"]);
+  assert.deepEqual(Object.keys(saved).sort(), ["button_label", "button_link", "description", "heading", "show"]);
   assert.equal(saved.heading, "Hi");
 });
 
@@ -180,4 +180,11 @@ test("a list picture can't be saved without its description; logos keep using th
 test("sections whose pictures live on another screen say where", () => {
   assert.equal(getHomeBlockDef("home_work")!.picturesElsewhere?.href, "/admin/projects");
   assert.equal(getHomeBlockDef("home_needs")!.picturesElsewhere, undefined);
+});
+
+test("the help panel has a Show/Hide switch, hidden by default", () => {
+  const helpBlock = getHomeBlockDef("home_help")!;
+  assert.equal(helpBlock.defaults.fields.show, "no");
+  assert.equal(sanitizeHomeBlock(helpBlock, { show: "yes" }).show, "yes");
+  assert.equal(groupedFields(helpBlock)[0].label, "Visibility");
 });
