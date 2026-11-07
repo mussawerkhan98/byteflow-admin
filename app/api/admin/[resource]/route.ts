@@ -2,6 +2,7 @@ import { isAdminAuthenticated, isAdministrator } from '../../../lib/auth'
 import { createRecord, deleteRecord, listRecords, reorderRecord, updateRecord } from '../../../lib/cms-admin'
 import { getResource } from '../../../lib/cms-config'
 import { FieldError } from '../../../lib/field-error'
+import { refreshSiteContent } from '../../../lib/site-revalidate'
 
 function errorResponse(error: unknown) {
   const technical = error instanceof Error ? error.message : ''
@@ -38,6 +39,7 @@ export async function POST(request: Request, context: Context) {
   if (!(await canAccess(resourceKey))) return Response.json({ error: 'You do not have permission to manage this section.' }, { status: 403 })
   const resource = getResource(resourceKey)
   if (!resource) return Response.json({ error: 'Unknown resource' }, { status: 404 })
+  refreshSiteContent()
   try {
     const body = await request.json() as Record<string, unknown>
     if (body.action === 'reorder') { await reorderRecord(resource, Number(body.id), body.direction === 'down' ? 'down' : 'up'); return Response.json({ ok: true }) }
@@ -50,6 +52,7 @@ export async function PUT(request: Request, context: Context) {
   if (!(await canAccess(resourceKey))) return Response.json({ error: 'You do not have permission to manage this section.' }, { status: 403 })
   const resource = getResource(resourceKey)
   if (!resource) return Response.json({ error: 'Unknown resource' }, { status: 404 })
+  refreshSiteContent()
   try { const body = await request.json() as Record<string, unknown>; await updateRecord(resource, Number(body.id), body); return Response.json({ ok: true }) } catch (error) { return errorResponse(error) }
 }
 
@@ -58,5 +61,6 @@ export async function DELETE(request: Request, context: Context) {
   if (!(await canAccess(resourceKey))) return Response.json({ error: 'You do not have permission to manage this section.' }, { status: 403 })
   const resource = getResource(resourceKey)
   if (!resource) return Response.json({ error: 'Unknown resource' }, { status: 404 })
+  refreshSiteContent()
   try { const id = Number(new URL(request.url).searchParams.get('id')); if (!id) throw new Error('A valid id is required'); await deleteRecord(resource, id); return Response.json({ ok: true }) } catch (error) { return errorResponse(error) }
 }

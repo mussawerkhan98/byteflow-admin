@@ -1,5 +1,6 @@
 import { isAdminAuthenticated } from "../../../lib/auth";
 import { db } from "../../../lib/db";
+import { refreshSiteContent } from "../../../lib/site-revalidate";
 import { heroExtraFields, heroExtraNames } from "../../../lib/hero-fields";
 
 const baseFields = [
@@ -36,6 +37,7 @@ const safeLink = (value: string) => !value || /^(#[\w-]+|\/(?!\/)\S*|https:\/\/\
 export async function PUT(request: Request) {
   if (!(await isAdminAuthenticated()))
     return Response.json({ error: "Unauthorized" }, { status: 401 });
+  refreshSiteContent();
   const body = (await request.json()) as Record<string, unknown>;
   const id = Number(body.id);
   if (!id)

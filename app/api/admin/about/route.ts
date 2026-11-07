@@ -1,5 +1,6 @@
 import { isAdminAuthenticated } from "../../../lib/auth";
 import { db } from "../../../lib/db";
+import { refreshSiteContent } from "../../../lib/site-revalidate";
 
 const FOUNDER_FIELDS = [
   "eyebrow",
@@ -52,6 +53,7 @@ export async function GET() {
 export async function PUT(request: Request) {
   if (!(await isAdminAuthenticated()))
     return Response.json({ error: "Unauthorized" }, { status: 401 });
+  refreshSiteContent();
   const body = (await request.json()) as Record<string, unknown>;
   const content = Object.fromEntries(
     FOUNDER_FIELDS.map((field) => [field, String(body[field] ?? "").trim()]),

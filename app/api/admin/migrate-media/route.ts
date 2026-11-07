@@ -1,5 +1,6 @@
 import { isAdministrator } from '../../../lib/auth'
 import { db } from '../../../lib/db'
+import { refreshSiteContent } from '../../../lib/site-revalidate'
 import { IMAGE_COLUMNS, rewriteSql } from '../../../lib/media-migration'
 import { surveyMedia } from '../../../lib/media-survey'
 
@@ -19,6 +20,7 @@ export async function GET() {
 
 export async function POST() {
   if (!(await isAdministrator())) return Response.json({ error: 'Administrators only' }, { status: 403 })
+  refreshSiteContent()
   const before = await surveyMedia()
   let rewritten = 0
   const failed: string[] = []
