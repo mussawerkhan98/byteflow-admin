@@ -72,6 +72,12 @@ export const homeBlocks: HomeBlockDef[] = [
       { name: "heading", label: "Heading — first part", type: "text", help: headingHelp },
       { name: "heading_soft", label: "Heading — second part", type: "text" },
       { name: "intro", label: "Intro paragraph", type: "textarea" },
+      {
+        name: "all_label",
+        label: "First filter tab",
+        type: "text",
+        help: "The tab above the smaller service cards that shows them all. The other tabs are the Services menu's groups.",
+      },
     ],
     lists: [],
     defaults: {
@@ -81,6 +87,7 @@ export const homeBlocks: HomeBlockDef[] = [
         heading_soft: "real business growth.",
         intro:
           "End-to-end technology and creative services, all under one roof so you never have to chase multiple vendors again.",
+        all_label: "All services",
       },
       lists: {},
     },
