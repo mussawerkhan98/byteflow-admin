@@ -45,6 +45,8 @@ export type HomeList = {
 
 export type HomeBlockDef = {
   key: string;
+  /** The page it is saved on: "home" when not set. */
+  page?: "about-us";
   label: string;
   /** Where it sits on the home page, in plain words. */
   shows: string;
@@ -694,6 +696,328 @@ export const homeBlocks: HomeBlockDef[] = [
 ];
 
 /**
+ * The About Us page's blocks, edited on the "About page sections" screen.
+ * The same shape as the home page's, saved on the "about-us" page instead.
+ * The top banner is that page's hero (Heroes), the founder has the "About Us
+ * — Founder" screen and the people are Team members.
+ */
+export const aboutBlocks: HomeBlockDef[] = [
+  {
+    key: "about_stats",
+    page: "about-us",
+    label: "Figures",
+    shows: "The row of figures under the top banner.",
+    fields: [],
+    lists: [
+      {
+        name: "stats",
+        label: "Figures",
+        itemLabel: "Figure",
+        max: 4,
+        help: `The figure is large, its label beneath. ${figuresNote}`,
+        fields: [
+          { name: "title", label: "Figure", type: "text" },
+          { name: "description", label: "Label", type: "text" },
+        ],
+      },
+    ],
+    defaults: {
+      fields: {},
+      lists: {
+        stats: [
+          { title: "{clients}", description: "Businesses served across the UAE" },
+          { title: "{years}+", description: "Years operating in Dubai" },
+          { title: "2 hrs", description: "On-site response guarantee" },
+          { title: "24/7", description: "Monitoring and support" },
+        ],
+      },
+    },
+  },
+  {
+    key: "about_story",
+    page: "about-us",
+    label: "Our story",
+    shows: "The timeline after the founder: one card per milestone, the year in its marker.",
+    fields: [
+      { name: "eyebrow", label: "Small heading", type: "text" },
+      { name: "heading", label: "Heading — first part", type: "text", help: `${headingHelp} ${figuresNote}` },
+      { name: "heading_soft", label: "Heading — second part", type: "text" },
+      { name: "intro", label: "Intro paragraph", type: "textarea" },
+    ],
+    lists: [
+      {
+        name: "milestones",
+        label: "Milestones",
+        itemLabel: "Milestone",
+        max: 6,
+        help: "Oldest first. The latest milestone's marker is in the brand colour.",
+        fields: [
+          { name: "year", label: "Year", type: "text" },
+          { name: "title", label: "Title", type: "text" },
+          { name: "description", label: "Description", type: "textarea" },
+        ],
+      },
+    ],
+    defaults: {
+      fields: {
+        eyebrow: "Our story",
+        heading: "{years} years.",
+        heading_soft: "One mission.",
+        intro: "From a small IT support operation to a full-service technology company — here is how Byteflow grew to become one of Dubai's most trusted IT partners.",
+      },
+      lists: {
+        milestones: [
+          { year: "{founded}", title: "Byteflow is founded in Dubai", description: "Started as a lean IT support team serving small businesses in Deira and Bur Dubai. First 10 clients onboarded within the first month." },
+          { year: "2019", title: "Expanded to cloud and Microsoft 365", description: "Became an official Microsoft partner. Started handling full cloud migrations and Microsoft 365 deployments for UAE businesses of all sizes." },
+          { year: "2020", title: "Launched digital marketing and web services", description: "Added website development, SEO, and Google Ads to the service portfolio — giving clients a single vendor for both IT and digital growth." },
+          { year: "2022", title: "Crossed 300+ business clients", description: "Expanded coverage to Sharjah and Abu Dhabi with dedicated on-site engineers. Introduced the 2-hour response SLA across all AMC plans." },
+          { year: "2024", title: "{clients} businesses and still growing", description: "Now serving {clients} businesses across the UAE with a full team of certified engineers, designers, marketers and cloud specialists." },
+        ],
+      },
+    },
+  },
+  {
+    key: "about_principles",
+    page: "about-us",
+    label: "How we work",
+    shows: "The numbered cards after Our story, with a button beside the heading.",
+    fields: [
+      { name: "eyebrow", label: "Small heading", type: "text" },
+      { name: "heading", label: "Heading — first part", type: "text", help: headingHelp },
+      { name: "heading_soft", label: "Heading — second part", type: "text" },
+      { name: "link_label", label: "Button text", type: "text", group: "Button" },
+      { name: "link", label: "Button link", type: "link", group: "Button" },
+    ],
+    lists: [
+      {
+        name: "principles",
+        label: "Principles",
+        itemLabel: "Principle",
+        max: 3,
+        fields: [
+          { name: "title", label: "Title", type: "text" },
+          { name: "description", label: "Description", type: "textarea" },
+        ],
+      },
+    ],
+    defaults: {
+      fields: {
+        eyebrow: "How we work",
+        heading: "No jargon. No surprises.",
+        heading_soft: "Just results.",
+        link_label: "Get started",
+        link: "/contact-us",
+      },
+      lists: {
+        principles: [
+          { title: "We respond in 2 hours — guaranteed", description: 'Every AMC plan includes a 2-hour on-site or remote response SLA. Not next business day. Not "as soon as possible." Two hours.' },
+          { title: "Fixed price, zero hidden fees", description: "You get one monthly invoice. No call-out fees, no emergency surcharges, no per-ticket billing. We cover everything in your plan." },
+          { title: "One team handles everything", description: "IT support, cloud, security, website, marketing — the same team, the same account manager, one phone number. No handoffs." },
+        ],
+      },
+    },
+  },
+  {
+    key: "about_services",
+    page: "about-us",
+    label: "What we do",
+    shows: "The numbered service cards, each linking to its page.",
+    fields: [
+      { name: "eyebrow", label: "Small heading", type: "text" },
+      { name: "heading", label: "Heading — first part", type: "text", help: headingHelp },
+      { name: "heading_soft", label: "Heading — second part", type: "text" },
+      { name: "link_label", label: "Link text", type: "text", group: "Link" },
+      { name: "link", label: "Link", type: "link", group: "Link" },
+    ],
+    lists: [
+      {
+        name: "services",
+        label: "Services",
+        itemLabel: "Service",
+        max: 12,
+        fields: [
+          { name: "title", label: "Name", type: "text" },
+          { name: "description", label: "Description", type: "textarea" },
+          { name: "link", label: "Link", type: "link" },
+        ],
+      },
+    ],
+    defaults: {
+      fields: {
+        eyebrow: "What we do",
+        heading: "Everything your business needs,",
+        heading_soft: "under one roof.",
+        link_label: "See all services",
+        link: "/#services",
+      },
+      lists: {
+        services: [
+          { title: "IT AMC / IT Support", description: "Fixed monthly support for all your devices, servers and network.", link: "/it-amc-services-dubai" },
+          { title: "Cyber Security", description: "Firewalls, antivirus, email protection and network monitoring.", link: "/cyber-security" },
+          { title: "Cloud & Microsoft 365", description: "Full cloud setup, migration and ongoing management.", link: "/cloud-services-dubai" },
+          { title: "Data Backup & Recovery", description: "Automated backups and fast recovery when disaster strikes.", link: "/data-backup-recovery" },
+          { title: "System Integration", description: "Connecting all your devices, offices and cloud systems.", link: "/system-integration" },
+          { title: "Website & App Development", description: "Professional websites, mobile apps and AI chatbots.", link: "/website-development" },
+          { title: "Digital Marketing", description: "SEO, Google Ads and social media that drives real leads.", link: "/digital-marketing" },
+          { title: "UI/UX & Graphic Design", description: "Logos, branding, social media graphics and full brand identity.", link: "/graphics-designing" },
+        ],
+      },
+    },
+  },
+  {
+    key: "about_team",
+    page: "about-us",
+    label: "Our team",
+    shows: "The heading above the team cards. The section shows once a team member is published.",
+    fields: [
+      { name: "eyebrow", label: "Small heading", type: "text" },
+      { name: "heading", label: "Heading — first part", type: "text", help: headingHelp },
+      { name: "heading_soft", label: "Heading — second part", type: "text" },
+      { name: "intro", label: "Intro paragraph", type: "textarea" },
+    ],
+    lists: [],
+    defaults: {
+      fields: {
+        eyebrow: "Our team",
+        heading: "The people",
+        heading_soft: "behind Byteflow.",
+        intro: "Experienced specialists working together across IT, cloud, security, design and growth.",
+      },
+      lists: {},
+    },
+    picturesElsewhere: { text: "The people and their photos are on the Team members screen.", href: "/admin/team", label: "Open Team members" },
+  },
+  {
+    key: "about_reviews",
+    page: "about-us",
+    label: "Reviews",
+    shows: "The heading and Google rating card beside the wall of reviews. The reviews are your published Customer reviews, featured ones first.",
+    fields: [
+      { name: "eyebrow", label: "Small heading", type: "text" },
+      { name: "heading", label: "Heading — first part", type: "text", help: headingHelp },
+      { name: "heading_soft", label: "Heading — second part", type: "text" },
+      { name: "intro", label: "Intro paragraph", type: "textarea" },
+      { name: "rating_label", label: "Rating label", type: "text", group: "Rating card", help: figuresNote },
+      { name: "count_label", label: "Review count line", type: "text", group: "Rating card" },
+      { name: "google_label", label: "Google link text", type: "text", group: "Rating card", help: "Links to the Google profile set in Contact details & logo." },
+    ],
+    lists: [],
+    defaults: {
+      fields: {
+        eyebrow: "Client reviews",
+        heading: "What our clients",
+        heading_soft: "say about working with us.",
+        intro: "Straight from the businesses we look after, in their own words.",
+        rating_label: "Google rating",
+        count_label: "{reviews} Google reviews",
+        google_label: "Read all reviews on Google",
+      },
+      lists: {},
+    },
+    picturesElsewhere: { text: "The reviews themselves are on the Customer reviews screen.", href: "/admin/testimonials", label: "Open Customer reviews" },
+  },
+  {
+    key: "about_company",
+    page: "about-us",
+    label: "Company information",
+    shows: "The registered business details beside three cards on what stands behind the work, after the reviews.",
+    fields: [
+      { name: "eyebrow", label: "Small heading", type: "text" },
+      { name: "heading", label: "Heading — first part", type: "text", help: headingHelp },
+      { name: "heading_soft", label: "Heading — second part", type: "text" },
+      { name: "intro", label: "Intro paragraph", type: "textarea" },
+      { name: "details_heading", label: "Details panel heading", type: "text", group: "Registered details" },
+    ],
+    lists: [
+      {
+        name: "details",
+        label: "Registered details",
+        itemLabel: "Detail",
+        max: 12,
+        help: "Keep these the same as the company details in the “Address” script (Tracking codes): Google compares the two, and a mismatch counts against the site. A link (tel:, mailto: or a web address) makes the detail clickable.",
+        fields: [
+          { name: "title", label: "Label", type: "text" },
+          { name: "description", label: "Detail", type: "text" },
+          { name: "link", label: "Link (optional)", type: "link" },
+        ],
+      },
+      {
+        name: "assurances",
+        label: "Cards beside the details",
+        itemLabel: "Card",
+        max: 4,
+        fields: [
+          { name: "title", label: "Title", type: "text" },
+          { name: "description", label: "Description", type: "textarea" },
+        ],
+      },
+    ],
+    defaults: {
+      fields: {
+        eyebrow: "Company information",
+        heading: "Who you are",
+        heading_soft: "actually dealing with.",
+        intro: "Plenty of IT providers in Dubai are a phone number and a logo. These are our registered details, so you can check us before you sign anything — and reach a named company, at a fixed address, if something goes wrong.",
+        details_heading: "Registered business details",
+      },
+      lists: {
+        details: [
+          { title: "Registered name", description: "Byteflow Information Technology Co. L.L.C.", link: "" },
+          { title: "Trading as", description: "Byteflow", link: "" },
+          { title: "Established", description: "{founded} — operating in Dubai for {years} years", link: "" },
+          { title: "Registered office", description: "Emaar Park 4, Greens, TECOM, Dubai, United Arab Emirates", link: "" },
+          { title: "Telephone", description: "+971 54 328 2042", link: "tel:+971543282042" },
+          { title: "Email", description: "info@byteflow.ae", link: "mailto:info@byteflow.ae" },
+          { title: "Opening hours", description: "Monday to Saturday, 9:00am to 6:00pm (GST)", link: "" },
+          { title: "Areas served", description: "Dubai, Sharjah and Abu Dhabi", link: "" },
+        ],
+        assurances: [
+          { title: "{years} years, one city", description: "Byteflow has supported businesses in Dubai since {founded}, from our first ten clients in Deira and Bur Dubai to {clients} across the UAE today." },
+          { title: "Our own engineers", description: "Support is delivered by people we employ, remotely and on site. Work is not passed to a subcontractor you never meet and cannot hold to anything." },
+          { title: "Accountable in writing", description: "Response times, what is covered and what is charged separately are set out in the contract before it starts, not decided after a problem happens." },
+        ],
+      },
+    },
+  },
+  {
+    key: "about_cta",
+    page: "about-us",
+    label: "Closing panel",
+    shows: "The free consultation panel at the end of the page, with ways to reach you beside it. The phone, email and location are your Contact details & logo.",
+    fields: [
+      { name: "eyebrow", label: "Small heading", type: "text" },
+      { name: "heading", label: "Heading — first part", type: "text", help: headingHelp },
+      { name: "heading_soft", label: "Heading — second part", type: "text" },
+      { name: "intro", label: "Intro paragraph", type: "textarea" },
+      { name: "link_label", label: "Button text", type: "text", group: "Button" },
+      { name: "link", label: "Button link", type: "link", group: "Button" },
+      { name: "phone_label", label: "Phone label", type: "text", group: "Contact rows" },
+      { name: "email_label", label: "Email label", type: "text", group: "Contact rows" },
+      { name: "address_label", label: "Location label", type: "text", group: "Contact rows" },
+      { name: "support_label", label: "Support label", type: "text", group: "Contact rows" },
+      { name: "support_text", label: "Support line", type: "text", group: "Contact rows" },
+    ],
+    lists: [],
+    defaults: {
+      fields: {
+        eyebrow: "Free consultation",
+        heading: "Tell us about your setup.",
+        heading_soft: "We will handle the rest.",
+        intro: "No commitment, no sales pitch. Just a straight conversation about what your business needs and how we can help.",
+        link_label: "Get in touch",
+        link: "/contact-us",
+        phone_label: "Phone",
+        email_label: "Email",
+        address_label: "Location",
+        support_label: "Support",
+        support_text: "24/7 — always available",
+      },
+      lists: {},
+    },
+  },
+];
+
+/**
  * The headings a block's fields sit under on the form, by field name. A
  * field not listed sits under "Heading" when it is one of the usual heading
  * fields, otherwise under "More".
@@ -764,8 +1088,9 @@ for (const block of homeBlocks) block.picturesElsewhere ??= PICTURES_ELSEWHERE[b
 
 export const homeBlockKeys = homeBlocks.map((block) => block.key);
 
+/** A home or About page block by its key. */
 export function getHomeBlockDef(key: string | null): HomeBlockDef | undefined {
-  return homeBlocks.find((block) => block.key === key);
+  return [...homeBlocks, ...aboutBlocks].find((block) => block.key === key);
 }
 
 const LIMITS: Record<HomeFieldType, number> = { text: 200, textarea: 2000, link: 500, image: 500, select: 40, service: 100, tab: 200, post: 200, category: 200 };

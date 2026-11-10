@@ -5,6 +5,7 @@ import {
   getHomeBlockDef,
   groupedFields,
   homeBlockFormValues,
+  aboutBlocks,
   homeBlocks,
   sanitizeHomeBlock,
 } from "../app/lib/home-sections";
@@ -187,4 +188,40 @@ test("the help panel has a Show/Hide switch, hidden by default", () => {
   assert.equal(helpBlock.defaults.fields.show, "no");
   assert.equal(sanitizeHomeBlock(helpBlock, { show: "yes" }).show, "yes");
   assert.equal(groupedFields(helpBlock)[0].label, "Visibility");
+});
+
+test("About page sections: in the page's order, saved on the About Us page", () => {
+  assert.deepEqual(aboutBlocks.map((b) => b.key), [
+    "about_stats", "about_story", "about_principles", "about_services", "about_team", "about_reviews", "about_company", "about_cta",
+  ]);
+  for (const block of aboutBlocks) {
+    assert.equal(block.page, "about-us", block.key);
+    assert.equal(getHomeBlockDef(block.key), block);
+    assert.equal(homeBlocks.find((b) => b.key === block.key), undefined, block.key);
+  }
+});
+
+test("About page sections: every field has a default and sits under one heading, the heading first", () => {
+  for (const block of aboutBlocks) {
+    for (const field of block.fields) assert.ok(block.defaults.fields[field.name], `${block.key}.${field.name}`);
+    for (const list of block.lists) assert.ok(block.defaults.lists[list.name]?.length, `${block.key}.${list.name}`);
+    const groups = groupedFields(block);
+    assert.deepEqual(groups.flatMap((g) => g.fields.map((f) => f.name)).sort(), block.fields.map((f) => f.name).sort(), block.key);
+    if (block.fields.length) assert.equal(groups[0].label, "Heading", block.key);
+  }
+  assert.ok(!/(2017|500\+|574)/.test(JSON.stringify(aboutBlocks.map((b) => b.defaults))));
+});
+
+test("About page sections: a registered detail keeps a tel: or mailto: link, unsafe links are dropped", () => {
+  const company = getHomeBlockDef("about_company")!;
+  const saved = sanitizeHomeBlock(company, {
+    details: [
+      { title: "Telephone", description: "+971 54 328 2042", link: "tel:+971543282042" },
+      { title: "Website", description: "x", link: "javascript:alert(1)" },
+    ],
+  });
+  assert.deepEqual(
+    (saved.details as Record<string, string>[]).map((d) => d.link),
+    ["tel:+971543282042", ""],
+  );
 });
