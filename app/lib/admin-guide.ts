@@ -51,6 +51,13 @@ export const adminGroups: AdminGroup[] = [
         preview: "/",
       },
       {
+        key: "about-sections",
+        label: "About page sections",
+        shows:
+          "The wording and lists of the About Us page: the figures under the top banner, Our story, How we work, What we do, the team heading, the reviews heading, Company information and the closing panel. The top banner itself is the page's hero.",
+        preview: "/about-us",
+      },
+      {
         key: "about",
         label: "About Us — Founder",
         shows: "The founder / CEO block on the About Us page.",

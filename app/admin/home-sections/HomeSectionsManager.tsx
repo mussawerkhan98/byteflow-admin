@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import AdminPageHeader from "../AdminPageHeader";
-import { groupedFields, homeBlocks, type HomeField, type HomeList } from "../../lib/home-sections";
+import { groupedFields, homeBlocks, type HomeBlockDef, type HomeField, type HomeList } from "../../lib/home-sections";
 import ImageUpload from "../ImageUpload";
 import { siteUrl } from "../../lib/admin-guide";
 
@@ -248,8 +248,23 @@ function ListEditor({
   );
 }
 
-export default function HomeSectionsManager() {
-  const [active, setActive] = useState(homeBlocks[0].key);
+/**
+ * The tabbed editor for one page's blocks: the home page's by default, or
+ * the About page's (About page sections).
+ */
+export default function HomeSectionsManager({
+  blocks = homeBlocks,
+  sectionKey = "home-sections",
+  pageName = "home page",
+  preview = "/",
+}: {
+  blocks?: HomeBlockDef[];
+  sectionKey?: string;
+  /** "home page", as in "the order they appear on the home page". */
+  pageName?: string;
+  preview?: string;
+}) {
+  const [active, setActive] = useState(blocks[0].key);
   const [form, setForm] = useState<FormValues>({});
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -257,7 +272,7 @@ export default function HomeSectionsManager() {
   const [notice, setNotice] = useState<Notice>(null);
   const [services, setServices] = useState<ServiceOption[]>([]);
   const clearedTab = useRef<{ index: number; name: string } | null>(null);
-  const def = homeBlocks.find((block) => block.key === active)!;
+  const def = blocks.find((block) => block.key === active)!;
   const needsServices = def.lists.some((list) => list.fields.some((field) => field.type === "service"));
   const [posts, setPosts] = useState<PostOption[]>([]);
   const postsLoaded = useRef(false);
@@ -312,7 +327,7 @@ export default function HomeSectionsManager() {
   // The section the form is for. A load that answers after another tab was
   // opened is ignored, so one section's words never fill another's form
   // (and get saved there).
-  const requested = useRef(homeBlocks[0].key);
+  const requested = useRef(blocks[0].key);
   const load = useCallback(
     (key: string) => {
       requested.current = key;
@@ -331,7 +346,7 @@ export default function HomeSectionsManager() {
   );
 
   // First tab on arrival. Switching tabs loads from the click handler below.
-  useEffect(() => load(homeBlocks[0].key), [load]);
+  useEffect(() => load(blocks[0].key), [load, blocks]);
 
   function open(key: string) {
     if (key === active) return;
@@ -420,11 +435,11 @@ export default function HomeSectionsManager() {
 
   return (
     <div className="pb-10">
-      <AdminPageHeader sectionKey="home-sections" />
+      <AdminPageHeader sectionKey={sectionKey} />
 
-      <p className="mt-6 text-xs text-slate-500">In the order they appear on the home page.</p>
-      <div role="tablist" aria-label="Home page sections" className="mt-2 flex flex-wrap gap-2">
-        {homeBlocks.map((block, i) => (
+      <p className="mt-6 text-xs text-slate-500">In the order they appear on the {pageName}.</p>
+      <div role="tablist" aria-label={`${pageName[0].toUpperCase()}${pageName.slice(1)} sections`} className="mt-2 flex flex-wrap gap-2">
+        {blocks.map((block, i) => (
           <button
             key={block.key}
             type="button"
@@ -535,8 +550,8 @@ export default function HomeSectionsManager() {
                 Reset to original wording
               </button>
             )}
-            <a href={siteUrl("/")} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-cyan-300">
-              View the home page ↗
+            <a href={siteUrl(preview)} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-cyan-300">
+              View the {pageName} ↗
             </a>
           </div>
         </form>
