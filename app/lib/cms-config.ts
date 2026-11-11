@@ -209,7 +209,7 @@ export const resources = {
         name: "image_url",
         label: "Image",
         type: "text",
-        help: "The large picture on this service's home page tab (shown 4:3, cropped to fill). Upload a photo about 1200×900; it is converted to WebP. Blank shows the service icon on navy.",
+        help: "The service's picture. It appears in the header's Services menu when this service is pointed at, cropped to a wide strip (about 5:2), so keep the subject in the middle; and on the service's page for services added here. A landscape photo about 1200×700 works best; it is converted to WebP. Blank shows the service icon.",
       },
       {
         name: "image_alt",
