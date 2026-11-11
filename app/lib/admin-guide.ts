@@ -51,6 +51,13 @@ export const adminGroups: AdminGroup[] = [
         preview: "/",
       },
       {
+        key: "services-sections",
+        label: "Services page sections",
+        shows:
+          "The Services page (/services): the figures and services card in the top banner, the service finder, the intro and photo beside each group of services, the one-team comparison, and which sections show. The top banner itself is the page's hero.",
+        preview: "/services",
+      },
+      {
         key: "about-sections",
         label: "About page sections",
         shows:

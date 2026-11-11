@@ -15,8 +15,9 @@
  * "tab": one of the titles in the same block's "tabs" list, saved as that title.
  * "post": "latest", or one published blog post, saved by its slug.
  * "category": a blog category the published posts use, saved as written.
+ * "menugroup": one of the Services menu's groups (Header menu), saved as its name.
  */
-export type HomeFieldType = "text" | "textarea" | "link" | "image" | "select" | "service" | "tab" | "post" | "category";
+export type HomeFieldType = "text" | "textarea" | "link" | "image" | "select" | "service" | "tab" | "post" | "category" | "menugroup";
 
 export type HomeField = {
   name: string;
@@ -46,7 +47,7 @@ export type HomeList = {
 export type HomeBlockDef = {
   key: string;
   /** The page it is saved on: "home" when not set. */
-  page?: "about-us" | "privacy-policy" | "terms-and-conditions";
+  page?: "about-us" | "services" | "privacy-policy" | "terms-and-conditions";
   /** Where "View the page" goes, when the screen's blocks are on different pages. */
   preview?: string;
   label: string;
@@ -850,7 +851,7 @@ export const aboutBlocks: HomeBlockDef[] = [
         heading: "IT, cloud and digital services,",
         heading_soft: "under one roof.",
         link_label: "See all services",
-        link: "/#services",
+        link: "/services",
       },
       lists: {
         services: [
@@ -1036,6 +1037,196 @@ const legalSections: HomeList = {
   ],
 };
 
+const showOrHide = [
+  { value: "yes", label: "Show" },
+  { value: "no", label: "Hide" },
+];
+
+/**
+ * The Services page's blocks (/services), edited on the "Services page
+ * sections" screen and saved on the "services" page. The top banner is that
+ * page's hero (Heroes), the services are the Services records and their
+ * groups are the Services menu's (Header menu).
+ */
+export const servicesBlocks: HomeBlockDef[] = [
+  {
+    key: "services_stats",
+    page: "services",
+    label: "Figures & index",
+    shows: "The figures under the top banner's buttons, and the heading of the card beside the banner that lists every service, each a jump down to it.",
+    fields: [{ name: "index_label", label: "Heading of the services card", type: "text", group: "Services card" }],
+    lists: [
+      {
+        name: "stats",
+        label: "Figures",
+        itemLabel: "Figure",
+        max: 3,
+        help: `The figure is large, its label beneath. ${figuresNote} Type {services} for the number of services on the page.`,
+        fields: [
+          { name: "title", label: "Figure", type: "text" },
+          { name: "description", label: "Label", type: "text" },
+        ],
+      },
+    ],
+    defaults: {
+      fields: { index_label: "Every service at a glance" },
+      lists: {
+        stats: [
+          { title: "{clients}", description: "Businesses served across the UAE" },
+          { title: "{rating}★", description: "Google rating from {reviews} reviews" },
+          { title: "{years}+", description: "Years operating in Dubai" },
+        ],
+      },
+    },
+  },
+  {
+    key: "services_finder",
+    page: "services",
+    label: "Service finder",
+    shows: "“Not sure where to start?”: visitors pick the situation they are in and see the services for it.",
+    fields: [
+      { name: "eyebrow", label: "Small heading", type: "text" },
+      { name: "heading", label: "Heading — first part", type: "text", help: headingHelp },
+      { name: "heading_soft", label: "Heading — second part", type: "text" },
+      { name: "result_label", label: "Small heading above the services", type: "text", group: "Labels" },
+    ],
+    lists: [
+      {
+        name: "situations",
+        label: "Situations",
+        itemLabel: "Situation",
+        max: 8,
+        help: "The first one is picked when the page opens. A situation whose services are all unpublished is left out.",
+        fields: [
+          { name: "title", label: "Situation", type: "text" },
+          { name: "description", label: "What we do about it", type: "textarea" },
+          { name: "service1", label: "First service", type: "service" },
+          { name: "service2", label: "Second service", type: "service" },
+          { name: "service3", label: "Third service", type: "service" },
+        ],
+      },
+    ],
+    defaults: {
+      fields: {
+        eyebrow: "Not sure where to start?",
+        heading: "Tell us what’s going on,",
+        heading_soft: "we’ll point you to the right service.",
+        result_label: "Where we’d start",
+      },
+      lists: {
+        situations: [
+          { title: "Opening or moving an office", description: "Cabling, Wi-Fi, CCTV and access control planned together, then looked after from the first day.", service1: "system-integration", service2: "it-amc-services-dubai", service3: "cyber-security" },
+          { title: "IT bills that are hard to predict", description: "One fixed monthly fee for remote support, on-site visits and monitoring, with backups included in the plan.", service1: "it-amc-services-dubai", service2: "data-backup-recovery", service3: "" },
+          { title: "Worried about ransomware or data loss", description: "Firewall, endpoint and email protection, with tested backups behind them, so one bad click doesn’t stop the business.", service1: "cyber-security", service2: "data-backup-recovery", service3: "" },
+          { title: "Moving email and files to the cloud", description: "Microsoft 365 or Azure set up, your data moved across and your team protected once it’s there.", service1: "cloud-services-dubai", service2: "cyber-security", service3: "" },
+          { title: "Not enough enquiries online", description: "A fast website or landing page, with SEO and ads that bring the right visitors to it.", service1: "website-development", service2: "digital-marketing", service3: "landing-page-designing" },
+          { title: "A brand that looks out of date", description: "A logo, brand identity and website that look as serious as the business behind them.", service1: "graphics-designing", service2: "website-development", service3: "" },
+        ],
+      },
+    },
+  },
+  {
+    key: "services_groups",
+    page: "services",
+    label: "Services by area",
+    shows: "The heading above the groups of services, and beside each group a few words about it and, on wide screens, a photo. The groups and the services in them are set on Header menu → Services menu.",
+    fields: [
+      { name: "eyebrow", label: "Small heading", type: "text" },
+      { name: "heading", label: "Heading — first part", type: "text", help: headingHelp },
+      { name: "heading_soft", label: "Heading — second part", type: "text" },
+    ],
+    lists: [
+      {
+        name: "groups",
+        label: "Group intros",
+        itemLabel: "Intro",
+        max: 6,
+        help: "One for each Services menu group. Without a photo, a built-in one shows.",
+        fields: [
+          { name: "title", label: "Group", type: "menugroup" },
+          { name: "description", label: "Intro", type: "textarea" },
+          { name: "image", label: "Photo", type: "image", upload: "photo" },
+          { name: "image_alt", label: "Photo description", type: "text" },
+        ],
+      },
+    ],
+    defaults: {
+      fields: {
+        eyebrow: "Browse by area",
+        heading: "Every service,",
+        heading_soft: "grouped by what it looks after.",
+      },
+      lists: {
+        groups: [
+          { title: "IT Support & Infrastructure", description: "Day-to-day IT support, the network and hardware behind it, and backups that keep your data safe.", image: "", image_alt: "" },
+          { title: "Cloud & Security", description: "Microsoft 365 and Azure set up and run for you, with the firewalls and email protection that keep threats out.", image: "", image_alt: "" },
+          { title: "Digital & Creative", description: "Websites, apps, design and marketing that bring in customers, from the team that already runs your IT.", image: "", image_alt: "" },
+        ],
+      },
+    },
+  },
+  {
+    key: "services_compare",
+    page: "services",
+    label: "One team vs vendors",
+    shows: "The table near the end of the page: what working with Byteflow is like beside using separate vendors, row by row.",
+    fields: [
+      { name: "eyebrow", label: "Small heading", type: "text" },
+      { name: "heading", label: "Heading — first part", type: "text", help: headingHelp },
+      { name: "heading_soft", label: "Heading — second part", type: "text" },
+      { name: "us_label", label: "Byteflow column heading", type: "text", group: "Column headings" },
+      { name: "them_label", label: "Other column heading", type: "text", group: "Column headings" },
+    ],
+    lists: [
+      {
+        name: "rows",
+        label: "Rows",
+        itemLabel: "Row",
+        max: 8,
+        fields: [
+          { name: "title", label: "Topic", type: "text" },
+          { name: "us", label: "With Byteflow", type: "text" },
+          { name: "them", label: "With separate vendors", type: "text" },
+        ],
+      },
+    ],
+    defaults: {
+      fields: {
+        eyebrow: "Why one team",
+        heading: "One accountable team,",
+        heading_soft: "instead of five vendors.",
+        us_label: "With Byteflow",
+        them_label: "With separate vendors",
+      },
+      lists: {
+        rows: [
+          { title: "Who you call", us: "One phone number and one account manager", them: "A different company for each problem" },
+          { title: "What you pay", us: "One fixed monthly invoice, no call-out fees", them: "Separate bills, with extras for urgent visits" },
+          { title: "How fast help arrives", us: "2-hour response on every AMC plan", them: "Whatever each contract allows" },
+          { title: "When something breaks", us: "We own the fix, whatever the cause", them: "Each vendor points to another" },
+          { title: "How it’s planned", us: "IT, cloud, security and web planned together", them: "Set up separately, rarely in step" },
+        ],
+      },
+    },
+  },
+  {
+    key: "services_sections",
+    page: "services",
+    label: "Sections on this page",
+    shows: "Which of the page's sections show. The banner and the services always do.",
+    fields: [
+      { name: "finder", label: "Service finder", type: "select", options: showOrHide, help: "Edited on the Service finder tab.", group: "Sections" },
+      { name: "spotlight", label: "Most popular offer", type: "select", options: showOrHide, help: "The Services menu's “Most popular” card as a wide plan card: edit it on Header menu → Services menu → Featured.", group: "Sections" },
+      { name: "compare", label: "One team vs vendors", type: "select", options: showOrHide, help: "Edited on the One team vs vendors tab.", group: "Sections" },
+    ],
+    lists: [],
+    defaults: {
+      fields: { finder: "yes", spotlight: "yes", compare: "yes" },
+      lists: {},
+    },
+  },
+];
+
 /**
  * The Privacy Policy and Terms & Conditions pages, linked from the footer's
  * Legal column. Each is saved on its own page, created on first save.
@@ -1179,12 +1370,12 @@ for (const block of homeBlocks) block.picturesElsewhere ??= PICTURES_ELSEWHERE[b
 
 export const homeBlockKeys = homeBlocks.map((block) => block.key);
 
-/** A home, About or legal page block by its key. */
+/** A home, About, Services or legal page block by its key. */
 export function getHomeBlockDef(key: string | null): HomeBlockDef | undefined {
-  return [...homeBlocks, ...aboutBlocks, ...legalBlocks].find((block) => block.key === key);
+  return [...homeBlocks, ...aboutBlocks, ...servicesBlocks, ...legalBlocks].find((block) => block.key === key);
 }
 
-const LIMITS: Record<HomeFieldType, number> = { text: 200, textarea: 2000, link: 500, image: 500, select: 40, service: 100, tab: 200, post: 200, category: 200 };
+const LIMITS: Record<HomeFieldType, number> = { text: 200, textarea: 2000, link: 500, image: 500, select: 40, service: 100, tab: 200, post: 200, category: 200, menugroup: 200 };
 
 /**
  * Links may be site paths, web addresses, phone, email or WhatsApp links;

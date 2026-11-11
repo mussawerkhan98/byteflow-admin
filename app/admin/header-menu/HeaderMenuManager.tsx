@@ -254,8 +254,15 @@ function NavEditor({ rows, onChange }: { rows: NavRow[]; onChange: (rows: NavRow
                 </label>
                 {needsLink ? (
                   <LinkField label="Link" value={row.href} onChange={(href) => update(index, { href })} />
+                ) : row.kind === "services" ? (
+                  <LinkField
+                    label="Link"
+                    help="Clicking the word opens this page; the arrow beside it opens the menu (edit it on the Services menu tab). Blank opens /services."
+                    value={row.href}
+                    onChange={(href) => update(index, { href })}
+                  />
                 ) : (
-                  <p className="self-end pb-3 text-xs text-slate-500">Opens its menu — edit it on the {row.kind === "services" ? "Services" : "Industries"} menu tab.</p>
+                  <p className="self-end pb-3 text-xs text-slate-500">Opens its menu — edit it on the Industries menu tab.</p>
                 )}
               </div>
               <div className="mt-4 flex flex-wrap gap-6">

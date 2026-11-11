@@ -86,7 +86,15 @@ async function ensureColumns(table: string, statements: string[]) {
   await ready
 }
 
+// Pages the website has that older databases were seeded without, so each is
+// listed under Pages for its banner, SEO, FAQs and call to action. Blank
+// fields show the website's own wording.
+const PAGE_ROWS = [
+  "INSERT OR IGNORE INTO pages (name, slug, status, indexable) VALUES ('Services', 'services', 'published', 1)",
+]
+
 async function ensureResourceTable(resource: Resource) {
+  if (resource.table === 'pages') return ensureColumns('pages:rows', PAGE_ROWS)
   if (resource.table === 'posts') return ensureColumns('posts', POST_COLUMNS)
   if (resource.table === 'site_settings') return ensureColumns('site_settings', SETTINGS_COLUMNS)
   if (resource.table === 'services') return ensureColumns('services', SERVICE_COLUMNS)

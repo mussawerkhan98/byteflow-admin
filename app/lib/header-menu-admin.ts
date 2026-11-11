@@ -59,7 +59,7 @@ export const SETTING_DEFAULTS = {
   "services.intro_heading": "Everything IT, under one roof.",
   "services.intro_text": "Support, cloud, security and creative work from one accountable team.",
   "services.intro_link_label": "View all services",
-  "services.intro_link": "/#services",
+  "services.intro_link": "/services",
   "services.featured_show": "1",
   "services.featured_eyebrow": "Most popular",
   "services.featured_title": "IT AMC plans",
@@ -70,6 +70,8 @@ export const SETTING_DEFAULTS = {
   "services.featured_stat2_label": "Monitoring",
   "services.featured_button_label": "See plans",
   "services.featured_button_link": "/it-amc-services-dubai",
+  "services.preview_show": "1",
+  "services.preview_button_label": "View service",
   "services.footer_text": "Not sure which one fits?",
   "services.footer_link_label": "Ask an engineer",
   "services.footer_link": "/contact-us",
@@ -87,6 +89,8 @@ export const SETTING_DEFAULTS = {
   "insights.view_all_link": "/blog",
   "insights.categories": "auto",
   "insights.latest_count": "3",
+  "insights.preview_show": "1",
+  "insights.preview_button_label": "Read article",
   "insights.footer_text": "New articles every week",
   "insights.footer_link_label": "Read the blog",
   "insights.footer_link": "/blog",
@@ -136,6 +140,17 @@ export const SETTING_SECTIONS: Record<"bar" | "services" | "industries" | "insig
       ],
     },
     {
+      title: "Service preview (right column)",
+      fields: [
+        toggle(
+          "services.preview_show",
+          "Preview a service when it is pointed at",
+          "Pointing at a service in the menu shows it in the right column, in place of the featured card: its picture, its subtitle and a button to its page. The picture and subtitle come from Services (Image, and Home tab — subtitle); a service without a picture shows its icon. The featured card comes back when the menu closes.",
+        ),
+        text("services.preview_button_label", "Button text", 20),
+      ],
+    },
+    {
       title: "Footer strip",
       fields: [
         text("services.footer_text", "Left text", 60),
@@ -178,6 +193,17 @@ export const SETTING_SECTIONS: Record<"bar" | "services" | "industries" | "insig
           help: "“auto” lists the six categories with the most posts. Or type category names, one per line, in the order you want them. Only categories with published posts are shown.",
         },
         { key: "insights.latest_count", label: "Number of latest articles", type: "number", help: "1 to 6. The newest published posts." },
+      ],
+    },
+    {
+      title: "Article preview (right column)",
+      fields: [
+        toggle(
+          "insights.preview_show",
+          "Show a large preview of the article pointed at",
+          "A column on the right with the article's picture, title and date: the newest article at first, then whichever article is pointed at. Pointing at a topic shows that topic's newest article. Wide screens only. The picture is the post's own image (Blog posts).",
+        ),
+        text("insights.preview_button_label", "Button text", 20),
       ],
     },
     {
@@ -278,7 +304,8 @@ export function sanitizeNav(body: unknown): Result<NavRow[]> {
     if (!label) errors.push(`${name}: add a label.`);
     const tooLong = lengthProblem(label, LIMITS.navLabel);
     if (tooLong) errors.push(`${name} (“${label}”): ${tooLong}`);
-    // Mega menus open from a button; Insights also links to its page.
+    // Mega menus open from a button; Insights and Services also link to their
+    // pages (Services to /services when left blank).
     const problem = linkProblem(href, { required: kind === "link" || kind === "insights" });
     if (problem) errors.push(`${name} (“${label}”): ${problem}`);
     return { label, href, kind, visible: bool(row.visible), new_tab: bool(row.new_tab) };

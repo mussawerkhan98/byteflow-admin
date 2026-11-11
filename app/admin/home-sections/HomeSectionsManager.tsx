@@ -43,6 +43,7 @@ function FieldInput({
   services,
   tabs,
   posts,
+  menuGroups = [],
 }: {
   field: HomeField;
   value: string;
@@ -50,7 +51,21 @@ function FieldInput({
   services: ServiceOption[];
   tabs: string[];
   posts: PostOption[];
+  menuGroups?: string[];
 }) {
+  if (field.type === "menugroup")
+    return (
+      <select value={menuGroups.find((group) => sameText(group, value)) ?? value} onChange={(event) => onChange(event.target.value)} className={inputClass}>
+        <option value="">Choose a group</option>
+        {/* A group renamed or removed since: kept, but shown beside no group until it is chosen again. */}
+        {value && !menuGroups.some((group) => sameText(group, value)) && <option value={value}>{value} (no such group: not shown)</option>}
+        {menuGroups.map((group) => (
+          <option key={group} value={group}>
+            {group}
+          </option>
+        ))}
+      </select>
+    );
   if (field.type === "post")
     return (
       <select value={value || "latest"} onChange={(event) => onChange(event.target.value)} className={inputClass}>
@@ -137,6 +152,7 @@ function ListEditor({
   services,
   tabs,
   posts,
+  menuGroups,
 }: {
   list: HomeList;
   items: Item[];
@@ -144,6 +160,7 @@ function ListEditor({
   services: ServiceOption[];
   tabs: string[];
   posts: PostOption[];
+  menuGroups: string[];
 }) {
   const titleField = list.fields.find((field) => field.name === "title");
   // A picture with its own "<name>_alt" field edits that; otherwise (logos)
@@ -223,7 +240,7 @@ function ListEditor({
                   <label key={field.name} className={`${labelClass} ${field.type === "textarea" ? "md:col-span-2" : ""}`}>
                     {field.label}
                     {field.help && <span className="mt-1 block font-normal text-slate-500">{field.help}</span>}
-                    <FieldInput field={field} value={item[field.name] ?? ""} onChange={(value) => update(index, field.name, value)} services={services} tabs={tabs} posts={posts} />
+                    <FieldInput field={field} value={item[field.name] ?? ""} onChange={(value) => update(index, field.name, value)} services={services} tabs={tabs} posts={posts} menuGroups={menuGroups} />
                   </label>
                 );
               })}
@@ -277,6 +294,24 @@ export default function HomeSectionsManager({
   const [posts, setPosts] = useState<PostOption[]>([]);
   const postsLoaded = useRef(false);
   const needsPosts = [...def.fields, ...def.lists.flatMap((list) => list.fields)].some((field) => field.type === "post" || field.type === "category");
+  const [menuGroups, setMenuGroups] = useState<string[]>([]);
+  const menuGroupsLoaded = useRef(false);
+  const needsMenuGroups = def.lists.some((list) => list.fields.some((field) => field.type === "menugroup"));
+
+  // Loaded once, the first time a section that picks a Services menu group is opened.
+  useEffect(() => {
+    if (!needsMenuGroups || menuGroupsLoaded.current) return;
+    menuGroupsLoaded.current = true;
+    void fetch("/api/admin/header-menu")
+      .then((response) => response.json())
+      .then((data: { groups?: { services?: { title: string }[] } }) =>
+        setMenuGroups((data.groups?.services ?? []).map((group) => group.title).filter(Boolean)),
+      )
+      .catch(() => {
+        menuGroupsLoaded.current = false;
+        setNotice({ type: "error", text: "The Services menu groups could not be loaded. Check your connection." });
+      });
+  }, [needsMenuGroups]);
 
   // Loaded once, the first time a section with a service picker is opened.
   useEffect(() => {
@@ -530,6 +565,7 @@ export default function HomeSectionsManager({
                 services={services}
                 tabs={tabNames}
                 posts={posts}
+                menuGroups={menuGroups}
               />
             ))}
           </div>
