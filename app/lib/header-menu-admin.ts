@@ -79,8 +79,12 @@ export const SETTING_DEFAULTS = {
   "services.whatsapp_label": "WhatsApp us",
 
   "industries.heading": "Industries we serve",
-  "industries.view_all_label": "",
-  "industries.view_all_link": "",
+  "industries.intro_heading": "IT that fits the way your sector works.",
+  "industries.intro_text": "Clinics, schools, shops, warehouses and offices each run on different systems. See what usually gets in the way in yours, and how we handle it.",
+  "industries.view_all_label": "View all industries",
+  "industries.view_all_link": "/industries",
+  "industries.preview_show": "1",
+  "industries.preview_button_label": "See how we help",
 
   "insights.eyebrow": "Insights",
   "insights.heading": "Practical IT advice for UAE businesses.",
@@ -163,11 +167,24 @@ export const SETTING_SECTIONS: Record<"bar" | "services" | "industries" | "insig
   ],
   industries: [
     {
-      title: "Industries menu",
+      title: "Intro (left column)",
       fields: [
-        text("industries.heading", "Heading", LIMITS.short),
-        text("industries.view_all_label", "“View all” link text", 30, "Leave blank for no link (there is no industries page yet)."),
-        link("industries.view_all_link", "“View all” link"),
+        text("industries.heading", "Small heading", LIMITS.short),
+        text("industries.intro_heading", "Heading", LIMITS.heading),
+        { key: "industries.intro_text", label: "Text", type: "textarea", max: LIMITS.text },
+        text("industries.view_all_label", "“View all” link text", 30, "Also where clicking “Industries” in the menu bar goes. Leave blank for neither."),
+        link("industries.view_all_link", "“View all” link", "/industries is the Industries page."),
+      ],
+    },
+    {
+      title: "Industry preview (right column)",
+      fields: [
+        toggle(
+          "industries.preview_show",
+          "Preview an industry when it is pointed at",
+          "Shows the industry pointed at (the first one until then): its icon, summary and first three points from the Industries page screen, and a button to its card. An industry left without a link here opens the card of the same name on the Industries page.",
+        ),
+        text("industries.preview_button_label", "Button text", 20),
       ],
     },
   ],
@@ -331,7 +348,8 @@ export function sanitizeCta(body: unknown): Result<Cta> {
 
 /**
  * The groups of the Services or Industries menu. An Industries link may be
- * left blank until its page exists; that industry is then not shown.
+ * left blank: the website then opens the card of the same name on its
+ * Industries page, or leaves the industry out when there is none.
  */
 export function sanitizeGroups(menu: MegaMenu, body: unknown): Result<MegaGroup[]> {
   const groups = Array.isArray(body) ? body : [];

@@ -238,6 +238,12 @@ export const resources = {
       { name: "sort_order", label: "Display order", type: "number" },
       { name: "featured", label: "Featured", type: "boolean" },
       {
+        name: "show_in_menu",
+        label: "Show in the menu bar",
+        type: "boolean",
+        help: "On: listed in the header's Services menu, in its group from Header menu → Services menu. Off: left out of the menu, but its page, its card on the Services page and its home page tab stay.",
+      },
+      {
         name: "status",
         label: "Publication",
         type: "select",
