@@ -374,11 +374,18 @@ export const resources = {
       { name: "business_hours", label: "Business hours", type: "textarea", help: "Shown in the footer under the address." },
       {
         name: "footer_text",
-        label: "Footer text",
+        label: "Footer — text under the first heading",
         type: "textarea",
         help: "What Byteflow does, in a sentence. The bottom of the footer already says how many businesses you serve and since when, so there is no need to repeat it here.",
       },
-      { name: "copyright_text", label: "Copyright text", type: "text" },
+      { name: "footer_about_heading", label: "Footer — first column heading", type: "text", help: "Above the text and contact details. Blank shows “About Byteflow”." },
+      { name: "footer_links_heading", label: "Footer — links column heading", type: "text", help: "Blank shows “Useful Links”. The links themselves are under Header & footer links." },
+      { name: "footer_services_heading", label: "Footer — services column heading", type: "text", help: "Blank shows “Our Services”. The column lists every published service, in the Services screen's order." },
+      { name: "footer_legal_heading", label: "Footer — legal column heading", type: "text", help: "Blank shows “Legal”. The pages are edited under Legal pages." },
+      { name: "footer_social_heading", label: "Footer — social column heading", type: "text", help: "Blank shows “Follow Us”." },
+      { name: "footer_social_text", label: "Footer — text above the social icons", type: "text", help: "Blank shows “Stay updated with our latest news and IT insights.”" },
+      { name: "footer_caption", label: "Footer — line under BYTEFLOW", type: "text", help: "The small line under the large BYTEFLOW. Blank shows “IT Support · Cyber Security · Cloud · Dubai, UAE”." },
+      { name: "copyright_text", label: "Footer — copyright line", type: "text", help: "Shown after © and the year at the bottom of the footer." },
       // Site-wide figures: one value each, quoted everywhere on the website
       // (hero, About, testimonials, footer, meta descriptions).
       {

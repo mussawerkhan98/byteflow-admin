@@ -124,7 +124,7 @@ export const adminGroups: AdminGroup[] = [
         key: "settings",
         label: "Contact details & logo",
         shows:
-          "Phone, email, address, opening hours, logo and social links used everywhere on the site, and the figures the site quotes (clients, Google rating, reviews, year founded) with the Google Business profile link. Change a figure here and it changes on every page; text elsewhere can quote them as {clients}, {rating}, {reviews}, {founded} or {years}. The header's button and phone switch are under Header menu.",
+          "Phone, email, address, opening hours, logo and social links used everywhere on the site, the footer's headings, text, copyright line and the line under BYTEFLOW, and the figures the site quotes (clients, Google rating, reviews, year founded) with the Google Business profile link. Change a figure here and it changes on every page; text elsewhere can quote them as {clients}, {rating}, {reviews}, {founded} or {years}. The header's button and phone switch are under Header menu.",
         preview: "/contact-us",
       },
       {
