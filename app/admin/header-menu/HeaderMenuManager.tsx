@@ -31,7 +31,7 @@ type Notice = { type: "ok" | "warn" | "error"; text: string; list?: string[] } |
 const TABS: { key: Tab; label: string; shows: string }[] = [
   { key: "bar", label: "Bar & links", shows: "The entries in the bar and their order, the button, the phone number and the dark/light switch." },
   { key: "services", label: "Services menu", shows: "The Services mega menu: intro, service groups, featured card and the strip along its bottom." },
-  { key: "industries", label: "Industries menu", shows: "The Industries menu. It stays hidden until its entry is switched on under Bar & links and at least one industry has a page link." },
+  { key: "industries", label: "Industries menu", shows: "The Industries menu, laid out like the Services menu. It shows once its entry is switched on under Bar & links and at least one industry has a page: its own link, or a card of the same name on the Industries page screen." },
   { key: "insights", label: "Insights menu", shows: "The blog mega menu: intro, topics, the latest articles and its footer strip. Topics and articles come from the blog itself." },
 ];
 
@@ -337,7 +337,7 @@ function GroupsEditor({
       <p className="mt-1 text-xs text-slate-500">
         {isServices
           ? "Each group is a column. Pick a service to fill in its name and link, or type your own."
-          : "With one group the industries show as a simple list; with more, each group is a column. Leave an industry's link blank until its page exists — it is not shown until then."}
+          : "With one group the industries show in two columns; with more, each group is a column. An industry left without a link opens the card of the same name on the Industries page (/industries); with no such card it is not shown."}
       </p>
       <div className="mt-4 space-y-5">
         {groups.map((group, g) => (

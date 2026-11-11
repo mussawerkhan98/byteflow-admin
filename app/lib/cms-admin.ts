@@ -52,6 +52,7 @@ const SERVICE_COLUMNS = [
   "ALTER TABLE services ADD COLUMN tagline TEXT NOT NULL DEFAULT ''",
   "ALTER TABLE services ADD COLUMN highlights TEXT NOT NULL DEFAULT ''",
   "ALTER TABLE services ADD COLUMN image_caption TEXT NOT NULL DEFAULT ''",
+  "ALTER TABLE services ADD COLUMN show_in_menu INTEGER NOT NULL DEFAULT 1",
 ]
 /** The home page Selected Work card (website: app/lib/project-cards.ts). */
 const PROJECT_COLUMNS = [

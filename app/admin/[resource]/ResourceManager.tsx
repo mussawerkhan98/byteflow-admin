@@ -88,6 +88,7 @@ function ResourceRow({
           config.fields.some((field) => field.name === "visible")
             ? " · hidden"
             : ""}
+          {record.show_in_menu !== undefined && !booleanValue(record.show_in_menu) ? " · not in menu bar" : ""}
         </p>
         {resourceKey === "sections" &&
           !LIVE_SECTION_TYPES.includes(String(record.section_type)) && (
