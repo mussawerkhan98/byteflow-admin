@@ -37,6 +37,14 @@ const SETTINGS_COLUMNS = [
   "ALTER TABLE site_settings ADD COLUMN google_review_count TEXT NOT NULL DEFAULT ''",
   "ALTER TABLE site_settings ADD COLUMN founded_year TEXT NOT NULL DEFAULT ''",
   "ALTER TABLE site_settings ADD COLUMN google_business_url TEXT NOT NULL DEFAULT ''",
+  // The footer's column headings and the caption under its wordmark. Blank shows the website's own wording.
+  "ALTER TABLE site_settings ADD COLUMN footer_about_heading TEXT NOT NULL DEFAULT ''",
+  "ALTER TABLE site_settings ADD COLUMN footer_links_heading TEXT NOT NULL DEFAULT ''",
+  "ALTER TABLE site_settings ADD COLUMN footer_services_heading TEXT NOT NULL DEFAULT ''",
+  "ALTER TABLE site_settings ADD COLUMN footer_legal_heading TEXT NOT NULL DEFAULT ''",
+  "ALTER TABLE site_settings ADD COLUMN footer_social_heading TEXT NOT NULL DEFAULT ''",
+  "ALTER TABLE site_settings ADD COLUMN footer_social_text TEXT NOT NULL DEFAULT ''",
+  "ALTER TABLE site_settings ADD COLUMN footer_caption TEXT NOT NULL DEFAULT ''",
 ]
 /** The home page Services tab wording (website: app/lib/service-tabs.ts). */
 const SERVICE_COLUMNS = [
