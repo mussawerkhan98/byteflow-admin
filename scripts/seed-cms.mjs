@@ -6,6 +6,7 @@ const pages = [
   ['Home','home','Byteflow Information Technology','Leading IT solutions provider trusted by 500+ businesses across Dubai and UAE since 2017.'],
   ['About Us','about-us','About Byteflow Information Technology','Meet the Dubai-based team providing complete IT, cloud, security and digital services.'],
   ['Services','services','IT Services in Dubai | Byteflow Information Technology','Managed IT support, cyber security, cloud, websites and digital marketing for UAE businesses.'],
+  ['Industries','industries','IT Support by Industry in Dubai | Byteflow Information Technology','IT support, cyber security, cloud and networks for clinics, schools, real estate, retail, logistics, hospitality, law firms and offices across the UAE.'],
   ['Projects','projects','Byteflow Projects','Explore selected technology projects delivered by Byteflow.'],
   ['Blog','blog','Byteflow IT Insights','Practical IT, cloud, cybersecurity and digital growth insights.'],
   ['Contact Us','contact-us','Contact Byteflow','Speak with Byteflow about IT support and digital services in the UAE.'],

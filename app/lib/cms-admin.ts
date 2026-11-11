@@ -91,6 +91,7 @@ async function ensureColumns(table: string, statements: string[]) {
 // fields show the website's own wording.
 const PAGE_ROWS = [
   "INSERT OR IGNORE INTO pages (name, slug, status, indexable) VALUES ('Services', 'services', 'published', 1)",
+  "INSERT OR IGNORE INTO pages (name, slug, status, indexable) VALUES ('Industries', 'industries', 'published', 1)",
 ]
 
 async function ensureResourceTable(resource: Resource) {

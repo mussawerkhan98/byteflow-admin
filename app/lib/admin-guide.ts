@@ -58,6 +58,13 @@ export const adminGroups: AdminGroup[] = [
         preview: "/services",
       },
       {
+        key: "industries-sections",
+        label: "Industries page",
+        shows:
+          "The Industries page (/industries): a card for each industry with what gets in the way there, how we handle it and the services we use. No client names. The top banner itself is the page's hero.",
+        preview: "/industries",
+      },
+      {
         key: "about-sections",
         label: "About page sections",
         shows:

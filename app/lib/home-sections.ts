@@ -47,7 +47,7 @@ export type HomeList = {
 export type HomeBlockDef = {
   key: string;
   /** The page it is saved on: "home" when not set. */
-  page?: "about-us" | "services" | "privacy-policy" | "terms-and-conditions";
+  page?: "about-us" | "services" | "industries" | "privacy-policy" | "terms-and-conditions";
   /** Where "View the page" goes, when the screen's blocks are on different pages. */
   preview?: string;
   label: string;
@@ -1228,6 +1228,81 @@ export const servicesBlocks: HomeBlockDef[] = [
 ];
 
 /**
+ * The Industries page (/industries), edited on the "Industries page" screen
+ * and saved on the "industries" page. The top banner is that page's hero
+ * (Heroes). No client names: each industry is what gets in the way there,
+ * how we handle it, and the services we use.
+ */
+export const industriesBlocks: HomeBlockDef[] = [
+  {
+    key: "industries_list",
+    page: "industries",
+    label: "Industries",
+    shows: "A card for each industry under the top banner, with the list of industries beside them. Each card's address is /industries# and its name in small letters with dashes, e.g. /industries#logistics — use it to link the Industries menu (Header menu) to the card.",
+    fields: [
+      { name: "nav_label", label: "Heading of the list of industries", type: "text", group: "Labels" },
+      { name: "challenges_label", label: "Heading of the problems", type: "text", group: "Labels" },
+      { name: "approach_label", label: "Heading of what we do", type: "text", group: "Labels" },
+      { name: "services_label", label: "Words before the services", type: "text", group: "Labels" },
+    ],
+    lists: [
+      {
+        name: "industries",
+        label: "Industries",
+        itemLabel: "Industry",
+        max: 12,
+        help: "No client names. One line per point in the two lists.",
+        fields: [
+          { name: "title", label: "Industry", type: "text" },
+          {
+            name: "icon",
+            label: "Icon",
+            type: "select",
+            options: [
+              { value: "other", label: "General" },
+              { value: "health", label: "Healthcare" },
+              { value: "education", label: "Education" },
+              { value: "real-estate", label: "Real estate / building" },
+              { value: "retail", label: "Retail" },
+              { value: "logistics", label: "Logistics" },
+              { value: "hospitality", label: "Hospitality" },
+              { value: "legal", label: "Legal" },
+              { value: "corporate", label: "Corporate / office" },
+            ],
+          },
+          { name: "summary", label: "One-line summary", type: "textarea" },
+          { name: "challenges", label: "What gets in the way (one per line)", type: "textarea" },
+          { name: "approach", label: "How we handle it (one per line)", type: "textarea" },
+          { name: "service1", label: "First service", type: "service" },
+          { name: "service2", label: "Second service", type: "service" },
+          { name: "service3", label: "Third service", type: "service" },
+        ],
+      },
+    ],
+    defaults: {
+      fields: {
+        nav_label: "Industries",
+        challenges_label: "What gets in the way",
+        approach_label: "How we handle it",
+        services_label: "Services we use",
+      },
+      lists: {
+        industries: [
+          { title: "Clinics & Healthcare", icon: "health", summary: "Clinic systems, patient records and front-desk technology that have to work for every appointment.", challenges: "Patient records that must stay private and backed up\nFront desk, booking and billing PCs that cannot go down mid-shift\nMedical devices, staff and patients sharing one network", approach: "Separate, secured networks for clinical, staff and guest devices\nAutomated, tested backups of patient and billing data\nRemote and on-site support under one AMC plan", service1: "it-amc-services-dubai", service2: "cyber-security", service3: "data-backup-recovery" },
+          { title: "Schools & Education", icon: "education", summary: "Classrooms, staff rooms and offices on one network that has to hold up all day.", challenges: "Hundreds of student and staff devices on one network\nClassrooms that need reliable Wi-Fi from the first lesson to the last\nControlling what students can reach online", approach: "Campus-wide network and Wi-Fi design\nMicrosoft 365 accounts and devices managed centrally\nFirewall and content filtering rules for student access", service1: "system-integration", service2: "cloud-services-dubai", service3: "cyber-security" },
+          { title: "Real Estate", icon: "real-estate", summary: "Agents on site visits, offices and showrooms, all working from the same listings and leads.", challenges: "Agents working from viewings, showrooms and home\nLeads spread across portals, inboxes and phones\nNew offices and showrooms opening on tight timelines", approach: "Cloud email, files and Teams that work from anywhere\nWebsites and landing pages built to bring in enquiries\nOffice and showroom fit-outs: cabling, Wi-Fi and CCTV", service1: "cloud-services-dubai", service2: "website-development", service3: "system-integration" },
+          { title: "Retail & Ecommerce", icon: "retail", summary: "Tills, stock and the online store, all needing to stay up while customers are buying.", challenges: "Point-of-sale and stock systems that must stay online\nCard payments and customer details to protect\nAn online store competing for the same searches as everyone else", approach: "Store networks, CCTV and POS connectivity set up and monitored\nFirewall and endpoint protection for tills and the back office\nEcommerce websites, SEO and ads that bring buyers in", service1: "website-development", service2: "digital-marketing", service3: "cyber-security" },
+          { title: "Logistics", icon: "logistics", summary: "Warehouses, offices and drivers on different sites, with systems that run around the clock.", challenges: "Warehouses, offices and yards on separate sites\nTracking and dispatch systems that run day and night\nRansomware that can stop shipments overnight", approach: "Site-to-site networking and warehouse Wi-Fi\nMonitoring around the clock, with backups ready to restore\nEndpoint and email protection on every site", service1: "system-integration", service2: "data-backup-recovery", service3: "cyber-security" },
+          { title: "Hospitality", icon: "hospitality", summary: "Guest Wi-Fi, cameras and property systems across buildings that never close.", challenges: "Guest Wi-Fi that simply has to work\nCCTV and access control across large buildings\nBooking and property systems that cannot stop", approach: "Separate guest, staff and system networks\nCCTV, access control and Wi-Fi fit-outs\nMonitoring, with on-site support when something fails", service1: "system-integration", service2: "it-amc-services-dubai", service3: "cyber-security" },
+          { title: "Law Firms & Professional Services", icon: "legal", summary: "Confidential files, constant email and people working from courts, client offices and home.", challenges: "Confidential client files that must stay private\nEmail as the main target for phishing and payment fraud\nPartners and staff working from outside the office", approach: "Email security and anti-phishing protection\nMicrosoft 365 with controlled sharing and backups\nSecure remote access for the whole team", service1: "cyber-security", service2: "cloud-services-dubai", service3: "data-backup-recovery" },
+          { title: "Corporate Offices & SMEs", icon: "corporate", summary: "Growing teams without a full IT department, who need everything to just work.", challenges: "No in-house IT person, or one stretched across everything\nIT costs that change from month to month\nNew starters who need laptops, accounts and access quickly", approach: "One fixed monthly AMC for support and on-site visits\nNew starters set up with devices, email and access\nOne team for IT, cloud, security and the website", service1: "it-amc-services-dubai", service2: "cloud-services-dubai", service3: "website-development" },
+        ],
+      },
+    },
+  },
+];
+
+/**
  * The Privacy Policy and Terms & Conditions pages, linked from the footer's
  * Legal column. Each is saved on its own page, created on first save.
  */
@@ -1370,9 +1445,9 @@ for (const block of homeBlocks) block.picturesElsewhere ??= PICTURES_ELSEWHERE[b
 
 export const homeBlockKeys = homeBlocks.map((block) => block.key);
 
-/** A home, About, Services or legal page block by its key. */
+/** A home, About, Services, Industries or legal page block by its key. */
 export function getHomeBlockDef(key: string | null): HomeBlockDef | undefined {
-  return [...homeBlocks, ...aboutBlocks, ...servicesBlocks, ...legalBlocks].find((block) => block.key === key);
+  return [...homeBlocks, ...aboutBlocks, ...servicesBlocks, ...industriesBlocks, ...legalBlocks].find((block) => block.key === key);
 }
 
 const LIMITS: Record<HomeFieldType, number> = { text: 200, textarea: 2000, link: 500, image: 500, select: 40, service: 100, tab: 200, post: 200, category: 200, menugroup: 200 };
