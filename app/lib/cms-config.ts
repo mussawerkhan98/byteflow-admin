@@ -365,9 +365,19 @@ export const resources = {
       { name: "whatsapp_number", label: "WhatsApp number", type: "text" },
       { name: "whatsapp_link", label: "WhatsApp link", type: "url" },
       { name: "primary_email", label: "Primary email", type: "email" },
-      { name: "physical_address", label: "Physical address", type: "textarea" },
-      { name: "business_hours", label: "Business hours", type: "textarea" },
-      { name: "footer_text", label: "Footer text", type: "textarea", help: figuresHelp },
+      {
+        name: "physical_address",
+        label: "Physical address",
+        type: "textarea",
+        help: "Shown in the footer and on the About page. Give the full address, the same as in the “Address” script and on Google: Google compares them.",
+      },
+      { name: "business_hours", label: "Business hours", type: "textarea", help: "Shown in the footer under the address." },
+      {
+        name: "footer_text",
+        label: "Footer text",
+        type: "textarea",
+        help: "What Byteflow does, in a sentence. The bottom of the footer already says how many businesses you serve and since when, so there is no need to repeat it here.",
+      },
       { name: "copyright_text", label: "Copyright text", type: "text" },
       // Site-wide figures: one value each, quoted everywhere on the website
       // (hero, About, testimonials, footer, meta descriptions).

@@ -9,9 +9,14 @@ import {
   type HomeBlockDef,
 } from "../../../lib/home-sections";
 
-// Home page blocks are saved on the "home" page, the About page's on "about-us".
+// Home page blocks are saved on the "home" page, the About page's on
+// "about-us", and each legal page's on its own page.
 const pageOf = (def: HomeBlockDef) => def.page ?? "home";
-const pageName = (def: HomeBlockDef) => (def.page === "about-us" ? "About Us" : "Home");
+const pageName = (def: HomeBlockDef) =>
+  def.page === "about-us" ? "About Us" : def.page ? def.label : "Home";
+// The legal pages are new: their page is created on first save rather than
+// asking for it to be made under Pages first.
+const createsPage = (def: HomeBlockDef) => def.page === "privacy-policy" || def.page === "terms-and-conditions";
 const missingPage = (def: HomeBlockDef) =>
   Response.json(
     { error: `The ${pageName(def)} page was not found. Create a page with slug "${pageOf(def)}" under Pages first.` },
@@ -41,6 +46,7 @@ export async function GET(request: Request) {
   const def = blockFrom(request);
   if (!def) return unknownBlock();
   const { pageId, section } = await findBlock(def);
+  if (!pageId && createsPage(def)) return Response.json({ saved: false, content: homeBlockFormValues(def, null) });
   if (!pageId) return missingPage(def);
   let saved: Record<string, unknown> | null = null;
   try {
@@ -60,7 +66,14 @@ export async function PUT(request: Request) {
   const content = sanitizeHomeBlock(def, (await request.json()) as Record<string, unknown>);
   const problem = checkHomeBlock(def, content);
   if (problem) return Response.json({ error: problem }, { status: 400 });
-  const { pageId, section } = await findBlock(def);
+  let { pageId, section } = await findBlock(def);
+  if (!pageId && createsPage(def)) {
+    await db.execute({
+      sql: "INSERT OR IGNORE INTO pages (name, slug, status, indexable) VALUES (?, ?, 'published', 1)",
+      args: [def.label, pageOf(def)],
+    });
+    ({ pageId, section } = await findBlock(def));
+  }
   if (!pageId) return missingPage(def);
   if (section) {
     await db.execute({
@@ -84,6 +97,8 @@ export async function DELETE(request: Request) {
   const def = blockFrom(request);
   if (!def) return unknownBlock();
   const { pageId } = await findBlock(def);
+  // Nothing saved yet, so it already shows the original wording.
+  if (!pageId && createsPage(def)) return Response.json({ ok: true });
   if (!pageId) return missingPage(def);
   await db.execute({
     sql: "DELETE FROM page_sections WHERE page_id = ? AND section_type = ?",

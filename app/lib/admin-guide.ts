@@ -82,6 +82,13 @@ export const adminGroups: AdminGroup[] = [
           "Articles on the Blog page, plus the “From Our IT Experts” row on the homepage.",
         preview: "/blog",
       },
+      {
+        key: "legal-pages",
+        label: "Legal pages",
+        shows:
+          "The Privacy Policy and Terms & Conditions pages, linked from the footer's Legal column: their title, last updated line, intro and sections.",
+        preview: "/privacy-policy",
+      },
     ],
   },
   {

@@ -550,8 +550,8 @@ export default function HomeSectionsManager({
                 Reset to original wording
               </button>
             )}
-            <a href={siteUrl(preview)} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-cyan-300">
-              View the {pageName} ↗
+            <a href={siteUrl(def.preview ?? preview)} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-cyan-300">
+              {def.preview ? `View the ${def.label} page ↗` : `View the ${pageName} ↗`}
             </a>
           </div>
         </form>

@@ -6,6 +6,7 @@ import {
   groupedFields,
   homeBlockFormValues,
   aboutBlocks,
+  legalBlocks,
   homeBlocks,
   sanitizeHomeBlock,
 } from "../app/lib/home-sections";
@@ -224,4 +225,32 @@ test("About page sections: a registered detail keeps a tel: or mailto: link, uns
     (saved.details as Record<string, string>[]).map((d) => d.link),
     ["tel:+971543282042", ""],
   );
+});
+
+test("Legal pages: Privacy Policy and Terms & Conditions, each on its own page with its own preview", () => {
+  assert.deepEqual(legalBlocks.map((b) => [b.key, b.page, b.preview]), [
+    ["legal_privacy", "privacy-policy", "/privacy-policy"],
+    ["legal_terms", "terms-and-conditions", "/terms-and-conditions"],
+  ]);
+  for (const block of legalBlocks) {
+    assert.equal(getHomeBlockDef(block.key), block);
+    for (const field of block.fields) assert.ok(block.defaults.fields[field.name], `${block.key}.${field.name}`);
+    assert.ok(block.defaults.lists.sections.length >= 10, block.key);
+    // Each default section fits what the form saves, or saving it unchanged would cut it short.
+    for (const section of block.defaults.lists.sections) assert.ok(section.description.length <= 2000, section.title);
+    assert.equal(groupedFields(block)[0].label, "Heading", block.key);
+  }
+});
+
+test("Legal pages: paragraphs and bullet lines survive saving; untitled sections are dropped", () => {
+  const privacy = getHomeBlockDef("legal_privacy")!;
+  const saved = sanitizeHomeBlock(privacy, {
+    title: "  Privacy Policy  ",
+    sections: [
+      { title: "Your rights", description: "You may ask us to:\n- See your data.\n- Delete it.\n\nEmail us." },
+      { title: "", description: "No heading, so not saved." },
+    ],
+  });
+  assert.equal(saved.title, "Privacy Policy");
+  assert.deepEqual(saved.sections, [{ title: "Your rights", description: "You may ask us to:\n- See your data.\n- Delete it.\n\nEmail us." }]);
 });
