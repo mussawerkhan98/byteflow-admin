@@ -727,7 +727,7 @@ export const aboutBlocks: HomeBlockDef[] = [
         stats: [
           { title: "{clients}", description: "Businesses served across the UAE" },
           { title: "{years}+", description: "Years operating in Dubai" },
-          { title: "2 hrs", description: "On-site response guarantee" },
+          { title: "8", description: "IT, cloud and digital services" },
           { title: "24/7", description: "Monitoring and support" },
         ],
       },
@@ -761,7 +761,7 @@ export const aboutBlocks: HomeBlockDef[] = [
     defaults: {
       fields: {
         eyebrow: "Our story",
-        heading: "{years} years.",
+        heading: "{years} years of IT in Dubai.",
         heading_soft: "One mission.",
         intro: "From a small IT support operation to a full-service technology company — here is how Byteflow grew to become one of Dubai's most trusted IT partners.",
       },
@@ -771,7 +771,7 @@ export const aboutBlocks: HomeBlockDef[] = [
           { year: "2019", title: "Expanded to cloud and Microsoft 365", description: "Became an official Microsoft partner. Started handling full cloud migrations and Microsoft 365 deployments for UAE businesses of all sizes." },
           { year: "2020", title: "Launched digital marketing and web services", description: "Added website development, SEO, and Google Ads to the service portfolio — giving clients a single vendor for both IT and digital growth." },
           { year: "2022", title: "Crossed 300+ business clients", description: "Expanded coverage to Sharjah and Abu Dhabi with dedicated on-site engineers. Introduced the 2-hour response SLA across all AMC plans." },
-          { year: "2024", title: "{clients} businesses and still growing", description: "Now serving {clients} businesses across the UAE with a full team of certified engineers, designers, marketers and cloud specialists." },
+          { year: "Today", title: "{clients} businesses and still growing", description: "A full team of certified engineers, designers, marketers and cloud specialists, looking after businesses across the UAE." },
         ],
       },
     },
@@ -803,8 +803,8 @@ export const aboutBlocks: HomeBlockDef[] = [
     defaults: {
       fields: {
         eyebrow: "How we work",
-        heading: "No jargon. No surprises.",
-        heading_soft: "Just results.",
+        heading: "Fast response, fixed price,",
+        heading_soft: "one team for all your IT.",
         link_label: "Get started",
         link: "/contact-us",
       },
@@ -845,7 +845,7 @@ export const aboutBlocks: HomeBlockDef[] = [
     defaults: {
       fields: {
         eyebrow: "What we do",
-        heading: "Everything your business needs,",
+        heading: "IT, cloud and digital services,",
         heading_soft: "under one roof.",
         link_label: "See all services",
         link: "/#services",
@@ -964,15 +964,12 @@ export const aboutBlocks: HomeBlockDef[] = [
         details: [
           { title: "Registered name", description: "Byteflow Information Technology Co. L.L.C.", link: "" },
           { title: "Trading as", description: "Byteflow", link: "" },
-          { title: "Established", description: "{founded} — operating in Dubai for {years} years", link: "" },
+          { title: "Established", description: "{founded}", link: "" },
           { title: "Registered office", description: "Emaar Park 4, Greens, TECOM, Dubai, United Arab Emirates", link: "" },
-          { title: "Telephone", description: "+971 54 328 2042", link: "tel:+971543282042" },
-          { title: "Email", description: "info@byteflow.ae", link: "mailto:info@byteflow.ae" },
           { title: "Opening hours", description: "Monday to Saturday, 9:00am to 6:00pm (GST)", link: "" },
           { title: "Areas served", description: "Dubai, Sharjah and Abu Dhabi", link: "" },
         ],
         assurances: [
-          { title: "{years} years, one city", description: "Byteflow has supported businesses in Dubai since {founded}, from our first ten clients in Deira and Bur Dubai to {clients} across the UAE today." },
           { title: "Our own engineers", description: "Support is delivered by people we employ, remotely and on site. Work is not passed to a subcontractor you never meet and cannot hold to anything." },
           { title: "Accountable in writing", description: "Response times, what is covered and what is charged separately are set out in the contract before it starts, not decided after a problem happens." },
         ],
