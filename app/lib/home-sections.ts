@@ -46,7 +46,9 @@ export type HomeList = {
 export type HomeBlockDef = {
   key: string;
   /** The page it is saved on: "home" when not set. */
-  page?: "about-us";
+  page?: "about-us" | "privacy-policy" | "terms-and-conditions";
+  /** Where "View the page" goes, when the screen's blocks are on different pages. */
+  preview?: string;
   label: string;
   /** Where it sits on the home page, in plain words. */
   shows: string;
@@ -1014,6 +1016,98 @@ export const aboutBlocks: HomeBlockDef[] = [
   },
 ];
 
+/** The legal pages' fields: the title is also the link in the footer's Legal column. */
+const legalFields: HomeField[] = [
+  { name: "eyebrow", label: "Small heading", type: "text" },
+  { name: "title", label: "Page title", type: "text", group: "Heading", help: "The page's heading, and its link text in the footer's Legal column." },
+  { name: "updated", label: "Last updated line", type: "text", group: "Heading", help: "Change the date whenever you change the wording." },
+  { name: "intro", label: "Intro paragraph", type: "textarea" },
+];
+
+const legalSections: HomeList = {
+  name: "sections",
+  label: "Sections",
+  itemLabel: "Section",
+  max: 20,
+  help: "Each section is a heading with its text, listed in this order down the page and in its contents list.",
+  fields: [
+    { name: "title", label: "Heading", type: "text" },
+    { name: "description", label: "Text", type: "textarea", help: "Leave a blank line between paragraphs. Start a line with “- ” to make it a bullet point." },
+  ],
+};
+
+/**
+ * The Privacy Policy and Terms & Conditions pages, linked from the footer's
+ * Legal column. Each is saved on its own page, created on first save.
+ */
+export const legalBlocks: HomeBlockDef[] = [
+  {
+    key: "legal_privacy",
+    page: "privacy-policy",
+    preview: "/privacy-policy",
+    label: "Privacy Policy",
+    shows: "The Privacy Policy page (/privacy-policy), linked from the footer's Legal column.",
+    fields: legalFields,
+    lists: [legalSections],
+    defaults: {
+      fields: {
+        eyebrow: "Legal",
+        title: "Privacy Policy",
+        updated: "Last updated: 11 November 2026",
+        intro: "This policy explains what personal information Byteflow collects when you use byteflow.ae or contact us, why we collect it, who we share it with and the choices you have.",
+      },
+      lists: {
+        sections: [
+          { title: "Who we are", description: "Byteflow Information Technology Co. L.L.C. (\"Byteflow\", \"we\", \"us\") is an IT services company registered in Dubai, United Arab Emirates. We are responsible for the personal information described in this policy.\n\nByteflow Information Technology Co. L.L.C.\nEmaar Park 4, Greens, TECOM, Dubai, United Arab Emirates\nEmail: info@byteflow.ae\nPhone: +971 54 328 2042" },
+          { title: "Information we collect", description: "Information you give us:\n- Your name, company, email address, phone number and message when you fill in a contact or inquiry form, or send us an email or WhatsApp message.\n- Details you share with us about your business, systems and requirements so we can prepare a quote or provide our services.\n\nInformation collected automatically when you visit the website:\n- Technical details such as your browser, device, approximate location (from your IP address) and the pages you view, collected through cookies and similar technologies.\n\nIf you are a client, we may also access information held on your systems while providing IT support. That access is governed by your service agreement with us, not by this policy." },
+          { title: "How we use your information", description: "We use your personal information to:\n- Reply to your inquiries and prepare quotes.\n- Provide, manage and invoice the services you have agreed with us.\n- Send you news and offers by email, where you have agreed to receive them. Every email has an unsubscribe link.\n- Understand how the website is used so we can improve it.\n- Protect the website and our forms against spam and misuse.\n- Meet our legal, tax and accounting obligations." },
+          { title: "Cookies and analytics", description: "The website uses cookies and similar technologies. We use Google Analytics to understand how visitors use the website, for example which pages are visited and which lead to an inquiry. Our forms are protected by Google reCAPTCHA, which checks that a form is being sent by a person and not an automated program.\n\nThese services are provided by Google, which processes the information under its own privacy policy. You can block or delete cookies in your browser settings; some parts of the website may not work as intended if you do." },
+          { title: "Who we share it with", description: "We do not sell your personal information. We share it only with:\n- Service providers who help us run our business, such as website hosting, email and analytics providers, and only for the purposes described in this policy.\n- Authorities, courts or advisers where the law requires it, or to protect our rights.\n\nSome of these providers may store or process information outside the United Arab Emirates. Where that happens, we take reasonable steps to make sure your information stays protected." },
+          { title: "How long we keep it", description: "We keep personal information only for as long as we need it for the purposes above, or for as long as the law requires us to keep it, for example for accounting records. When we no longer need it, we delete it or make it anonymous." },
+          { title: "How we protect it", description: "We use technical and organisational measures to protect personal information against loss, misuse and unauthorised access, including access controls and encrypted connections. No method of sending or storing information is completely secure, but we work to keep your information safe." },
+          { title: "Your rights", description: "Subject to the law that applies, including the UAE Personal Data Protection Law (Federal Decree-Law No. 45 of 2021), you may ask us to:\n- Tell you what personal information we hold about you and give you a copy.\n- Correct information that is wrong or incomplete.\n- Delete your information, or stop or limit how we use it.\n- Stop sending you marketing emails, at any time.\n\nTo make a request, email info@byteflow.ae. We may need to confirm your identity before we act on it." },
+          { title: "Children", description: "Our website and services are intended for businesses. They are not directed at children under 18, and we do not knowingly collect personal information from them." },
+          { title: "Changes to this policy", description: "We may update this policy from time to time. The date at the top of this page shows when it was last changed." },
+          { title: "Contact us", description: "If you have any questions about this policy or how we handle your personal information, please contact us:\n\nByteflow Information Technology Co. L.L.C.\nEmaar Park 4, Greens, TECOM, Dubai, United Arab Emirates\nEmail: info@byteflow.ae\nPhone: +971 54 328 2042" },
+        ],
+      },
+    },
+  },
+  {
+    key: "legal_terms",
+    page: "terms-and-conditions",
+    preview: "/terms-and-conditions",
+    label: "Terms & Conditions",
+    shows: "The Terms & Conditions page (/terms-and-conditions), linked from the footer's Legal column.",
+    fields: legalFields,
+    lists: [legalSections],
+    defaults: {
+      fields: {
+        eyebrow: "Legal",
+        title: "Terms & Conditions",
+        updated: "Last updated: 11 November 2026",
+        intro: "These terms apply to your use of byteflow.ae. By using the website you agree to them. Please read them carefully.",
+      },
+      lists: {
+        sections: [
+          { title: "About these terms", description: "The website byteflow.ae is operated by Byteflow Information Technology Co. L.L.C. (\"Byteflow\", \"we\", \"us\"), a company registered in Dubai, United Arab Emirates. These terms cover your use of the website. If you do not agree with them, please do not use the website." },
+          { title: "Our services", description: "The information on this website describes our services in general terms. It is not an offer that can be accepted. The services we provide to a client, and the price, are set out in a written quotation or service agreement. If anything in that quotation or agreement differs from this website or these terms, the quotation or agreement applies." },
+          { title: "Quotes and prices", description: "Quotes are valid for the period stated on them. Unless a quote says otherwise, prices are in UAE dirhams (AED) and exclude VAT, which is added at the applicable rate." },
+          { title: "Using the website", description: "You agree to use the website only for lawful purposes. You must not:\n- Try to gain unauthorised access to the website, its servers or any connected system.\n- Interfere with how the website works, including by introducing viruses or other harmful code.\n- Copy or collect content from the website by automated means without our written permission.\n- Use the contact forms to send spam or misleading information." },
+          { title: "Intellectual property", description: "The content of this website, including its text, design, graphics and the Byteflow name and logo, belongs to Byteflow or is used with permission. You may view and print pages for your own reference, but you may not copy, reproduce or use our content for commercial purposes without our written permission. Other names, logos and trademarks shown on the website belong to their owners." },
+          { title: "Links to other websites", description: "The website may link to websites run by others. We do not control those websites and are not responsible for their content or how they handle your information." },
+          { title: "Accuracy of information", description: "We work to keep the information on the website accurate and up to date, but we do not guarantee that it is complete, current or free of errors. We may change the website or its content at any time without notice." },
+          { title: "Limitation of liability", description: "The website is provided \"as is\". To the extent permitted by law, Byteflow is not liable for any indirect or consequential loss, or for any loss of data, profit or business, arising from your use of the website or your reliance on its content. Nothing in these terms limits any liability that cannot be limited under the law of the United Arab Emirates." },
+          { title: "Privacy", description: "How we collect and use personal information is explained in our Privacy Policy." },
+          { title: "Governing law", description: "These terms are governed by the laws of the Emirate of Dubai and the federal laws of the United Arab Emirates. The courts of Dubai have jurisdiction over any dispute arising from them." },
+          { title: "Changes to these terms", description: "We may update these terms from time to time. The date at the top of this page shows when they were last changed. Your continued use of the website means you accept the updated terms." },
+          { title: "Contact us", description: "If you have any questions about these terms, please contact us:\n\nByteflow Information Technology Co. L.L.C.\nEmaar Park 4, Greens, TECOM, Dubai, United Arab Emirates\nEmail: info@byteflow.ae\nPhone: +971 54 328 2042" },
+        ],
+      },
+    },
+  },
+];
+
 /**
  * The headings a block's fields sit under on the form, by field name. A
  * field not listed sits under "Heading" when it is one of the usual heading
@@ -1085,9 +1179,9 @@ for (const block of homeBlocks) block.picturesElsewhere ??= PICTURES_ELSEWHERE[b
 
 export const homeBlockKeys = homeBlocks.map((block) => block.key);
 
-/** A home or About page block by its key. */
+/** A home, About or legal page block by its key. */
 export function getHomeBlockDef(key: string | null): HomeBlockDef | undefined {
-  return [...homeBlocks, ...aboutBlocks].find((block) => block.key === key);
+  return [...homeBlocks, ...aboutBlocks, ...legalBlocks].find((block) => block.key === key);
 }
 
 const LIMITS: Record<HomeFieldType, number> = { text: 200, textarea: 2000, link: 500, image: 500, select: 40, service: 100, tab: 200, post: 200, category: 200 };
