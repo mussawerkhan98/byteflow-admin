@@ -10,15 +10,15 @@ import {
 } from "../../../lib/home-sections";
 
 // Home page blocks are saved on the "home" page, the About page's on
-// "about-us", the Services page's on "services", and each legal page's on
-// its own page.
+// "about-us", the Services and Industries pages' on "services" and
+// "industries", and each legal page's on its own page.
 const pageOf = (def: HomeBlockDef) => def.page ?? "home";
 const pageName = (def: HomeBlockDef) =>
-  def.page === "about-us" ? "About Us" : def.page === "services" ? "Services" : def.page ? def.label : "Home";
-// The Services and legal pages are new: their page is created on first save
-// rather than asking for it to be made under Pages first.
+  def.page === "about-us" ? "About Us" : def.page === "services" ? "Services" : def.page === "industries" ? "Industries" : def.page ? def.label : "Home";
+// The Services, Industries and legal pages are new: their page is created
+// on first save rather than asking for it to be made under Pages first.
 const createsPage = (def: HomeBlockDef) =>
-  def.page === "services" || def.page === "privacy-policy" || def.page === "terms-and-conditions";
+  def.page === "services" || def.page === "industries" || def.page === "privacy-policy" || def.page === "terms-and-conditions";
 const missingPage = (def: HomeBlockDef) =>
   Response.json(
     { error: `The ${pageName(def)} page was not found. Create a page with slug "${pageOf(def)}" under Pages first.` },
