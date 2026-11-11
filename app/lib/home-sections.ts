@@ -850,7 +850,7 @@ export const aboutBlocks: HomeBlockDef[] = [
         heading: "IT, cloud and digital services,",
         heading_soft: "under one roof.",
         link_label: "See all services",
-        link: "/#services",
+        link: "/services",
       },
       lists: {
         services: [

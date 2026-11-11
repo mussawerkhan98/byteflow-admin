@@ -59,7 +59,7 @@ export const SETTING_DEFAULTS = {
   "services.intro_heading": "Everything IT, under one roof.",
   "services.intro_text": "Support, cloud, security and creative work from one accountable team.",
   "services.intro_link_label": "View all services",
-  "services.intro_link": "/#services",
+  "services.intro_link": "/services",
   "services.featured_show": "1",
   "services.featured_eyebrow": "Most popular",
   "services.featured_title": "IT AMC plans",
@@ -304,7 +304,8 @@ export function sanitizeNav(body: unknown): Result<NavRow[]> {
     if (!label) errors.push(`${name}: add a label.`);
     const tooLong = lengthProblem(label, LIMITS.navLabel);
     if (tooLong) errors.push(`${name} (“${label}”): ${tooLong}`);
-    // Mega menus open from a button; Insights also links to its page.
+    // Mega menus open from a button; Insights and Services also link to their
+    // pages (Services to /services when left blank).
     const problem = linkProblem(href, { required: kind === "link" || kind === "insights" });
     if (problem) errors.push(`${name} (“${label}”): ${problem}`);
     return { label, href, kind, visible: bool(row.visible), new_tab: bool(row.new_tab) };
