@@ -46,8 +46,15 @@ export type HomeList = {
 
 export type HomeBlockDef = {
   key: string;
-  /** The page it is saved on: "home" when not set. */
-  page?: "about-us" | "services" | "industries" | "privacy-policy" | "terms-and-conditions";
+  /** The page it is saved on (its slug): "home" when not set. */
+  page?: string;
+  /** The page_sections section_type it is saved as, when not its key (service pages). */
+  sectionType?: string;
+  /**
+   * The block's starting wording lives on the website (service pages): the
+   * form begins from /api/service-defaults?slug=…&section=… there.
+   */
+  remoteDefaults?: { slug: string; section: string };
   /** Where "View the page" goes, when the screen's blocks are on different pages. */
   preview?: string;
   label: string;
@@ -1302,6 +1309,902 @@ export const industriesBlocks: HomeBlockDef[] = [
   },
 ];
 
+/** A section's small heading and its heading in two tones. */
+const sectionHeading: HomeField[] = [
+  { name: "eyebrow", label: "Small heading", type: "text" },
+  { name: "heading", label: "Heading — first part", type: "text", help: headingHelp },
+  { name: "heading_soft", label: "Heading — second part", type: "text" },
+];
+const titledItems = (label: string, itemLabel: string, max: number, help?: string): HomeList => ({
+  name: "",
+  label,
+  itemLabel,
+  max,
+  help,
+  fields: [
+    { name: "title", label: "Title", type: "text" },
+    { name: "description", label: "Text", type: "textarea" },
+  ],
+});
+
+/** The sections the IT AMC page can show, as the website names them (app/lib/amc-page.ts). */
+const amcSectionOptions = [
+  { value: "highlights", label: "2. Trust & highlights" },
+  { value: "intro", label: "3. What is IT AMC?" },
+  { value: "services", label: "4. Complete IT AMC services" },
+  { value: "preventive", label: "5. Preventive maintenance" },
+  { value: "plans", label: "6. Packages & pricing" },
+  { value: "costs", label: "7. Cost factors" },
+  { value: "breakfix", label: "8. AMC vs break-fix" },
+  { value: "industries", label: "9. Industries" },
+  { value: "why", label: "10. Why Byteflow" },
+  { value: "process", label: "11. Process" },
+  { value: "sla", label: "12. SLA & response times" },
+  { value: "coverage", label: "13. Dubai & UAE coverage" },
+  { value: "scope", label: "14. Included & excluded" },
+  { value: "pageblocks", label: "Blocks added under Pages" },
+  { value: "related", label: "Related services" },
+  { value: "faq", label: "16. FAQs" },
+  { value: "reviews", label: "15. Testimonials & case studies" },
+  { value: "contact", label: "17. Final CTA & contact form" },
+];
+
+/** The icons the page's highlights and service categories can use (website: components/amc/AmcIcon.tsx). */
+const amcIconOptions = [
+  { value: "check", label: "Tick" },
+  { value: "fee", label: "Money / fee" },
+  { value: "clock", label: "Clock" },
+  { value: "monitor", label: "Screen / monitoring" },
+  { value: "person", label: "Person" },
+  { value: "shield", label: "Shield" },
+  { value: "cloud", label: "Cloud" },
+  { value: "server", label: "Server" },
+  { value: "laptop", label: "Laptop" },
+  { value: "network", label: "Network" },
+  { value: "camera", label: "Camera" },
+  { value: "tools", label: "Tools" },
+];
+
+/** A page's search title and description. */
+const seoFields: HomeField[] = [
+  { name: "title", label: "Search title", type: "text", help: "The blue link in Google. Include the service and Dubai." },
+  { name: "description", label: "Search description", type: "textarea", help: "The two lines under it in Google." },
+];
+
+/** A picture and its description, for a list item. */
+const pictureFields: HomeField[] = [
+  { name: "image", label: "Picture", type: "image", upload: "photo" },
+  { name: "image_alt", label: "Picture description", type: "text" },
+];
+
+/**
+ * The IT AMC page (/it-amc-services-dubai), edited on the "IT AMC page"
+ * screen and saved on that page. The top banner is the page's hero (Heroes:
+ * words, buttons and picture); the Sections tab sets which sections follow
+ * it and in what order. Blocks added for the page under Pages keep showing
+ * on either side of the questions.
+ */
+export const amcBlocks: HomeBlockDef[] = [
+  {
+    key: "amc_layout",
+    page: "it-amc-services-dubai",
+    label: "Sections",
+    shows: "Which sections show under the top banner, in this order. Hide one to prepare it without showing it, then show it when it is ready. Remove one to drop it; add it back with “Add section”.",
+    fields: [],
+    lists: [
+      {
+        name: "sections",
+        label: "Sections, in page order",
+        itemLabel: "Section",
+        max: 18,
+        help: "Use ↑ Up and ↓ Down to reorder. Each section's words and pictures are on its own tab; “Blocks added under Pages” are the page's own blocks from Pages → IT AMC Services.",
+        fields: [
+          { name: "title", label: "Section", type: "select", options: amcSectionOptions },
+          { name: "show", label: "On the website", type: "select", options: showOrHide },
+        ],
+      },
+    ],
+    defaults: {
+      fields: {},
+      lists: {
+        sections: amcSectionOptions.map((option) => ({ title: option.value, show: "yes" })),
+      },
+    },
+  },
+  {
+    key: "amc_seo",
+    page: "it-amc-services-dubai",
+    label: "SEO",
+    shows: "What Google shows for this page: its title and description. Keep the title under about 60 characters and the description under about 155.",
+    fields: seoFields,
+    lists: [],
+    defaults: {
+      fields: {
+        title: "IT AMC Support & Services in Dubai | Byteflow",
+        description: "IT AMC support across Dubai, Business Bay, JLT and WTC included. One fixed monthly fee, 2-hour on-site response, 24/7 monitoring and no surprise bills.",
+      },
+      lists: {},
+    },
+  },
+  {
+    key: "amc_figures",
+    page: "it-amc-services-dubai",
+    label: "Banner figures",
+    shows: "The figures under the top banner's buttons.",
+    fields: [],
+    lists: [
+      {
+        name: "stats",
+        label: "Figures",
+        itemLabel: "Figure",
+        max: 3,
+        help: `Only figures that are true. The figure is large, its label beneath. ${figuresNote}`,
+        fields: [
+          { name: "title", label: "Figure", type: "text" },
+          { name: "description", label: "Label", type: "text" },
+        ],
+      },
+    ],
+    defaults: {
+      fields: {},
+      lists: {
+        stats: [
+          { title: "2 hrs", description: "On-site response across Dubai" },
+          { title: "24/7", description: "Remote monitoring" },
+          { title: "{years}+", description: "Years looking after UAE businesses" },
+        ],
+      },
+    },
+  },
+  {
+    key: "amc_highlights",
+    page: "it-amc-services-dubai",
+    label: "Highlights",
+    shows: "2. The row of highlights under the banner.",
+    fields: [],
+    lists: [
+      {
+        name: "items",
+        label: "Highlights",
+        itemLabel: "Highlight",
+        max: 4,
+        fields: [
+          { name: "title", label: "Title", type: "text" },
+          { name: "description", label: "Text", type: "textarea" },
+          { name: "icon", label: "Icon", type: "select", options: amcIconOptions },
+        ],
+      },
+    ],
+    defaults: {
+      fields: {},
+      lists: {
+        items: [
+          { title: "One fixed monthly fee", description: "Support, maintenance and monitoring on one invoice, with no per-incident charges.", icon: "fee" },
+          { title: "2-hour on-site response", description: "Across Dubai, with Sharjah and Abu Dhabi covered under the same AMC.", icon: "clock" },
+          { title: "24/7 monitoring", description: "Every laptop, desktop and server watched for problems around the clock.", icon: "monitor" },
+          { title: "A dedicated account engineer", description: "One person who knows your setup, and one number to call.", icon: "person" },
+        ],
+      },
+    },
+  },
+  {
+    key: "amc_intro",
+    page: "it-amc-services-dubai",
+    label: "What is IT AMC?",
+    shows: "3. The explanation beside its picture (or its points, without a picture).",
+    fields: [
+      ...sectionHeading,
+      { name: "text", label: "Text", type: "textarea", help: "Leave a blank line between paragraphs." },
+      { name: "points", label: "Points (one per line)", type: "textarea", help: "Shown in place of the picture until one is uploaded." },
+      { name: "image", label: "Picture", type: "image", upload: "photo", group: "Picture" },
+      { name: "image_alt", label: "Picture description", type: "text", group: "Picture" },
+    ],
+    lists: [],
+    defaults: {
+      fields: {
+        eyebrow: "What is IT AMC?",
+        heading: "IT support",
+        heading_soft: "on a fixed monthly plan.",
+        text: "An IT AMC (annual maintenance contract) covers the support, maintenance and monitoring of your office’s IT for one fixed monthly fee, instead of paying a technician each time something breaks.\n\nWith Byteflow, every device, server and network in your office is monitored, patched and supported, remotely and on site, by a team that already knows your setup.",
+        points: "Unlimited remote support\nOn-site visits when a fix needs an engineer\nMonitoring, patching and a monthly health report",
+        image: "",
+        image_alt: "",
+      },
+      lists: {},
+    },
+  },
+  {
+    key: "amc_services",
+    page: "it-amc-services-dubai",
+    label: "Services",
+    shows: "4. The services by category: the categories as tabs, each one's services as cards.",
+    fields: [...sectionHeading, { name: "intro", label: "Intro line", type: "textarea" }],
+    lists: [
+      {
+        name: "tabs",
+        label: "Categories",
+        itemLabel: "Category",
+        max: 8,
+        help: "Renaming a category keeps its services in it.",
+        fields: [
+          { name: "title", label: "Category name", type: "text" },
+          { name: "description", label: "Line under the name", type: "textarea" },
+          { name: "icon", label: "Icon", type: "select", options: amcIconOptions },
+          ...pictureFields,
+        ],
+      },
+      {
+        name: "services",
+        label: "Services",
+        itemLabel: "Service",
+        max: 60,
+        help: "Each service shows under the category picked for it.",
+        fields: [
+          { name: "title", label: "Service", type: "text" },
+          { name: "description", label: "Description", type: "textarea" },
+          { name: "tab", label: "Category", type: "tab" },
+          ...pictureFields,
+        ],
+      },
+    ],
+    defaults: {
+      fields: {
+        eyebrow: "Complete IT AMC services",
+        heading: "Everything we look after,",
+        heading_soft: "grouped by area.",
+        intro: "Pick an area to see what the AMC covers there.",
+      },
+      lists: {
+        tabs: [
+          { title: "End-User IT Support", description: "Support for your people and the devices they work on.", icon: "laptop", image: "", image_alt: "" },
+          { title: "Server & Network Infrastructure", description: "The servers, network and connections your office runs on.", icon: "server", image: "", image_alt: "" },
+          { title: "Microsoft 365 & Cloud Support", description: "Email, files and collaboration, managed for you.", icon: "cloud", image: "", image_alt: "" },
+          { title: "Cybersecurity & Business Continuity", description: "Protection, backups and recovery.", icon: "shield", image: "", image_alt: "" },
+          { title: "Additional IT Services", description: "Installations and projects alongside your AMC, quoted separately.", icon: "tools", image: "", image_alt: "" },
+        ],
+        services: [
+          { title: "Unlimited Remote Support", description: "Raise a ticket or call us and get remote assistance within 30 minutes. No per-incident fees, no limits on the number of requests per month.", tab: "End-User IT Support", image: "", image_alt: "" },
+          { title: "On-site Engineer Visits", description: "When remote support is not enough, a certified engineer arrives at your office within 2 hours across Dubai, Sharjah and Abu Dhabi.", tab: "End-User IT Support", image: "", image_alt: "" },
+          { title: "Endpoint Monitoring", description: "Every laptop, desktop and workstation is monitored 24/7 for hardware issues, software conflicts, disk health and security threats.", tab: "End-User IT Support", image: "", image_alt: "" },
+          { title: "Software Updates and Patching", description: "We handle all OS updates, firmware patches and critical security fixes during off-hours so your team is never disrupted.", tab: "End-User IT Support", image: "", image_alt: "" },
+          { title: "IT Asset Inventory", description: "A live register of every device, licence and warranty expiry date in your office so you always know what you own and when it needs replacing.", tab: "End-User IT Support", image: "", image_alt: "" },
+          { title: "Server and Network Management", description: "We configure, patch and monitor your Windows or Linux servers, routers, switches and firewalls to keep everything running at peak performance.", tab: "Server & Network Infrastructure", image: "", image_alt: "" },
+          { title: "Microsoft 365 User Administration", description: "New starters set up, leavers removed, and mailboxes and access kept in order.", tab: "Microsoft 365 & Cloud Support", image: "", image_alt: "" },
+          { title: "Licence Management", description: "Your Microsoft 365 licences assigned, renewed and kept to the number you need.", tab: "Microsoft 365 & Cloud Support", image: "", image_alt: "" },
+          { title: "SharePoint and Teams Configuration", description: "Sites, channels and sharing set up for the way your team works.", tab: "Microsoft 365 & Cloud Support", image: "", image_alt: "" },
+          { title: "Microsoft 365 Migrations", description: "Email and files moved to Microsoft 365 from your old system.", tab: "Microsoft 365 & Cloud Support", image: "", image_alt: "" },
+          { title: "Email Security", description: "Spam and phishing filtered before it reaches your team.", tab: "Cybersecurity & Business Continuity", image: "", image_alt: "" },
+          { title: "Antivirus Management", description: "Antivirus kept installed, updated and watched on every device.", tab: "Cybersecurity & Business Continuity", image: "", image_alt: "" },
+          { title: "Backup Configuration", description: "Backups set up and checked as part of onboarding.", tab: "Cybersecurity & Business Continuity", image: "", image_alt: "" },
+          { title: "Website Management & SEO Monitoring", description: "Your website kept online, secure and visible: domain renewal, hosting and SSL certificates, and monthly SEO health monitoring.", tab: "Additional IT Services", image: "", image_alt: "" },
+          { title: "CCTV and Access Control", description: "Cameras and door access supplied, installed and supported.", tab: "Additional IT Services", image: "", image_alt: "" },
+          { title: "Structured Cabling", description: "Network cabling for new and existing offices.", tab: "Additional IT Services", image: "", image_alt: "" },
+          { title: "VoIP and Desk Phones", description: "Business phone systems set up and supported.", tab: "Additional IT Services", image: "", image_alt: "" },
+          { title: "IT Procurement", description: "Laptops, servers and network equipment sourced and installed.", tab: "Additional IT Services", image: "", image_alt: "" },
+          { title: "Office Relocation", description: "Your IT moved to a new office, scoped and quoted as a project.", tab: "Additional IT Services", image: "", image_alt: "" },
+        ],
+      },
+    },
+  },
+  {
+    key: "amc_preventive",
+    page: "it-amc-services-dubai",
+    label: "Preventive maintenance",
+    shows: "5. Picture and text rows (or numbered cards, while none has a picture).",
+    fields: sectionHeading,
+    lists: [
+      {
+        name: "items",
+        label: "Items",
+        itemLabel: "Item",
+        max: 8,
+        fields: [
+          { name: "title", label: "Title", type: "text" },
+          { name: "description", label: "Text", type: "textarea" },
+          ...pictureFields,
+        ],
+      },
+    ],
+    defaults: {
+      fields: { eyebrow: "Preventive maintenance", heading: "Problems fixed", heading_soft: "before they stop your work." },
+      lists: {
+        items: [
+          { title: "Monitoring around the clock", description: "Every laptop, desktop and workstation is monitored 24/7 for hardware issues, software conflicts, disk health and security threats.", image: "", image_alt: "" },
+          { title: "Patching outside working hours", description: "OS updates, firmware patches and critical security fixes are applied during off-hours, so your team is never disrupted.", image: "", image_alt: "" },
+          { title: "Monthly health reports", description: "Every month you receive a report covering uptime, issues resolved, devices monitored and upcoming risks.", image: "", image_alt: "" },
+          { title: "Asset and warranty tracking", description: "A live register of every device, licence and warranty expiry date, so replacements are planned, not urgent.", image: "", image_alt: "" },
+        ],
+      },
+    },
+  },
+  {
+    key: "amc_plans",
+    page: "it-amc-services-dubai",
+    label: "Packages & pricing",
+    shows: "6. The plan cards and the comparison table, and the card beside the top banner that sums them up (it shows the first plan's price as “from”).",
+    fields: [
+      ...sectionHeading,
+      { name: "card_label", label: "Small heading on the banner card", type: "text", group: "Banner card" },
+      { name: "compare_label", label: "“Compare plans” link text", type: "text", group: "Banner card" },
+      { name: "unit", label: "Words after each price", type: "text", group: "Prices" },
+      { name: "note", label: "VAT note", type: "textarea", group: "Prices" },
+      { name: "terms", label: "Terms under the cards", type: "textarea", group: "Prices" },
+      { name: "button_label", label: "Button text", type: "text", group: "Button" },
+      { name: "button_link", label: "Button link", type: "link", group: "Button" },
+      { name: "table_heading", label: "Heading above the table", type: "text", group: "Comparison table" },
+    ],
+    lists: [
+      {
+        name: "plans",
+        label: "Plans",
+        itemLabel: "Plan",
+        max: 4,
+        help: "Cheapest first: the table's columns follow this order. A plan with a badge is shown raised, with its badge on top.",
+        fields: [
+          { name: "title", label: "Plan name", type: "text" },
+          { name: "price", label: "Price", type: "text" },
+          { name: "summary", label: "Line under the price", type: "text" },
+          { name: "points", label: "What it includes (one per line)", type: "textarea" },
+          { name: "badge", label: "Badge (optional)", type: "text" },
+        ],
+      },
+      {
+        name: "compare",
+        label: "Comparison table rows",
+        itemLabel: "Row",
+        max: 30,
+        help: "For each plan, in the plans' order: “yes” shows a tick, “no” or blank a dash, anything else is shown as written.",
+        fields: [
+          { name: "title", label: "Feature", type: "text" },
+          { name: "plan1", label: "Plan 1", type: "text" },
+          { name: "plan2", label: "Plan 2", type: "text" },
+          { name: "plan3", label: "Plan 3", type: "text" },
+          { name: "plan4", label: "Plan 4", type: "text" },
+        ],
+      },
+    ],
+    defaults: {
+      fields: {
+        eyebrow: "Plans and pricing",
+        heading: "Published prices,",
+        heading_soft: "per user, per month.",
+        card_label: "Plans from",
+        unit: "per user / month",
+        note: "Prices exclude 5% VAT. A 10-person office on Essential is AED 300/month.",
+        terms: "No setup fee. No minimum term beyond the contract year. How often you call does not change the price — unlimited means unlimited.",
+        button_label: "Get a free quote",
+        button_link: "/contact-us",
+        compare_label: "Compare plans",
+        table_heading: "Compare the plans",
+      },
+      lists: {
+        plans: [
+          { title: "Essential", price: "AED 30", summary: "Remote support and monitoring for every device.", points: "Unlimited remote support\n24/7 endpoint monitoring\nSoftware updates and patching", badge: "" },
+          { title: "Standard", price: "AED 60", summary: "Everything in Essential, plus:", points: "On-site engineer visits\nServer and network management\nIT asset inventory", badge: "Includes on-site visits" },
+          { title: "Complete", price: "AED 90", summary: "Everything in Standard, plus:", points: "Website management and SEO monitoring\nPriority SLA\nA dedicated account manager", badge: "" },
+        ],
+        compare: [
+          { title: "Unlimited remote support", plan1: "yes", plan2: "yes", plan3: "yes", plan4: "" },
+          { title: "24/7 endpoint monitoring", plan1: "yes", plan2: "yes", plan3: "yes", plan4: "" },
+          { title: "Software updates and patching", plan1: "yes", plan2: "yes", plan3: "yes", plan4: "" },
+          { title: "On-site engineer visits", plan1: "no", plan2: "yes", plan3: "yes", plan4: "" },
+          { title: "Server and network management", plan1: "no", plan2: "yes", plan3: "yes", plan4: "" },
+          { title: "IT asset inventory", plan1: "no", plan2: "yes", plan3: "yes", plan4: "" },
+          { title: "Website management and SEO monitoring", plan1: "no", plan2: "no", plan3: "yes", plan4: "" },
+          { title: "Priority SLA", plan1: "no", plan2: "no", plan3: "yes", plan4: "" },
+          { title: "A dedicated account manager", plan1: "no", plan2: "no", plan3: "yes", plan4: "" },
+        ],
+      },
+    },
+  },
+  {
+    key: "amc_costs",
+    page: "it-amc-services-dubai",
+    label: "Cost factors",
+    shows: "7. The numbered list of what the price depends on.",
+    fields: [...sectionHeading, { name: "intro", label: "Intro line", type: "textarea" }],
+    lists: [{ ...titledItems("Factors", "Factor", 10), name: "factors" }],
+    defaults: {
+      fields: {
+        eyebrow: "Cost factors",
+        heading: "What sets the price",
+        heading_soft: "of an IT AMC in Dubai.",
+        intro: "Every quote is fixed and itemised. This is what it depends on.",
+      },
+      lists: {
+        factors: [
+          { title: "Number of users", description: "Plans are priced per user, per month, so the number of users sets most of the price." },
+          { title: "Number of servers", description: "Servers need more monitoring and maintenance than laptops and desktops." },
+          { title: "Coverage hours", description: "The hours you need support for shape the plan." },
+          { title: "Number of sites", description: "Each office location is covered, with an engineer assigned per site." },
+          { title: "Plan level", description: "Essential, Standard or Complete, depending on what you need included." },
+        ],
+      },
+    },
+  },
+  {
+    key: "amc_breakfix",
+    page: "it-amc-services-dubai",
+    label: "AMC vs break-fix",
+    shows: "8. The two columns comparing an AMC with paying per incident.",
+    fields: [
+      ...sectionHeading,
+      { name: "us_label", label: "AMC column heading", type: "text", group: "Columns" },
+      { name: "them_label", label: "Break-fix column heading", type: "text", group: "Columns" },
+      { name: "footer", label: "Line under the columns", type: "textarea", group: "Columns" },
+    ],
+    lists: [
+      {
+        name: "rows",
+        label: "Rows",
+        itemLabel: "Row",
+        max: 10,
+        fields: [
+          { name: "title", label: "Topic", type: "text" },
+          { name: "us", label: "With an AMC", type: "text" },
+          { name: "them", label: "With break-fix", type: "text" },
+        ],
+      },
+    ],
+    defaults: {
+      fields: {
+        eyebrow: "AMC or break-fix?",
+        heading: "Two ways",
+        heading_soft: "to pay for IT support.",
+        us_label: "IT AMC",
+        them_label: "Break-fix",
+        footer: "Break-fix is usually cheaper for very small teams and more expensive for everyone else, because nobody is being paid to prevent problems.",
+      },
+      lists: {
+        rows: [
+          { title: "How you pay", us: "One fixed monthly fee covering everything", them: "A charge for each incident" },
+          { title: "Prevention", us: "Systems monitored and maintained before problems start", them: "Nobody is paid to prevent problems" },
+          { title: "Budgeting", us: "The same invoice every month", them: "Costs change with every call-out" },
+          { title: "Best for", us: "Most offices", them: "Very small teams with few issues" },
+        ],
+      },
+    },
+  },
+  {
+    key: "amc_industries",
+    page: "it-amc-services-dubai",
+    label: "Industries",
+    shows: "9. The industry cards, each linking to its card on the Industries page.",
+    fields: [
+      ...sectionHeading,
+      { name: "link_label", label: "Link text", type: "text", group: "Link" },
+      { name: "link", label: "Link", type: "link", group: "Link" },
+    ],
+    lists: [
+      {
+        name: "industries",
+        label: "Industries",
+        itemLabel: "Industry",
+        max: 12,
+        fields: [
+          { name: "title", label: "Industry", type: "text" },
+          { name: "description", label: "Text", type: "textarea" },
+          {
+            name: "icon",
+            label: "Icon",
+            type: "select",
+            options: [
+              { value: "other", label: "General" },
+              { value: "health", label: "Healthcare" },
+              { value: "education", label: "Education" },
+              { value: "real-estate", label: "Real estate / building" },
+              { value: "retail", label: "Retail" },
+              { value: "logistics", label: "Logistics" },
+              { value: "hospitality", label: "Hospitality" },
+              { value: "legal", label: "Legal" },
+              { value: "corporate", label: "Corporate / office" },
+            ],
+          },
+          { name: "link", label: "Link", type: "link" },
+        ],
+      },
+    ],
+    defaults: {
+      fields: { eyebrow: "Industries we support", heading: "IT support for", heading_soft: "the way your sector works.", link_label: "See all industries", link: "/industries" },
+      lists: {
+        industries: [
+          { title: "Clinics & Healthcare", description: "Clinic systems, patient records and front-desk technology that have to work for every appointment.", icon: "health", link: "/industries#clinics-healthcare" },
+          { title: "Schools & Education", description: "Classrooms, staff rooms and offices on one network that has to hold up all day.", icon: "education", link: "/industries#schools-education" },
+          { title: "Real Estate", description: "Agents on site visits, offices and showrooms, all working from the same listings and leads.", icon: "real-estate", link: "/industries#real-estate" },
+          { title: "Retail & Ecommerce", description: "Tills, stock and the online store, all needing to stay up while customers are buying.", icon: "retail", link: "/industries#retail-ecommerce" },
+          { title: "Logistics", description: "Warehouses, offices and drivers on different sites, with systems that run around the clock.", icon: "logistics", link: "/industries#logistics" },
+          { title: "Hospitality", description: "Guest Wi-Fi, cameras and property systems across buildings that never close.", icon: "hospitality", link: "/industries#hospitality" },
+          { title: "Law Firms & Professional Services", description: "Confidential files, constant email and people working from courts, client offices and home.", icon: "legal", link: "/industries#law-firms-professional-services" },
+          { title: "Corporate Offices & SMEs", description: "Growing teams without a full IT department, who need everything to just work.", icon: "corporate", link: "/industries#corporate-offices-smes" },
+        ],
+      },
+    },
+  },
+  {
+    key: "amc_benefits",
+    page: "it-amc-services-dubai",
+    label: "Why Byteflow",
+    shows: "10. The columns on why businesses choose Byteflow.",
+    fields: sectionHeading,
+    lists: [{ ...titledItems("Reasons", "Reason", 8), name: "benefits" }],
+    defaults: {
+      fields: { eyebrow: "Why Byteflow", heading: "Why businesses choose", heading_soft: "Byteflow for their AMC." },
+      lists: {
+        benefits: [
+          { title: "Predictable monthly cost", description: "One fixed invoice replaces dozens of unpredictable repair bills. Budget with confidence every month of the year." },
+          { title: "Faster issue resolution", description: "A dedicated engineer already knows your setup, so problems are solved faster than starting from scratch with a new vendor every time." },
+          { title: "Proactive maintenance", description: "We identify failing hardware and software conflicts before they become outages, reducing unplanned downtime." },
+          { title: "Single point of contact", description: "One account manager, one phone number. No being passed between departments or waiting on hold with multiple vendors." },
+        ],
+      },
+    },
+  },
+  {
+    key: "amc_process",
+    page: "it-amc-services-dubai",
+    label: "Process",
+    shows: "11. The numbered steps from the first visit onwards.",
+    fields: sectionHeading,
+    lists: [{ ...titledItems("Steps", "Step", 6, "In order. Numbered automatically."), name: "steps" }],
+    defaults: {
+      fields: { eyebrow: "Our IT AMC process", heading: "From the first visit", heading_soft: "to the monthly report." },
+      lists: {
+        steps: [
+          { title: "Free IT Audit", description: "We visit your office and document every device, server, licence and network component. No obligation, no cost." },
+          { title: "Custom AMC Proposal", description: "You receive a fixed-price proposal within 24 hours, itemised by service level and number of users. No hidden charges." },
+          { title: "Onboarding and Baseline", description: "Our engineers install monitoring agents, update all software, configure backups and document your entire IT environment." },
+          { title: "Ongoing Management", description: "From day one, your systems are monitored 24/7. Tickets are resolved remotely or on-site within the agreed SLA." },
+          { title: "Monthly Reporting", description: "Every month you receive a health report covering uptime, issues resolved, devices monitored and upcoming risks." },
+        ],
+      },
+    },
+  },
+  {
+    key: "amc_sla",
+    page: "it-amc-services-dubai",
+    label: "SLA & response times",
+    shows: "12. A row per priority with its response commitment, then the escalation steps (shown once written).",
+    fields: [
+      ...sectionHeading,
+      { name: "intro", label: "Intro line", type: "textarea" },
+      { name: "escalation_heading", label: "Escalation heading", type: "text", group: "Escalation" },
+      { name: "escalation", label: "Escalation steps", type: "textarea", group: "Escalation", help: "Blank hides this part." },
+    ],
+    lists: [
+      {
+        name: "priorities",
+        label: "Priorities",
+        itemLabel: "Priority",
+        max: 6,
+        help: "Most urgent first; numbered P1, P2… automatically.",
+        fields: [
+          { name: "title", label: "Priority", type: "text" },
+          { name: "description", label: "When it applies", type: "text" },
+          { name: "response", label: "Response commitment", type: "text" },
+        ],
+      },
+    ],
+    defaults: {
+      fields: {
+        eyebrow: "SLA & response times",
+        heading: "How fast we respond,",
+        heading_soft: "by priority.",
+        intro: "Every ticket is given a priority, and the priority sets how fast we act.",
+        escalation_heading: "Escalation",
+        escalation: "",
+      },
+      lists: {
+        priorities: [
+          { title: "Critical", description: "A server outage or a fault stopping the whole office.", response: "We mobilise immediately" },
+          { title: "Remote support", description: "Any ticket that can be fixed remotely.", response: "Within 30 minutes" },
+          { title: "On-site visit", description: "When the fix needs an engineer at your office.", response: "Within 2 hours across Dubai" },
+        ],
+      },
+    },
+  },
+  {
+    key: "amc_areas",
+    page: "it-amc-services-dubai",
+    label: "Coverage",
+    shows: "13. The panel with the areas the response time covers.",
+    fields: [
+      ...sectionHeading,
+      { name: "text", label: "Text", type: "textarea" },
+      { name: "areas", label: "Areas (one per line)", type: "textarea", group: "Areas" },
+    ],
+    lists: [],
+    defaults: {
+      fields: {
+        eyebrow: "Dubai & UAE coverage",
+        heading: "The same response time,",
+        heading_soft: "wherever your office is.",
+        text: "The two-hour on-site response applies across Dubai, with no premium zone and no area we charge extra to reach. Sharjah and Abu Dhabi are covered under the same AMC.",
+        areas: "Business Bay\nJLT\nWorld Trade Centre\nDIFC\nDowntown\nDeira\nAl Barsha\nTECOM\nSharjah\nAbu Dhabi",
+      },
+      lists: {},
+    },
+  },
+  {
+    key: "amc_excluded",
+    page: "it-amc-services-dubai",
+    label: "Included & excluded",
+    shows: "14. What the AMC covers beside what it does not.",
+    fields: [
+      { name: "eyebrow", label: "Small heading", type: "text" },
+      { name: "heading", label: "Heading", type: "text" },
+      { name: "intro", label: "Intro paragraph", type: "textarea" },
+      { name: "included_heading", label: "Heading of the included list", type: "text", group: "List headings" },
+      { name: "excluded_heading", label: "Heading of the excluded list", type: "text", group: "List headings" },
+      { name: "footer", label: "Line at the foot", type: "textarea" },
+    ],
+    lists: [
+      { name: "included", label: "Included", itemLabel: "Item", max: 20, fields: [{ name: "title", label: "Item", type: "text" }] },
+      { ...titledItems("Not included", "Item", 20), name: "items" },
+    ],
+    defaults: {
+      fields: {
+        eyebrow: "No surprises",
+        heading: "What’s included and what isn’t",
+        intro: "Every AMC has exclusions. Most providers do not publish them, which is how businesses end up with invoices they did not expect. Ours are below.",
+        included_heading: "Included",
+        excluded_heading: "Not included",
+        footer: "If something falls outside your contract, we tell you before doing the work, not on the invoice afterwards.",
+      },
+      lists: {
+        included: [
+          { title: "Unlimited remote support" },
+          { title: "On-site engineer visits (Standard and Complete)" },
+          { title: "Monitoring, patching and updates" },
+          { title: "Microsoft 365 administration" },
+          { title: "Antivirus management" },
+          { title: "A monthly health report" },
+        ],
+        items: [
+          { title: "Hardware and its replacement cost", description: "We diagnose, source and install it, and the labour is covered by your contract. The equipment itself is quoted separately." },
+          { title: "Third-party software licences", description: "Microsoft 365, Adobe and similar are billed to you directly." },
+          { title: "Major projects", description: "Office relocations, full infrastructure rebuilds and large migrations are scoped and quoted separately." },
+          { title: "Full website redesigns", description: "Maintenance, updates and uptime monitoring are covered on the Complete plan. A new build is a separate piece of work." },
+          { title: "Paid advertising spend", description: "SEO monitoring is included on Complete. Google Ads and social media budget is not." },
+          { title: "Specialist third-party applications", description: "Unless agreed at contract stage." },
+        ],
+      },
+    },
+  },
+  {
+    key: "amc_reviews",
+    page: "it-amc-services-dubai",
+    label: "Testimonials & case studies",
+    shows: "15. Your published Customer reviews (featured first), then the case studies added here.",
+    fields: [
+      ...sectionHeading,
+      { name: "count", label: "How many reviews to show", type: "select", options: ["6", "3", "9", "12"].map((n) => ({ value: n, label: n })), group: "Reviews" },
+      { name: "cases_heading", label: "Heading above the case studies", type: "text", group: "Case studies" },
+    ],
+    lists: [
+      {
+        name: "cases",
+        label: "Case studies",
+        itemLabel: "Case study",
+        max: 6,
+        startsEmpty: true,
+        help: "Only real, approved projects. Each can link to its page.",
+        fields: [
+          { name: "title", label: "Title", type: "text" },
+          { name: "description", label: "Text", type: "textarea" },
+          { name: "link", label: "Link", type: "link" },
+          ...pictureFields,
+        ],
+      },
+    ],
+    picturesElsewhere: { text: "The reviews themselves are your published Customer reviews.", href: "/admin/testimonials", label: "Open Customer reviews" },
+    defaults: {
+      fields: { eyebrow: "Clients", heading: "What our clients", heading_soft: "say about us.", count: "6", cases_heading: "Related projects" },
+      lists: { cases: [] },
+    },
+  },
+  {
+    key: "amc_faq",
+    page: "it-amc-services-dubai",
+    label: "FAQs",
+    shows: "16. The questions near the end of the page, with search and topic tabs. FAQs added for this page on the FAQs screen follow these. The search, topic and help card labels come from Home page sections → FAQ section.",
+    fields: [...sectionHeading, { name: "intro", label: "Intro line", type: "textarea" }],
+    lists: [
+      {
+        name: "faqs",
+        label: "Questions",
+        itemLabel: "Question",
+        max: 30,
+        fields: [
+          { name: "title", label: "Question", type: "text" },
+          { name: "description", label: "Answer", type: "textarea" },
+        ],
+      },
+    ],
+    defaults: {
+      fields: { eyebrow: "FAQ", heading: "Questions we get", heading_soft: "asked all the time.", intro: "Everything you need to know about IT AMC support with Byteflow." },
+      lists: {
+        faqs: [
+          { title: "What exactly does an IT AMC cover?", description: "Our AMC covers unlimited remote and on-site support for all devices, servers, network equipment and software in your office. It includes proactive monitoring, patching, antivirus management and a dedicated account engineer. You pay one fixed monthly fee with no additional call-out or per-incident charges." },
+          { title: "How quickly do you respond when something breaks?", description: "Remote support is available within 30 minutes of a ticket being raised. For issues that require a physical presence, our engineers arrive on-site within 2 hours across Dubai, Sharjah and Abu Dhabi. For critical server outages, we treat it as a P1 and mobilise immediately." },
+          { title: "Do you support businesses with multiple offices?", description: "Yes. We manage multi-site businesses with offices across Dubai, Sharjah, Abu Dhabi and other UAE emirates. We assign a dedicated engineer per site and provide centralised monitoring from our NOC, so issues in any location are spotted and resolved quickly." },
+          { title: "Can we add services to the AMC later?", description: "Absolutely. Many clients start with basic IT support and later add cloud management, cyber security monitoring or Microsoft 365 administration. Your AMC can be expanded at any time without signing a new long-term contract." },
+          { title: "Do you cover Business Bay, JLT and World Trade Centre?", description: "Yes, and at the same service level as everywhere else. The two-hour on-site response applies across Dubai, so Business Bay, JLT, World Trade Centre, DIFC, Downtown, Deira, Al Barsha and TECOM are all covered on the same SLA — there is no premium zone and no area we charge extra to reach. Engineers are dispatched from whichever team is closest on the day. Sharjah and Abu Dhabi are covered under the same AMC." },
+          { title: "What is the minimum contract length?", description: "We offer monthly rolling plans as well as annual contracts. Annual plans come with better pricing and priority SLA guarantees. Most clients choose annual contracts because the savings are significant, but we never force you into a long-term commitment." },
+        ],
+      },
+    },
+  },
+  {
+    key: "amc_contact",
+    page: "it-amc-services-dubai",
+    label: "Final CTA & contact form",
+    shows: "17. The closing call to action beside the enquiry form. The phone, WhatsApp, email and address come from Contact details & logo.",
+    fields: [
+      ...sectionHeading,
+      { name: "intro", label: "Text", type: "textarea" },
+      { name: "call_label", label: "Call button text", type: "text", group: "Buttons" },
+      { name: "whatsapp_label", label: "WhatsApp button text", type: "text", group: "Buttons" },
+      { name: "promises", label: "Promises (one per line)", type: "textarea", group: "Promises" },
+    ],
+    lists: [],
+    defaults: {
+      fields: {
+        eyebrow: "Get a quote",
+        heading: "Ready to put your IT",
+        heading_soft: "on one fixed fee?",
+        intro: "Tell us about your office and we’ll send a fixed, itemised AMC proposal within 24 hours.",
+        call_label: "Call us",
+        whatsapp_label: "WhatsApp us",
+        promises: "Free IT audit\nFixed, itemised proposal\nNo obligation",
+      },
+      lists: {},
+    },
+  },
+  {
+    key: "amc_related",
+    page: "it-amc-services-dubai",
+    label: "Related services",
+    shows: "The cards at the end linking to other services.",
+    fields: [
+      { name: "eyebrow", label: "Small heading", type: "text" },
+      { name: "heading", label: "Heading", type: "text" },
+    ],
+    lists: [
+      {
+        name: "services",
+        label: "Services",
+        itemLabel: "Service",
+        max: 3,
+        fields: [{ name: "title", label: "Service", type: "service" }],
+      },
+    ],
+    defaults: {
+      fields: { eyebrow: "Related services", heading: "Often added to an AMC" },
+      lists: { services: [{ title: "cyber-security" }, { title: "cloud-services-dubai" }, { title: "data-backup-recovery" }] },
+    },
+  },
+];
+
+/** The service pages the "Service pages" screen edits, by slug (website: app/lib/services-data.ts). */
+export const servicePageList = [
+  { slug: "cyber-security", name: "Cyber Security" },
+  { slug: "system-integration", name: "System Integration" },
+  { slug: "data-backup-recovery", name: "Data Backup & Recovery" },
+  { slug: "cloud-services-dubai", name: "Cloud Services" },
+  { slug: "website-development", name: "Website / Apps / Bots" },
+  { slug: "graphics-designing", name: "UI/UX & Graphics Design" },
+  { slug: "digital-marketing", name: "Digital Marketing" },
+  { slug: "landing-page-designing", name: "Landing Page Designing" },
+];
+
+/** The sections a service page can show, as the website names them (app/lib/service-page.ts). */
+const serviceSectionOptions = [
+  { value: "highlights", label: "Highlights" },
+  { value: "intro", label: "Overview" },
+  { value: "features", label: "What's included" },
+  { value: "plans", label: "Packages & pricing" },
+  { value: "benefits", label: "Why it matters" },
+  { value: "compare", label: "Comparison" },
+  { value: "process", label: "Process" },
+  { value: "industries", label: "Industries" },
+  { value: "sla", label: "Response times" },
+  { value: "coverage", label: "Dubai & UAE coverage" },
+  { value: "scope", label: "Included & excluded" },
+  { value: "costs", label: "Cost factors" },
+  { value: "pageblocks", label: "Blocks added under Pages" },
+  { value: "related", label: "Related services" },
+  { value: "faq", label: "FAQs" },
+  { value: "reviews", label: "Client reviews" },
+  { value: "contact", label: "Final CTA & contact form" },
+];
+
+/**
+ * Each service page section's form, as [key, label, what it shows, the IT AMC
+ * section whose fields it uses]. The service pages share the IT AMC page's
+ * section designs, so they share its fields too.
+ */
+const serviceSectionForms: [string, string, string, string | null][] = [
+  ["layout", "Sections", "Which sections show under the top banner, in this order. Hide one to prepare it, then show it when ready. Sections with no content yet (packages, comparison, response times, included & excluded, cost factors) start hidden.", null],
+  ["seo", "SEO", "What Google shows for this page: its title and description. They start as the page's long-standing ones.", "amc_seo"],
+  ["figures", "Banner figures", "The figures under the top banner's buttons. Only figures that are true.", "amc_figures"],
+  ["highlights", "Highlights", "A row of highlight cards under the banner. Starts hidden: switch it on under Sections once it has its own words.", "amc_highlights"],
+  ["intro", "Overview", "The description of the service, beside its picture or points when they are added.", "amc_intro"],
+  ["features", "What's included", "A numbered card for each thing the service includes, each with its own picture. The card beside the banner lists the first six.", null],
+  ["plans", "Packages & pricing", "Package cards and a comparison table. With packages, the card beside the banner shows them.", "amc_plans"],
+  ["benefits", "Why it matters", "The columns on what the service changes.", "amc_benefits"],
+  ["compare", "Comparison", "Two columns comparing two ways of doing it.", "amc_breakfix"],
+  ["process", "Process", "The numbered steps of the work.", "amc_process"],
+  ["industries", "Industries", "The industry cards, each linking to its card on the Industries page.", "amc_industries"],
+  ["sla", "Response times", "A row per priority with its response commitment.", "amc_sla"],
+  ["coverage", "Dubai & UAE coverage", "The areas the service covers on site.", "amc_areas"],
+  ["scope", "Included & excluded", "What the service covers beside what it does not.", "amc_excluded"],
+  ["costs", "Cost factors", "What the price depends on.", "amc_costs"],
+  ["related", "Related services", "The cards linking to other services.", "amc_related"],
+  ["faq", "FAQs", "The questions, with search and topic tabs. FAQs added for this page on the FAQs screen follow these.", "amc_faq"],
+  ["reviews", "Client reviews", "Your published Customer reviews, then the case studies added here.", "amc_reviews"],
+  ["contact", "Final CTA & contact form", "The closing call to action beside the enquiry form.", "amc_contact"],
+];
+
+const featureForm = {
+  fields: [
+    ...sectionHeading,
+    { name: "intro", label: "Intro line", type: "textarea" as const },
+    { name: "link_label", label: "Link text on the banner card", type: "text" as const, group: "Banner card" },
+  ],
+  lists: [
+    {
+      name: "features",
+      label: "Items",
+      itemLabel: "Item",
+      max: 20,
+      fields: [
+        { name: "title", label: "Title", type: "text" as const },
+        { name: "description", label: "Text", type: "textarea" as const },
+        ...pictureFields,
+      ],
+    },
+  ],
+};
+
+const layoutForm = {
+  fields: [],
+  lists: [
+    {
+      name: "sections",
+      label: "Sections, in page order",
+      itemLabel: "Section",
+      max: serviceSectionOptions.length,
+      help: "Use ↑ Up and ↓ Down to reorder. “Blocks added under Pages” are the page's own blocks from Pages.",
+      fields: [
+        { name: "title", label: "Section", type: "select" as const, options: serviceSectionOptions },
+        { name: "show", label: "On the website", type: "select" as const, options: showOrHide },
+      ],
+    },
+  ],
+};
+
+/** A service page's forms on the "Service pages" screen, saved on its own page as svc_<section>. */
+export function servicePageBlocks(slug: string): HomeBlockDef[] {
+  return serviceSectionForms.map(([section, label, shows, template]) => {
+    const form = section === "layout" ? layoutForm : section === "features" ? featureForm : amcBlocks.find((block) => block.key === template)!;
+    return {
+      key: `${slug}:svc_${section}`,
+      sectionType: `svc_${section}`,
+      page: slug,
+      preview: `/${slug}`,
+      label,
+      shows,
+      fields: form.fields,
+      lists: form.lists,
+      remoteDefaults: { slug, section },
+      defaults: { fields: {}, lists: {} },
+      ...(section === "reviews" ? { picturesElsewhere: amcBlocks.find((block) => block.key === "amc_reviews")?.picturesElsewhere } : {}),
+    };
+  });
+}
+
+const allServicePageBlocks = servicePageList.flatMap((page) => servicePageBlocks(page.slug));
+
 /**
  * The Privacy Policy and Terms & Conditions pages, linked from the footer's
  * Legal column. Each is saved on its own page, created on first save.
@@ -1445,9 +2348,9 @@ for (const block of homeBlocks) block.picturesElsewhere ??= PICTURES_ELSEWHERE[b
 
 export const homeBlockKeys = homeBlocks.map((block) => block.key);
 
-/** A home, About, Services, Industries or legal page block by its key. */
+/** A home, About, Services, Industries, IT AMC or legal page block by its key. */
 export function getHomeBlockDef(key: string | null): HomeBlockDef | undefined {
-  return [...homeBlocks, ...aboutBlocks, ...servicesBlocks, ...industriesBlocks, ...legalBlocks].find((block) => block.key === key);
+  return [...homeBlocks, ...aboutBlocks, ...servicesBlocks, ...industriesBlocks, ...amcBlocks, ...allServicePageBlocks, ...legalBlocks].find((block) => block.key === key);
 }
 
 const LIMITS: Record<HomeFieldType, number> = { text: 200, textarea: 2000, link: 500, image: 500, select: 40, service: 100, tab: 200, post: 200, category: 200, menugroup: 200 };

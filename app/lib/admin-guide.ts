@@ -65,6 +65,20 @@ export const adminGroups: AdminGroup[] = [
         preview: "/industries",
       },
       {
+        key: "amc-sections",
+        label: "IT AMC page",
+        shows:
+          "The IT AMC page (/it-amc-services-dubai): which sections show and in what order, and every section's words and pictures: highlights, what is IT AMC, services and their categories, preventive maintenance, plans and the comparison table, cost factors, AMC vs break-fix, industries, why Byteflow, process, SLA, coverage, included and excluded, testimonials and case studies, FAQs and the contact section. The top banner itself is the page's hero (Heroes).",
+        preview: "/it-amc-services-dubai",
+      },
+      {
+        key: "service-pages",
+        label: "Service pages",
+        shows:
+          "The other service pages (Cyber Security, System Integration, Backup, Cloud, Website, Design, Marketing, Landing Pages): pick one, then edit its SEO, which sections show and in what order, and every section's words and pictures. The top banner itself is each page's hero (Heroes).",
+        preview: "/cyber-security",
+      },
+      {
         key: "about-sections",
         label: "About page sections",
         shows:
