@@ -72,6 +72,13 @@ export const adminGroups: AdminGroup[] = [
         preview: "/it-amc-services-dubai",
       },
       {
+        key: "service-pages",
+        label: "Service pages",
+        shows:
+          "The other service pages (Cyber Security, System Integration, Backup, Cloud, Website, Design, Marketing, Landing Pages): pick one, then edit its SEO, which sections show and in what order, and every section's words and pictures. The top banner itself is each page's hero (Heroes).",
+        preview: "/cyber-security",
+      },
+      {
         key: "about-sections",
         label: "About page sections",
         shows:

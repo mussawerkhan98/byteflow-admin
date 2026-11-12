@@ -46,8 +46,15 @@ export type HomeList = {
 
 export type HomeBlockDef = {
   key: string;
-  /** The page it is saved on: "home" when not set. */
-  page?: "about-us" | "services" | "industries" | "it-amc-services-dubai" | "privacy-policy" | "terms-and-conditions";
+  /** The page it is saved on (its slug): "home" when not set. */
+  page?: string;
+  /** The page_sections section_type it is saved as, when not its key (service pages). */
+  sectionType?: string;
+  /**
+   * The block's starting wording lives on the website (service pages): the
+   * form begins from /api/service-defaults?slug=…&section=… there.
+   */
+  remoteDefaults?: { slug: string; section: string };
   /** Where "View the page" goes, when the screen's blocks are on different pages. */
   preview?: string;
   label: string;
@@ -1358,6 +1365,12 @@ const amcIconOptions = [
   { value: "tools", label: "Tools" },
 ];
 
+/** A page's search title and description. */
+const seoFields: HomeField[] = [
+  { name: "title", label: "Search title", type: "text", help: "The blue link in Google. Include the service and Dubai." },
+  { name: "description", label: "Search description", type: "textarea", help: "The two lines under it in Google." },
+];
+
 /** A picture and its description, for a list item. */
 const pictureFields: HomeField[] = [
   { name: "image", label: "Picture", type: "image", upload: "photo" },
@@ -1396,6 +1409,21 @@ export const amcBlocks: HomeBlockDef[] = [
       lists: {
         sections: amcSectionOptions.map((option) => ({ title: option.value, show: "yes" })),
       },
+    },
+  },
+  {
+    key: "amc_seo",
+    page: "it-amc-services-dubai",
+    label: "SEO",
+    shows: "What Google shows for this page: its title and description. Keep the title under about 60 characters and the description under about 155.",
+    fields: seoFields,
+    lists: [],
+    defaults: {
+      fields: {
+        title: "IT AMC Support & Services in Dubai | Byteflow",
+        description: "IT AMC support across Dubai, Business Bay, JLT and WTC included. One fixed monthly fee, 2-hour on-site response, 24/7 monitoring and no surprise bills.",
+      },
+      lists: {},
     },
   },
   {
@@ -2057,6 +2085,126 @@ export const amcBlocks: HomeBlockDef[] = [
   },
 ];
 
+/** The service pages the "Service pages" screen edits, by slug (website: app/lib/services-data.ts). */
+export const servicePageList = [
+  { slug: "cyber-security", name: "Cyber Security" },
+  { slug: "system-integration", name: "System Integration" },
+  { slug: "data-backup-recovery", name: "Data Backup & Recovery" },
+  { slug: "cloud-services-dubai", name: "Cloud Services" },
+  { slug: "website-development", name: "Website / Apps / Bots" },
+  { slug: "graphics-designing", name: "UI/UX & Graphics Design" },
+  { slug: "digital-marketing", name: "Digital Marketing" },
+  { slug: "landing-page-designing", name: "Landing Page Designing" },
+];
+
+/** The sections a service page can show, as the website names them (app/lib/service-page.ts). */
+const serviceSectionOptions = [
+  { value: "highlights", label: "Highlights" },
+  { value: "intro", label: "Overview" },
+  { value: "features", label: "What's included" },
+  { value: "plans", label: "Packages & pricing" },
+  { value: "benefits", label: "Why it matters" },
+  { value: "compare", label: "Comparison" },
+  { value: "process", label: "Process" },
+  { value: "industries", label: "Industries" },
+  { value: "sla", label: "Response times" },
+  { value: "coverage", label: "Dubai & UAE coverage" },
+  { value: "scope", label: "Included & excluded" },
+  { value: "costs", label: "Cost factors" },
+  { value: "pageblocks", label: "Blocks added under Pages" },
+  { value: "related", label: "Related services" },
+  { value: "faq", label: "FAQs" },
+  { value: "reviews", label: "Client reviews" },
+  { value: "contact", label: "Final CTA & contact form" },
+];
+
+/**
+ * Each service page section's form, as [key, label, what it shows, the IT AMC
+ * section whose fields it uses]. The service pages share the IT AMC page's
+ * section designs, so they share its fields too.
+ */
+const serviceSectionForms: [string, string, string, string | null][] = [
+  ["layout", "Sections", "Which sections show under the top banner, in this order. Hide one to prepare it, then show it when ready. Sections with no content yet (packages, comparison, response times, included & excluded, cost factors) start hidden.", null],
+  ["seo", "SEO", "What Google shows for this page: its title and description. They start as the page's long-standing ones.", "amc_seo"],
+  ["figures", "Banner figures", "The figures under the top banner's buttons. Only figures that are true.", "amc_figures"],
+  ["highlights", "Highlights", "A row of highlight cards under the banner. Starts hidden: switch it on under Sections once it has its own words.", "amc_highlights"],
+  ["intro", "Overview", "The description of the service, beside its picture or points when they are added.", "amc_intro"],
+  ["features", "What's included", "A numbered card for each thing the service includes, each with its own picture. The card beside the banner lists the first six.", null],
+  ["plans", "Packages & pricing", "Package cards and a comparison table. With packages, the card beside the banner shows them.", "amc_plans"],
+  ["benefits", "Why it matters", "The columns on what the service changes.", "amc_benefits"],
+  ["compare", "Comparison", "Two columns comparing two ways of doing it.", "amc_breakfix"],
+  ["process", "Process", "The numbered steps of the work.", "amc_process"],
+  ["industries", "Industries", "The industry cards, each linking to its card on the Industries page.", "amc_industries"],
+  ["sla", "Response times", "A row per priority with its response commitment.", "amc_sla"],
+  ["coverage", "Dubai & UAE coverage", "The areas the service covers on site.", "amc_areas"],
+  ["scope", "Included & excluded", "What the service covers beside what it does not.", "amc_excluded"],
+  ["costs", "Cost factors", "What the price depends on.", "amc_costs"],
+  ["related", "Related services", "The cards linking to other services.", "amc_related"],
+  ["faq", "FAQs", "The questions, with search and topic tabs. FAQs added for this page on the FAQs screen follow these.", "amc_faq"],
+  ["reviews", "Client reviews", "Your published Customer reviews, then the case studies added here.", "amc_reviews"],
+  ["contact", "Final CTA & contact form", "The closing call to action beside the enquiry form.", "amc_contact"],
+];
+
+const featureForm = {
+  fields: [
+    ...sectionHeading,
+    { name: "intro", label: "Intro line", type: "textarea" as const },
+    { name: "link_label", label: "Link text on the banner card", type: "text" as const, group: "Banner card" },
+  ],
+  lists: [
+    {
+      name: "features",
+      label: "Items",
+      itemLabel: "Item",
+      max: 20,
+      fields: [
+        { name: "title", label: "Title", type: "text" as const },
+        { name: "description", label: "Text", type: "textarea" as const },
+        ...pictureFields,
+      ],
+    },
+  ],
+};
+
+const layoutForm = {
+  fields: [],
+  lists: [
+    {
+      name: "sections",
+      label: "Sections, in page order",
+      itemLabel: "Section",
+      max: serviceSectionOptions.length,
+      help: "Use ↑ Up and ↓ Down to reorder. “Blocks added under Pages” are the page's own blocks from Pages.",
+      fields: [
+        { name: "title", label: "Section", type: "select" as const, options: serviceSectionOptions },
+        { name: "show", label: "On the website", type: "select" as const, options: showOrHide },
+      ],
+    },
+  ],
+};
+
+/** A service page's forms on the "Service pages" screen, saved on its own page as svc_<section>. */
+export function servicePageBlocks(slug: string): HomeBlockDef[] {
+  return serviceSectionForms.map(([section, label, shows, template]) => {
+    const form = section === "layout" ? layoutForm : section === "features" ? featureForm : amcBlocks.find((block) => block.key === template)!;
+    return {
+      key: `${slug}:svc_${section}`,
+      sectionType: `svc_${section}`,
+      page: slug,
+      preview: `/${slug}`,
+      label,
+      shows,
+      fields: form.fields,
+      lists: form.lists,
+      remoteDefaults: { slug, section },
+      defaults: { fields: {}, lists: {} },
+      ...(section === "reviews" ? { picturesElsewhere: amcBlocks.find((block) => block.key === "amc_reviews")?.picturesElsewhere } : {}),
+    };
+  });
+}
+
+const allServicePageBlocks = servicePageList.flatMap((page) => servicePageBlocks(page.slug));
+
 /**
  * The Privacy Policy and Terms & Conditions pages, linked from the footer's
  * Legal column. Each is saved on its own page, created on first save.
@@ -2202,7 +2350,7 @@ export const homeBlockKeys = homeBlocks.map((block) => block.key);
 
 /** A home, About, Services, Industries, IT AMC or legal page block by its key. */
 export function getHomeBlockDef(key: string | null): HomeBlockDef | undefined {
-  return [...homeBlocks, ...aboutBlocks, ...servicesBlocks, ...industriesBlocks, ...amcBlocks, ...legalBlocks].find((block) => block.key === key);
+  return [...homeBlocks, ...aboutBlocks, ...servicesBlocks, ...industriesBlocks, ...amcBlocks, ...allServicePageBlocks, ...legalBlocks].find((block) => block.key === key);
 }
 
 const LIMITS: Record<HomeFieldType, number> = { text: 200, textarea: 2000, link: 500, image: 500, select: 40, service: 100, tab: 200, post: 200, category: 200, menugroup: 200 };
