@@ -59,3 +59,32 @@ test("a preview link is signed for its path and expires within the hour", () => 
   assert.equal(previewLink("/digital-marketing", "short", now), null);
   assert.equal(previewPath("//evil.example"), null);
 });
+
+const servicePlans = servicePageBlocks("cloud-services-dubai").find((block) => block.sectionType === "svc_plans")!;
+
+test("service pages take 12 packages, each with a billing unit, a two-part price and third-party costs", () => {
+  const [plans, compare] = servicePlans.lists;
+  assert.equal(plans.max, 12);
+  const saved = sanitizeHomeBlock(servicePlans, {
+    plans: Array.from({ length: 13 }, (_, i) => ({ title: `Plan ${i + 1}`, unit_type: i === 0 ? "user_month" : "made-up", unit_custom: "per mailbox / month", setup_fee: "AED 2,000", management_fee: "AED 450", third_party: "Microsoft 365 subscriptions billed separately" })),
+    compare: [{ title: "Backup", plan12: "yes" }],
+  }) as { plans: Record<string, string>[]; compare: Record<string, string>[] };
+  assert.equal(saved.plans.length, 12);
+  assert.equal(saved.plans[0].unit_type, "user_month");
+  assert.equal(saved.plans[1].unit_type, "", "an unknown unit falls back to the page default");
+  assert.equal(saved.plans[0].setup_fee, "AED 2,000");
+  assert.equal(saved.plans[0].management_fee, "AED 450");
+  assert.equal(saved.plans[0].third_party, "Microsoft 365 subscriptions billed separately");
+  assert.equal(saved.compare[0].plan12, "yes");
+  assert.ok(compare.fields.some((field) => field.name === "plan12"));
+});
+
+test("service pages switch the table and the quote form filling; the IT AMC form is unchanged", () => {
+  const saved = sanitizeHomeBlock(servicePlans, { show_table: "no", quote_prefill: "yes", unit_device_month: "per device / month" }) as Record<string, string>;
+  assert.equal(saved.show_table, "no");
+  assert.equal(saved.quote_prefill, "yes");
+  assert.equal(saved.unit_device_month, "per device / month");
+  const amcNames = [...amcPlans.fields, ...amcPlans.lists.flatMap((list) => list.fields)].map((field) => field.name);
+  for (const name of ["show_table", "quote_prefill", "unit_month", "unit_type", "setup_fee", "third_party", "plan5"]) assert.ok(!amcNames.includes(name), name);
+  assert.equal(amcPlans.lists[0].max, 4);
+});
