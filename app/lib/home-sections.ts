@@ -2506,6 +2506,19 @@ const amcPlansForm = amcBlocks.find((block) => block.key === "amc_plans")!;
 const [amcPlanList, amcCompareList] = amcPlansForm.lists;
 const servicePlansForm = {
   fields: withAfter(amcPlansForm.fields, {
+    intro: [
+      {
+        name: "layout",
+        label: "Packages shown as",
+        type: "select",
+        options: [
+          { value: "auto", label: "Automatic: a price list for more than 4 quote-only packages, else cards" },
+          { value: "cards", label: "Cards" },
+          { value: "list", label: "Price list (a row per package)" },
+        ],
+        help: "Quote-only packages have just a name, a price and a third-party note: no points, deliverables, groups, exclusions or extras.",
+      },
+    ],
     compare_label: [
       {
         name: "banner_card",
