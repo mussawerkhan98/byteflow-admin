@@ -88,3 +88,9 @@ test("service pages switch the table and the quote form filling; the IT AMC form
   for (const name of ["show_table", "quote_prefill", "unit_month", "unit_type", "setup_fee", "third_party", "plan5"]) assert.ok(!amcNames.includes(name), name);
   assert.equal(amcPlans.lists[0].max, 4);
 });
+
+test("service pages choose cards or a price list; the IT AMC form has no such choice", () => {
+  assert.equal((sanitizeHomeBlock(servicePlans, { layout: "list" }) as Record<string, string>).layout, "list");
+  assert.equal((sanitizeHomeBlock(servicePlans, { layout: "grid" }) as Record<string, string>).layout, "auto");
+  assert.ok(!amcPlans.fields.some((field) => field.name === "layout"));
+});
