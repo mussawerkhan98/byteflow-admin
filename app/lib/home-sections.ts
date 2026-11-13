@@ -2477,28 +2477,123 @@ const layoutForm = {
   ],
 };
 
+/** The billing units a service package can pick, as [value, its starting words]; the words are set on the section. */
+const billingUnits = [
+  ["one_time", "one-time"],
+  ["month", "per month"],
+  ["user_month", "per user / month"],
+  ["device_month", "per device / month"],
+  ["site_month", "per site / month"],
+  ["project", "per project"],
+] as const;
+
+/** Up to 12 packages on a service page: the table needs a column for each. */
+const SERVICE_PLAN_MAX = 12;
+
+/** A form's fields with more added straight after the named ones. */
+const withAfter = (fields: HomeField[], after: Record<string, HomeField[]>) => fields.flatMap((field) => [field, ...(after[field.name] ?? [])]);
+
 /**
- * A service page's packages use the IT AMC page's form, plus the choice of
- * banner card: the IT AMC page always sums up its plans there, a service
- * page keeps listing what's included unless its packages are picked.
+ * A service page's packages use the IT AMC page's form (the IT AMC page's
+ * own form stays as it is), plus: up to 12 packages; a billing unit, a
+ * two-part price and a third-party costs line per package; the comparison
+ * table switched on or off; quote buttons that fill in the enquiry form; and
+ * the choice of banner card (the IT AMC page always sums up its plans there,
+ * a service page keeps listing what's included unless its packages are
+ * picked).
  */
 const amcPlansForm = amcBlocks.find((block) => block.key === "amc_plans")!;
+const [amcPlanList, amcCompareList] = amcPlansForm.lists;
 const servicePlansForm = {
-  fields: [
-    ...amcPlansForm.fields,
+  fields: withAfter(amcPlansForm.fields, {
+    compare_label: [
+      {
+        name: "banner_card",
+        label: "Card beside the top banner",
+        type: "select",
+        options: [
+          { value: "included", label: "What's included (unchanged)" },
+          { value: "plans", label: "These packages" },
+        ],
+        group: "Banner card",
+        help: "Showing this section doesn't change the card unless “These packages” is picked here.",
+      },
+    ],
+    terms: [
+      ...billingUnits.map(([value, words]): HomeField => ({
+        name: `unit_${value}`,
+        label: `Words for “${words}”`,
+        type: "text",
+        group: "Billing units",
+        help: value === "one_time" ? "Each package picks its billing unit; these are the words shown after its price." : undefined,
+      })),
+      { name: "setup_label", label: "Name for the setup fee", type: "text", group: "Two-part price" },
+      { name: "management_label", label: "Name for the management fee", type: "text", group: "Two-part price" },
+    ],
+    button_link: [
+      {
+        name: "quote_prefill",
+        label: "Quote buttons fill in the enquiry form",
+        type: "select",
+        options: [
+          { value: "no", label: "No: plain link" },
+          { value: "yes", label: "Yes: with this service and the package" },
+        ],
+        group: "Button",
+        help: "Adds ?service=…&package=… to buttons that link to a page on this website, e.g. /contact-us, where the form starts with them filled in.",
+      },
+    ],
+    table_heading: [
+      {
+        name: "show_table",
+        label: "Comparison table",
+        type: "select",
+        options: [
+          { value: "auto", label: "Automatic: shown with up to 4 packages" },
+          { value: "yes", label: "Show" },
+          { value: "no", label: "Hide" },
+        ],
+        group: "Comparison table",
+      },
+    ],
+  }),
+  lists: [
     {
-      name: "banner_card",
-      label: "Card beside the top banner",
-      type: "select" as const,
-      options: [
-        { value: "included", label: "What's included (unchanged)" },
-        { value: "plans", label: "These packages" },
+      ...amcPlanList,
+      max: SERVICE_PLAN_MAX,
+      help: "Cheapest first: the table's columns follow this order. Up to 4 sit side by side; more wrap in rows of three. A plan with a badge is shown raised, with its badge on top. A hidden plan keeps its column in the table rows but shows nowhere on the website (not even in its code), except in a preview.",
+      fields: withAfter(amcPlanList.fields, {
+        price: [
+          {
+            name: "unit_type",
+            label: "Billing unit",
+            type: "select",
+            options: [
+              { value: "", label: "Page default (Words after each price)" },
+              ...billingUnits.map(([value, words]) => ({ value, label: words })),
+              { value: "custom", label: "Custom text (below)" },
+            ],
+            group: "Price",
+          },
+          { name: "unit_custom", label: "Custom billing unit", type: "text", group: "Price", help: "Used when the billing unit is “Custom text”, e.g. per mailbox / month." },
+        ],
+        badge: [
+          { name: "setup_fee", label: "Setup fee (one-time)", type: "text", group: "Two-part price", help: "Optional, e.g. AED 2,000. With no Price above, the management fee (or else this) is shown as the price." },
+          { name: "management_fee", label: "Management fee (monthly)", type: "text", group: "Two-part price" },
+        ],
+        extras: [
+          { name: "third_party", label: "Third-party costs", type: "text", group: "Not included & extras", help: "One line, e.g. Microsoft 365 / Google Workspace / AWS / Azure subscriptions billed separately." },
+        ],
+      }),
+    },
+    {
+      ...amcCompareList,
+      fields: [
+        ...amcCompareList.fields.filter((field) => !/^plan\d+$/.test(field.name)),
+        ...Array.from({ length: SERVICE_PLAN_MAX }, (_, i): HomeField => ({ name: `plan${i + 1}`, label: `Plan ${i + 1}`, type: "text" })),
       ],
-      group: "Banner card",
-      help: "Showing this section doesn't change the card unless “These packages” is picked here.",
     },
   ],
-  lists: amcPlansForm.lists,
 };
 
 /** A service page's forms on the "Service pages" screen, saved on its own page as svc_<section>. */
