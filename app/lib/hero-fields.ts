@@ -32,7 +32,7 @@ export const heroExtraFields: HeroExtraField[] = [
     name: "hero_image",
     label: "Picture on the right (optional)",
     type: "image",
-    help: "Shown clearly on the right of the home page banner; the response-times card then moves under the text. A landscape photo about 1600×1200 works best (converted to WebP). Blank keeps the card on the right.",
+    help: "Shown clearly on the right of the banner, beside the text. A landscape photo about 1600×1200 works best (converted to WebP) and it loads first. Blank: the home and About pages show their built-in photograph; the IT AMC and service pages show their banner card alone.",
   },
   {
     name: "hero_image_alt",

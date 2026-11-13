@@ -8,20 +8,25 @@ const inputClass =
 
 /**
  * The home page hero's extra fields (highlight line, trust line, visual,
- * bottom strip), shared by the page workspace and the Heroes screen.
+ * bottom strip), shared by the page workspace and the Heroes screen. With
+ * `pictureOnly`, just the picture on the right and its alt text, for the
+ * other pages whose banners show one (banner-images.ts).
  */
 export default function HeroExtras({
   values,
   onChange,
+  pictureOnly = false,
 }: {
   values: Record<string, string | number | undefined>;
   onChange: (name: string, value: string) => void;
+  pictureOnly?: boolean;
 }) {
+  const fields = pictureOnly ? heroExtraFields.filter((field) => field.name.startsWith("hero_image")) : heroExtraFields;
   return (
     <fieldset className="rounded-xl border border-cyan-400/15 bg-cyan-400/[.03] p-5 md:col-span-2">
-      <legend className="px-2 text-sm font-bold text-white">Home page extras</legend>
+      <legend className="px-2 text-sm font-bold text-white">{pictureOnly ? "Picture on the right" : "Home page extras"}</legend>
       <div className="grid gap-5 md:grid-cols-2">
-        {heroExtraFields.map((field) => {
+        {fields.map((field) => {
           const value = String(values[field.name] ?? "");
           const over = field.max ? value.trim().length > field.max : false;
           if (field.type === "image")

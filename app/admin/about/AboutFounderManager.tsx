@@ -86,7 +86,7 @@ export default function AboutFounderManager() {
             </div>
             <label className="text-xs font-semibold text-slate-300">
               Name (optional)
-              <span className="mt-1 block font-normal text-slate-500">Shown with the quote on the home page. Blank shows the role and company only.</span>
+              <span className="mt-1 block font-normal text-slate-500">Shown with the quote on the About Us page. Blank shows the role and company only.</span>
               <input
                 value={form.name ?? ""}
                 onChange={(event) => change("name", event.target.value)}

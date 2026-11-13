@@ -64,11 +64,11 @@ test("a choice keeps one of its options; anything else falls back to the first",
   const about = getHomeBlockDef("home_about")!;
   const saved = sanitizeHomeBlock(about, {
     highlights: [
-      { title: "A", icon: "<script>", show: "no" },
-      { title: "B", icon: "shield", show: "maybe" },
+      { title: "A", show: "no" },
+      { title: "B", show: "maybe" },
     ],
   }).highlights as Record<string, string>[];
-  assert.deepEqual(saved.map((item) => [item.icon, item.show]), [["layers", "no"], ["shield", "yes"]]);
+  assert.deepEqual(saved.map((item) => item.show), ["no", "yes"]);
 });
 
 test("no default types a figure that the site-wide settings provide", () => {
@@ -111,6 +111,9 @@ test("the three default scenarios match the website's", () => {
 });
 
 test("Technologies: logos keep their tab and logo, unsafe logo links are dropped", () => {
+  // About reasons have no picture of their own in the current design, so no picture fields.
+  const about = getHomeBlockDef("home_about")!.lists[0].fields.map((field) => field.name);
+  assert.ok(!about.includes("image") && !about.includes("icon"));
   const tech = getHomeBlockDef("home_tech")!;
   const saved = sanitizeHomeBlock(tech, {
     tabs: [{ title: " Backup ", description: "Restores", show: "yes" }],
@@ -168,7 +171,7 @@ test("every field sits under exactly one heading, the heading fields first", () 
 });
 
 test("a list picture can't be saved without its description; logos keep using their name", () => {
-  for (const [key, list] of [["home_needs", "scenarios"], ["home_about", "highlights"], ["home_process", "steps"]] as const) {
+  for (const [key, list] of [["home_needs", "scenarios"], ["home_process", "steps"]] as const) {
     const def = getHomeBlockDef(key)!;
     const save = (item: Record<string, string>) => checkHomeBlock(def, sanitizeHomeBlock(def, { [list]: [{ title: "First" }, item] }));
     assert.match(save({ title: "Second", image: "/api/media/9/x.webp" }) ?? "", /2: describe the picture/, key);

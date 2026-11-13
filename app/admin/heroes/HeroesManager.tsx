@@ -5,6 +5,7 @@ import ImageUpload from "../ImageUpload";
 import { useEffect, useState } from "react";
 import AdminPageHeader from "../AdminPageHeader";
 import HeroExtras from "../HeroExtras";
+import { backgroundHelp, bannerImages } from "../../lib/banner-images";
 import { heroExtraNames } from "../../lib/hero-fields";
 
 type PageHero = Record<string, string | number> & {
@@ -68,6 +69,8 @@ export default function HeroesManager() {
 
   const change = (field: string, value: string) =>
     setForm((current) => ({ ...current, [field]: value }));
+  const slug = pages.find((item) => item.id === Number(selectedId))?.slug;
+  const images = bannerImages(slug);
   const inputClass =
     "mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-3 text-sm outline-none focus:border-cyan-400";
 
@@ -130,15 +133,18 @@ export default function HeroesManager() {
                 className={inputClass}
               />
             </label>
-            <div className="md:col-span-2">
-              <ImageUpload
-                label="Background image"
-                value={form.hero_background_image ?? ""}
-                onChange={(url) => change("hero_background_image", url)}
-                allowDecorative
-                help="Shown darkened behind the whole banner, so it is usually decorative. For a clear picture beside the text on the home page, use “Picture on the right” in Home page extras below."
-              />
-            </div>
+            {/* Only the pictures this page's banner shows (banner-images.ts). */}
+            {images.background && (
+              <div className="md:col-span-2">
+                <ImageUpload
+                  label="Background image"
+                  value={form.hero_background_image ?? ""}
+                  onChange={(url) => change("hero_background_image", url)}
+                  allowDecorative
+                  help={backgroundHelp(slug)}
+                />
+              </div>
+            )}
             <label className="text-xs font-semibold text-slate-300">
               Primary button label
               <input
@@ -179,8 +185,9 @@ export default function HeroesManager() {
                 className={inputClass}
               />
             </label>
-            {pages.find((item) => item.id === Number(selectedId))?.slug === "home" && (
-              <HeroExtras values={form} onChange={change} />
+            {(slug === "home" || images.picture) && <HeroExtras values={form} onChange={change} pictureOnly={slug !== "home"} />}
+            {!images.background && !images.picture && (
+              <p className="text-xs text-slate-500 md:col-span-2">This page&apos;s banner is text only, so it has no picture fields.</p>
             )}
           </div>
           <button

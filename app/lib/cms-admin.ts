@@ -63,6 +63,8 @@ const PROJECT_COLUMNS = [
   "ALTER TABLE projects ADD COLUMN challenge TEXT NOT NULL DEFAULT ''",
   "ALTER TABLE projects ADD COLUMN card_image TEXT NOT NULL DEFAULT ''",
   "ALTER TABLE projects ADD COLUMN card_image_alt TEXT NOT NULL DEFAULT ''",
+  // The featured image's description (website: app/lib/project-page.ts).
+  "ALTER TABLE projects ADD COLUMN image_alt TEXT NOT NULL DEFAULT ''",
 ]
 const columnsReady = new Map<string, Promise<void>>()
 
@@ -158,7 +160,7 @@ function normalize(field: Field, value: unknown) {
 const SERVICE_TAB_LIMITS: [string, string, number][] = [
   ['eyebrow', 'Home tab — small heading', 40],
   ['tagline', 'Home tab — subtitle', 80],
-  ['image_caption', 'Home tab — image caption', 48],
+  ['image_caption', 'Home tab — caption line', 48],
   ['image_alt', 'Image alt text', 125],
   ['cta_label', 'Home tab — button text', 28],
   ['home_heading', 'Home tab — heading', 60],
@@ -182,6 +184,7 @@ export function checkProjectCard(data: Record<string, unknown>) {
   const limits: [string, string, number][] = [
     ['challenge', 'Homepage card — business requirement', 220],
     ['card_image_alt', 'Homepage card — image alt text', 125],
+    ['image_alt', 'Featured image — alt text', 125],
   ]
   for (const [name, label, max] of limits) {
     if (String(data[name] ?? '').length > max) throw new FieldError(name, `${label} must be ${max} characters or fewer`)

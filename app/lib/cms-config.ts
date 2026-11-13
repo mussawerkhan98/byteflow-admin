@@ -209,7 +209,7 @@ export const resources = {
         name: "icon",
         label: "Icon",
         type: "text",
-        help: "An SVG file up to 256 KB, shown on the service card. Exports from Figma, Illustrator and Inkscape all work as they come.",
+        help: "An SVG file up to 256 KB, shown at the top of the page of a service added here. The nine built-in services (Cyber Security, Cloud, IT AMC…) draw their own icons everywhere, so it is not used for them. Exports from Figma, Illustrator and Inkscape all work as they come.",
       },
       {
         name: "image_url",
@@ -225,9 +225,9 @@ export const resources = {
       },
       {
         name: "image_caption",
-        label: "Home tab — image caption",
+        label: "Home tab — caption line",
         type: "text",
-        help: "The small dark label on the picture, e.g. “Monitored 24/7. Fixed in hours.” Up to 48 characters. Blank uses the service page's headline figure.",
+        help: "The short line with a dot under the highlights on the homepage service card (text only, no picture there), e.g. “Monitored 24/7. Fixed in hours.” Up to 48 characters. Blank uses the service page's headline figure.",
       },
       {
         name: "cta_label",
@@ -522,7 +522,18 @@ export const resources = {
       { name: "category", label: "Category", type: "text" },
       { name: "industry", label: "Industry", type: "text" },
       { name: "year", label: "Year", type: "text" },
-      { name: "image_url", label: "Featured image", type: "text" },
+      {
+        name: "image_url",
+        label: "Featured image",
+        type: "text",
+        help: "The project's photo on the Projects page and its own page (and when the page is shared). A landscape photo about 1600×1000 works best; it is converted to WebP. Blank uses the homepage card image, else a built-in photo.",
+      },
+      {
+        name: "image_alt",
+        label: "Featured image — alt text",
+        type: "text",
+        help: "Describe what the picture shows, for screen readers and Google. Up to 125 characters. Blank uses the project title.",
+      },
       {
         name: "bullet_points",
         label: "Project deliverables",
@@ -561,7 +572,7 @@ export const resources = {
         name: "card_image",
         label: "Homepage card — image",
         type: "text",
-        help: "A screenshot or photo for the dark panel at the top of the card (shown 16:9, cropped to fill). Upload about 1600×900; it is converted to WebP. Blank shows the project number on navy.",
+        help: "The photo on this project's card in Selected Work on the homepage (cropped to fill). Upload about 1600×1000; it is converted to WebP. Blank shows a built-in photo.",
       },
       {
         name: "card_image_alt",
