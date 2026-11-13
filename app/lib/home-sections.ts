@@ -204,7 +204,7 @@ export const homeBlocks: HomeBlockDef[] = [
     key: "home_about",
     label: "About Byteflow",
     shows:
-      "The dark navy About section: heading and paragraph, then the numbered reasons on the right. The light card on the left shows the reason under the pointer, with a small picture and a link to its service; on phones each reason opens like an accordion.",
+      "The About section: heading and paragraph, then a large photograph beside the numbered reasons, each with its text and a link to its service. The photograph is built into the design; reasons have no pictures of their own.",
     fields: [
       { name: "eyebrow", label: "Small heading", type: "text", help: figuresNote },
       { name: "heading", label: "Heading — first part (white)", type: "text" },
@@ -217,32 +217,13 @@ export const homeBlocks: HomeBlockDef[] = [
         label: "Reasons",
         itemLabel: "Reason",
         max: 4,
-        help: "Numbered in this order. Each one's text and link show in the preview card; a link to a service page is labelled with that service's name.",
+        help: "Numbered in this order, each with its text and link; a link to a service page is labelled with that service's name.",
+        // No picture or illustration fields: the current design shows one
+        // built-in photograph beside the reasons, none per reason.
         fields: [
           { name: "title", label: "Title", type: "text" },
           { name: "description", label: "Text (one or two lines)", type: "textarea" },
           { name: "link", label: "Link — the related service page", type: "link" },
-          {
-            name: "icon",
-            label: "Picture in the preview card",
-            type: "select",
-            options: [
-              { value: "layers", label: "One team: network, cloud, security, web" },
-              { value: "receipt", label: "Fixed monthly plan" },
-              { value: "clock", label: "Response timeline (on site within 2 hours)" },
-              { value: "cloud", label: "Microsoft 365 set up" },
-              { value: "shield", label: "Protection: firewall, endpoint, email" },
-              { value: "chat", label: "Support chat" },
-            ],
-          },
-          {
-            name: "image",
-            label: "Picture",
-            type: "image",
-            upload: "photo",
-            help: "Optional. Replaces the small illustration in the preview card (about 1200×800). Converted to WebP. Empty shows the illustration chosen above.",
-          },
-          { name: "image_alt", label: "Picture description (alt text)", type: "text" },
           {
             name: "show",
             label: "Show on the website",
@@ -378,7 +359,7 @@ export const homeBlocks: HomeBlockDef[] = [
         label: "Logos",
         itemLabel: "Logo",
         max: 80,
-        help: "Only vendors you really work with. Each shows under its tab, in this order. Without a logo picture, the tile shows the name's initials.",
+        help: "Only vendors you really work with. Each shows under its tab, in this order. Without a logo picture, the tile shows a small dot before the name.",
         fields: [
           { name: "title", label: "Vendor name", type: "text" },
           { name: "tab", label: "Tab", type: "tab" },
@@ -391,7 +372,7 @@ export const homeBlocks: HomeBlockDef[] = [
               { value: "no", label: "Hide" },
             ],
           },
-          { name: "logo", label: "Logo", type: "image", upload: "logo", help: "SVG works best. Leave empty to show the name's initials." },
+          { name: "logo", label: "Logo", type: "image", upload: "logo", help: "SVG works best. Leave empty to show a small dot before the name." },
         ],
       },
     ],

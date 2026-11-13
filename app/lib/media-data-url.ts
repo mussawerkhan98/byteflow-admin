@@ -16,6 +16,9 @@ export const SERVABLE = new Set([
   // No longer accepted for upload; still served for images uploaded before.
   "image/gif",
   "image/svg+xml",
+  // Favicons kept in their own format (the admin's favicon upload).
+  "image/x-icon",
+  "image/vnd.microsoft.icon",
 ]);
 
 /**

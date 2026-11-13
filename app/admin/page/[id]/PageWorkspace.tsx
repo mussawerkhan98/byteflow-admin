@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import ResourceManager from "../../[resource]/ResourceManager";
 import { resources } from "../../../lib/cms-config";
 import { siteUrl } from "../../../lib/admin-guide";
+import { backgroundHelp, bannerImages } from "../../../lib/banner-images";
 import { heroExtraNames } from "../../../lib/hero-fields";
 import HeroExtras from "../../HeroExtras";
 
@@ -238,15 +239,18 @@ export default function PageWorkspace({ pageId }: { pageId: number }) {
               className={inputClass}
             />
           </label>
-          <div className="md:col-span-2">
-            <ImageUpload
-              label="Background image"
-              value={heroForm.hero_background_image ?? ""}
-              onChange={(url) => setHeroForm((current) => ({ ...current, hero_background_image: url }))}
-              allowDecorative
-              help="Shown darkened behind the whole banner, so it is usually decorative. For a clear picture beside the text on the home page, use “Picture on the right” in Home page extras below."
-            />
-          </div>
+          {/* Only the pictures this page's banner shows (banner-images.ts). */}
+          {bannerImages(pageRecord?.slug).background && (
+            <div className="md:col-span-2">
+              <ImageUpload
+                label="Background image"
+                value={heroForm.hero_background_image ?? ""}
+                onChange={(url) => setHeroForm((current) => ({ ...current, hero_background_image: url }))}
+                allowDecorative
+                help={backgroundHelp(pageRecord?.slug)}
+              />
+            </div>
+          )}
           <label className="text-xs font-semibold text-slate-300">
             Primary button label
             <input
@@ -287,11 +291,15 @@ export default function PageWorkspace({ pageId }: { pageId: number }) {
               className={inputClass}
             />
           </label>
-          {pageRecord?.slug === "home" && (
+          {(pageRecord?.slug === "home" || bannerImages(pageRecord?.slug).picture) && (
             <HeroExtras
               values={heroForm}
               onChange={(name, value) => setHeroForm((current) => ({ ...current, [name]: value }))}
+              pictureOnly={pageRecord?.slug !== "home"}
             />
+          )}
+          {!bannerImages(pageRecord?.slug).background && !bannerImages(pageRecord?.slug).picture && (
+            <p className="text-xs text-slate-500 md:col-span-2">This page&apos;s banner is text only, so it has no picture fields.</p>
           )}
           <div className="md:col-span-2">
             <button

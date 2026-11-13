@@ -75,7 +75,14 @@ export default function StructuredFieldEditor({
           />
         </label>
         <div className="sm:col-span-2">
-          <ImageUpload label="Image (optional)" value={content.image_url ?? ""} onChange={(url) => update("image_url", url)} />
+          <ImageUpload
+            label="Image (optional)"
+            value={content.image_url ?? ""}
+            onChange={(url) => update("image_url", url)}
+            alt={content.image_alt ?? ""}
+            onAltChange={(alt) => update("image_alt", alt)}
+            altMax={125}
+          />
         </div>
         <label>
           <span className="mb-1 block text-xs text-slate-400">Button text (optional)</span>
