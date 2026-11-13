@@ -1544,7 +1544,54 @@ const sectionHeading: HomeField[] = [
   { name: "heading", label: "Heading — first part", type: "text", help: headingHelp },
   { name: "heading_soft", label: "Heading — second part", type: "text" },
 ];
-const titledItems = (label: string, itemLabel: string, max: number, help?: string): HomeList => ({
+
+/** A package's structured deliverables (a number each) and inclusion groups (a list each), as [field, starting name]. */
+const deliverableFields = [
+  ["d_keywords", "Keywords"],
+  ["d_pages", "Pages"],
+  ["d_audits", "Audits"],
+  ["d_content", "Content pieces"],
+] as const;
+const inclusionFields = [
+  ["g_technical", "Technical"],
+  ["g_onpage", "On-page"],
+  ["g_local", "Local SEO"],
+  ["g_content", "Content"],
+  ["g_links", "Link building"],
+] as const;
+
+const priceTypes = [
+  { value: "fixed", label: "Fixed price" },
+  { value: "from", label: "Starting from" },
+  { value: "custom", label: "Custom quote" },
+];
+
+/**
+ * The packages section's names for its parts, as the website starts them
+ * (byteflow, app/lib/home-content.ts planLabels).
+ */
+const planLabels = {
+  from_label: "From",
+  custom_label: "Request Pricing",
+  ...Object.fromEntries(deliverableFields.map(([name, label]) => [`${name}_label`, label])),
+  ...Object.fromEntries(inclusionFields.map(([name, label]) => [`${name}_label`, label])),
+  excluded_label: "Not included",
+  extras_label: "Additional charges",
+};
+
+/** A package's fields beyond its name, price, line, points and badge, as they start. */
+const planExtras = {
+  price_type: "fixed",
+  show: "yes",
+  button_label: "",
+  button_link: "",
+  ...Object.fromEntries(deliverableFields.map(([name]) => [name, ""])),
+  ...Object.fromEntries(inclusionFields.map(([name]) => [name, ""])),
+  excluded: "",
+  extras: "",
+};
+
+const titledItems =(label: string, itemLabel: string, max: number, help?: string): HomeList => ({
   name: "",
   label,
   itemLabel,
@@ -1850,16 +1897,23 @@ export const amcBlocks: HomeBlockDef[] = [
     key: "amc_plans",
     page: "it-amc-services-dubai",
     label: "Packages & pricing",
-    shows: "6. The plan cards and the comparison table, and the card beside the top banner that sums them up (it shows the first plan's price as “from”).",
+    shows: "6. The plan cards and the comparison table, and the card beside the top banner that sums them up (it shows the first plan's price as “from”). On the website the section has one h2, its heading; each plan's name is an h3.",
     fields: [
       ...sectionHeading,
+      { name: "intro", label: "Description under the heading", type: "textarea", help: "Optional: a short paragraph under the section heading." },
       { name: "card_label", label: "Small heading on the banner card", type: "text", group: "Banner card" },
       { name: "compare_label", label: "“Compare plans” link text", type: "text", group: "Banner card" },
-      { name: "unit", label: "Words after each price", type: "text", group: "Prices" },
+      { name: "unit", label: "Words after each price", type: "text", group: "Prices", help: "Not shown after a custom quote." },
+      { name: "from_label", label: "Word before a “Starting from” price", type: "text", group: "Prices" },
+      { name: "custom_label", label: "Shown instead of a price", type: "text", group: "Prices", help: "For a plan set to “Custom quote”, or with no price typed." },
       { name: "note", label: "VAT note", type: "textarea", group: "Prices" },
       { name: "terms", label: "Terms under the cards", type: "textarea", group: "Prices" },
-      { name: "button_label", label: "Button text", type: "text", group: "Button" },
-      { name: "button_link", label: "Button link", type: "link", group: "Button" },
+      { name: "button_label", label: "Button text", type: "text", group: "Button", help: "For every plan without its own button text." },
+      { name: "button_link", label: "Button link", type: "link", group: "Button", help: "For every plan without its own button link." },
+      ...deliverableFields.map(([name, label]) => ({ name: `${name}_label`, label: `Name for “${label}”`, type: "text" as const, group: "Deliverables" })),
+      ...inclusionFields.map(([name, label]) => ({ name: `${name}_label`, label: `Name for “${label}”`, type: "text" as const, group: "Inclusion groups" })),
+      { name: "excluded_label", label: "Heading over what's not included", type: "text", group: "Not included & extras" },
+      { name: "extras_label", label: "Heading over additional charges", type: "text", group: "Not included & extras" },
       { name: "table_heading", label: "Heading above the table", type: "text", group: "Comparison table" },
     ],
     lists: [
@@ -1868,23 +1922,32 @@ export const amcBlocks: HomeBlockDef[] = [
         label: "Plans",
         itemLabel: "Plan",
         max: 4,
-        help: "Cheapest first: the table's columns follow this order. A plan with a badge is shown raised, with its badge on top.",
+        help: "Cheapest first: the table's columns follow this order. A plan with a badge is shown raised, with its badge on top. A hidden plan keeps its column in the table rows but shows nowhere on the website, except in a preview.",
         fields: [
           { name: "title", label: "Plan name", type: "text" },
-          { name: "price", label: "Price", type: "text" },
-          { name: "summary", label: "Line under the price", type: "text" },
-          { name: "points", label: "What it includes (one per line)", type: "textarea" },
-          { name: "badge", label: "Badge (optional)", type: "text" },
+          { name: "show", label: "On the website", type: "select", options: showOrHide },
+          { name: "price_type", label: "Price type", type: "select", options: priceTypes, group: "Price" },
+          { name: "price", label: "Price", type: "text", group: "Price", help: "e.g. AED 1,500. Left blank, the plan shows the “Shown instead of a price” words." },
+          { name: "summary", label: "Line under the price", type: "text", group: "Price" },
+          { name: "badge", label: "Badge (optional)", type: "text", group: "Price" },
+          { name: "button_label", label: "Button text", type: "text", group: "Button", help: "Blank uses the section's button text." },
+          { name: "button_link", label: "Button link", type: "link", group: "Button", help: "Blank uses the section's button link." },
+          ...deliverableFields.map(([name, label]) => ({ name, label: `${label} (number)`, type: "text" as const, group: "Deliverables", help: name === "d_keywords" ? "Blank ones are left out. Their names are set above, under Deliverables." : undefined })),
+          { name: "points", label: "What it includes (one per line)", type: "textarea", group: "Included" },
+          ...inclusionFields.map(([name, label]) => ({ name, label: `${label} (one per line)`, type: "textarea" as const, group: "Included", help: name === "g_technical" ? "Each group shows under its own heading on the card; empty ones are left out. Their names are set above, under Inclusion groups." : undefined })),
+          { name: "excluded", label: "Not included (one per line)", type: "textarea", group: "Not included & extras" },
+          { name: "extras", label: "Additional charges (one per line)", type: "textarea", group: "Not included & extras" },
         ],
       },
       {
         name: "compare",
         label: "Comparison table rows",
         itemLabel: "Row",
-        max: 30,
-        help: "For each plan, in the plans' order: “yes” shows a tick, “no” or blank a dash, anything else is shown as written.",
+        max: 40,
+        help: "For each plan, in the plans' order: “yes” shows a tick, “no” or blank a dash, anything else is shown as written. Rows given the same group, one after another, sit under that group's heading (Technical, On-page …).",
         fields: [
           { name: "title", label: "Feature", type: "text" },
+          { name: "group", label: "Group (optional)", type: "text" },
           { name: "plan1", label: "Plan 1", type: "text" },
           { name: "plan2", label: "Plan 2", type: "text" },
           { name: "plan3", label: "Plan 3", type: "text" },
@@ -1894,9 +1957,11 @@ export const amcBlocks: HomeBlockDef[] = [
     ],
     defaults: {
       fields: {
+        ...planLabels,
         eyebrow: "Plans and pricing",
         heading: "Published prices,",
         heading_soft: "per user, per month.",
+        intro: "",
         card_label: "Plans from",
         unit: "per user / month",
         note: "Prices exclude 5% VAT. A 10-person office on Essential is AED 300/month.",
@@ -1908,20 +1973,20 @@ export const amcBlocks: HomeBlockDef[] = [
       },
       lists: {
         plans: [
-          { title: "Essential", price: "AED 30", summary: "Remote support and monitoring for every device.", points: "Unlimited remote support\n24/7 endpoint monitoring\nSoftware updates and patching", badge: "" },
-          { title: "Standard", price: "AED 60", summary: "Everything in Essential, plus:", points: "On-site engineer visits\nServer and network management\nIT asset inventory", badge: "Includes on-site visits" },
-          { title: "Complete", price: "AED 90", summary: "Everything in Standard, plus:", points: "Website management and SEO monitoring\nPriority SLA\nA dedicated account manager", badge: "" },
+          { title: "Essential", price: "AED 30", summary: "Remote support and monitoring for every device.", points: "Unlimited remote support\n24/7 endpoint monitoring\nSoftware updates and patching", badge: "", ...planExtras },
+          { title: "Standard", price: "AED 60", summary: "Everything in Essential, plus:", points: "On-site engineer visits\nServer and network management\nIT asset inventory", badge: "Includes on-site visits", ...planExtras },
+          { title: "Complete", price: "AED 90", summary: "Everything in Standard, plus:", points: "Website management and SEO monitoring\nPriority SLA\nA dedicated account manager", badge: "", ...planExtras },
         ],
         compare: [
-          { title: "Unlimited remote support", plan1: "yes", plan2: "yes", plan3: "yes", plan4: "" },
-          { title: "24/7 endpoint monitoring", plan1: "yes", plan2: "yes", plan3: "yes", plan4: "" },
-          { title: "Software updates and patching", plan1: "yes", plan2: "yes", plan3: "yes", plan4: "" },
-          { title: "On-site engineer visits", plan1: "no", plan2: "yes", plan3: "yes", plan4: "" },
-          { title: "Server and network management", plan1: "no", plan2: "yes", plan3: "yes", plan4: "" },
-          { title: "IT asset inventory", plan1: "no", plan2: "yes", plan3: "yes", plan4: "" },
-          { title: "Website management and SEO monitoring", plan1: "no", plan2: "no", plan3: "yes", plan4: "" },
-          { title: "Priority SLA", plan1: "no", plan2: "no", plan3: "yes", plan4: "" },
-          { title: "A dedicated account manager", plan1: "no", plan2: "no", plan3: "yes", plan4: "" },
+          { title: "Unlimited remote support", group: "", plan1: "yes", plan2: "yes", plan3: "yes", plan4: "" },
+          { title: "24/7 endpoint monitoring", group: "", plan1: "yes", plan2: "yes", plan3: "yes", plan4: "" },
+          { title: "Software updates and patching", group: "", plan1: "yes", plan2: "yes", plan3: "yes", plan4: "" },
+          { title: "On-site engineer visits", group: "", plan1: "no", plan2: "yes", plan3: "yes", plan4: "" },
+          { title: "Server and network management", group: "", plan1: "no", plan2: "yes", plan3: "yes", plan4: "" },
+          { title: "IT asset inventory", group: "", plan1: "no", plan2: "yes", plan3: "yes", plan4: "" },
+          { title: "Website management and SEO monitoring", group: "", plan1: "no", plan2: "no", plan3: "yes", plan4: "" },
+          { title: "Priority SLA", group: "", plan1: "no", plan2: "no", plan3: "yes", plan4: "" },
+          { title: "A dedicated account manager", group: "", plan1: "no", plan2: "no", plan3: "yes", plan4: "" },
         ],
       },
     },
@@ -2359,7 +2424,7 @@ const serviceSectionForms: [string, string, string, string | null][] = [
   ["highlights", "Highlights", "A row of highlight cards under the banner. Starts hidden: switch it on under Sections once it has its own words.", "amc_highlights"],
   ["intro", "Overview", "The description of the service, beside its picture or points when they are added.", "amc_intro"],
   ["features", "What's included", "A numbered card for each thing the service includes, each with its own picture. The card beside the banner lists the first six.", null],
-  ["plans", "Packages & pricing", "Package cards and a comparison table. With packages, the card beside the banner shows them.", "amc_plans"],
+  ["plans", "Packages & pricing", "Package cards and a comparison table. One h2 for the section (its heading), each package name an h3. The card beside the banner shows the packages only when picked under Banner card. Use “Preview hidden sections” to check it before showing it.", "amc_plans"],
   ["benefits", "Why it matters", "The columns on what the service changes.", "amc_benefits"],
   ["compare", "Comparison", "Two columns comparing two ways of doing it.", "amc_breakfix"],
   ["process", "Process", "The numbered steps of the work.", "amc_process"],
@@ -2412,10 +2477,35 @@ const layoutForm = {
   ],
 };
 
+/**
+ * A service page's packages use the IT AMC page's form, plus the choice of
+ * banner card: the IT AMC page always sums up its plans there, a service
+ * page keeps listing what's included unless its packages are picked.
+ */
+const amcPlansForm = amcBlocks.find((block) => block.key === "amc_plans")!;
+const servicePlansForm = {
+  fields: [
+    ...amcPlansForm.fields,
+    {
+      name: "banner_card",
+      label: "Card beside the top banner",
+      type: "select" as const,
+      options: [
+        { value: "included", label: "What's included (unchanged)" },
+        { value: "plans", label: "These packages" },
+      ],
+      group: "Banner card",
+      help: "Showing this section doesn't change the card unless “These packages” is picked here.",
+    },
+  ],
+  lists: amcPlansForm.lists,
+};
+
 /** A service page's forms on the "Service pages" screen, saved on its own page as svc_<section>. */
 export function servicePageBlocks(slug: string): HomeBlockDef[] {
   return serviceSectionForms.map(([section, label, shows, template]) => {
-    const form = section === "layout" ? layoutForm : section === "features" ? featureForm : amcBlocks.find((block) => block.key === template)!;
+    const form =
+      section === "layout" ? layoutForm : section === "features" ? featureForm : section === "plans" ? servicePlansForm : amcBlocks.find((block) => block.key === template)!;
     return {
       key: `${slug}:svc_${section}`,
       sectionType: `svc_${section}`,

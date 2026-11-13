@@ -216,7 +216,14 @@ function ListEditor({
               </span>
             </summary>
             <div className="grid gap-4 border-t border-white/[.06] px-4 pb-4 pt-4 md:grid-cols-2">
-              {list.fields.map((field) => {
+              {list.fields.map((field, f) => {
+                // A long item (a package) is split under small headings where its fields' group changes.
+                const heading = field.group && field.group !== list.fields[f - 1]?.group && (
+                  <p key={`${field.name}-group`} className="mt-2 flex items-center gap-3 text-[10.5px] font-bold uppercase tracking-[0.14em] text-slate-400 md:col-span-2">
+                    {field.group}
+                    <span aria-hidden="true" className="h-px flex-1 bg-white/[.06]" />
+                  </p>
+                );
                 if (field.type === "image") {
                   const altName = altFieldOf(field.name);
                   return (
@@ -236,13 +243,14 @@ function ListEditor({
                   );
                 }
                 if (pictureAlts.has(field.name) || (titleIsAlt && field.name === "title")) return null;
-                return (
+                return [
+                  heading,
                   <label key={field.name} className={`${labelClass} ${field.type === "textarea" ? "md:col-span-2" : ""}`}>
                     {field.label}
                     {field.help && <span className="mt-1 block font-normal text-slate-500">{field.help}</span>}
                     <FieldInput field={field} value={item[field.name] ?? ""} onChange={(value) => update(index, field.name, value)} services={services} tabs={tabs} posts={posts} menuGroups={menuGroups} />
-                  </label>
-                );
+                  </label>,
+                ];
               })}
             </div>
           </details>
@@ -274,12 +282,15 @@ export default function HomeSectionsManager({
   sectionKey = "home-sections",
   pageName = "home page",
   preview = "/",
+  previewHidden = false,
 }: {
   blocks?: HomeBlockDef[];
   sectionKey?: string;
   /** "home page", as in "the order they appear on the home page". */
   pageName?: string;
   preview?: string;
+  /** The page can be previewed with its hidden sections and packages (IT AMC and service pages). */
+  previewHidden?: boolean;
 }) {
   const [active, setActive] = useState(blocks[0].key);
   const [form, setForm] = useState<FormValues>({});
@@ -589,6 +600,18 @@ export default function HomeSectionsManager({
             <a href={siteUrl(def.preview ?? preview)} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-cyan-300">
               {def.preview ? `View the ${def.label} page ↗` : `View the ${pageName} ↗`}
             </a>
+            {previewHidden && (
+              // Saved changes only: save first, then preview.
+              <a
+                href={`/api/admin/preview?path=${encodeURIComponent(def.preview ?? preview)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Opens the page with its hidden sections and packages shown, marked “Hidden”. Only you see them; save first."
+                className="text-xs font-semibold text-amber-300"
+              >
+                Preview hidden sections ↗
+              </a>
+            )}
           </div>
         </form>
       )}
