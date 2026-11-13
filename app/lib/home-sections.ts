@@ -1309,6 +1309,129 @@ export const industriesBlocks: HomeBlockDef[] = [
   },
 ];
 
+/**
+ * The Projects page (/projects) and each project's page: their wording,
+ * saved on the "projects" page. The projects themselves are the Projects
+ * screen; the banner is the page's hero (Heroes).
+ */
+export const projectsBlocks: HomeBlockDef[] = [
+  {
+    key: "projects_page",
+    page: "projects",
+    label: "Projects list",
+    shows: "The Projects page under the top banner: the labels of the figures in the banner (the numbers are counted from your published projects, and clients served is under Contact details & logo), the heading above the projects, the service filter and the link on the lead card.",
+    preview: "/projects",
+    fields: [
+      { name: "stat_projects", label: "Label under the number of projects", type: "text", group: "Banner figures", help: "Leave a label blank to hide that figure." },
+      { name: "stat_services", label: "Label under the number of services", type: "text", group: "Banner figures" },
+      { name: "stat_industries", label: "Label under the number of industries", type: "text", group: "Banner figures" },
+      { name: "stat_clients", label: "Label under clients served", type: "text", group: "Banner figures" },
+      { name: "eyebrow", label: "Small heading", type: "text", group: "Projects" },
+      { name: "heading", label: "Heading — first part", type: "text", group: "Projects", help: headingHelp },
+      { name: "heading_soft", label: "Heading — second part", type: "text", group: "Projects" },
+      { name: "all_label", label: "First filter button (all projects)", type: "text", group: "Service filter" },
+      { name: "filter_label", label: "Name of the filter, read out by screen readers", type: "text", group: "Service filter" },
+      { name: "empty_text", label: "Shown when a service has no projects", type: "text", group: "Service filter" },
+      { name: "link_label", label: "Link text on the lead project", type: "text", group: "Service filter" },
+    ],
+    lists: [],
+    defaults: {
+      fields: {
+        stat_projects: "Case studies",
+        stat_services: "Services",
+        stat_industries: "Industries",
+        stat_clients: "Clients served",
+        eyebrow: "Case studies",
+        heading: "What each business needed,",
+        heading_soft: "and what we delivered.",
+        filter_label: "Filter by service",
+        all_label: "All work",
+        empty_text: "No projects for this service yet.",
+        link_label: "View case study",
+      },
+      lists: {},
+    },
+  },
+  {
+    key: "projects_detail",
+    page: "projects",
+    label: "Project page labels",
+    shows: "The labels on every project's own page (/projects/…): the back link and button at the top, the story's heading, the project details, what we delivered, the technology used and the related projects. Each project's own words are on the Projects screen.",
+    preview: "/projects",
+    fields: [
+      { name: "back_label", label: "Back link", type: "text", group: "Top" },
+      { name: "primary_label", label: "Button text", type: "text", group: "Top" },
+      { name: "primary_link", label: "Button link", type: "link", group: "Top" },
+      { name: "story_heading", label: "Heading above the project's content", type: "text", group: "Story" },
+      { name: "details_label", label: "Project details heading", type: "text", group: "Side panel" },
+      { name: "service_label", label: "Service label", type: "text", group: "Side panel" },
+      { name: "industry_label", label: "Industry label", type: "text", group: "Side panel" },
+      { name: "year_label", label: "Year label", type: "text", group: "Side panel" },
+      { name: "delivered_label", label: "Deliverables heading", type: "text", group: "Side panel" },
+      { name: "tags_label", label: "Tags heading", type: "text", group: "Side panel" },
+      { name: "more_eyebrow", label: "Small heading", type: "text", group: "Related projects" },
+      { name: "more_heading", label: "Heading", type: "text", group: "Related projects" },
+      { name: "more_link_label", label: "Link to all projects", type: "text", group: "Related projects" },
+    ],
+    lists: [],
+    defaults: {
+      fields: {
+        back_label: "All projects",
+        primary_label: "Start a similar project",
+        primary_link: "/contact-us",
+        story_heading: "The project",
+        details_label: "Project details",
+        service_label: "Service",
+        industry_label: "Industry",
+        year_label: "Year",
+        delivered_label: "What we delivered",
+        tags_label: "Technology used",
+        more_eyebrow: "More work",
+        more_heading: "Related projects",
+        more_link_label: "See all projects",
+      },
+      lists: {},
+    },
+  },
+  {
+    key: "projects_cta",
+    page: "projects",
+    label: "Closing panel",
+    shows: "The panel at the end of the Projects page and of every project's page, with ways to reach you beside it. The phone, email and location are your Contact details & logo.",
+    preview: "/projects",
+    fields: [
+      { name: "eyebrow", label: "Small heading", type: "text" },
+      { name: "heading", label: "Heading — first part", type: "text", help: headingHelp },
+      { name: "heading_soft", label: "Heading — second part", type: "text" },
+      { name: "intro", label: "Intro paragraph", type: "textarea" },
+      { name: "link_label", label: "Button text", type: "text", group: "Button" },
+      { name: "link", label: "Button link", type: "link", group: "Button" },
+      { name: "phone_label", label: "Phone label", type: "text", group: "Contact rows" },
+      { name: "email_label", label: "Email label", type: "text", group: "Contact rows" },
+      { name: "address_label", label: "Location label", type: "text", group: "Contact rows" },
+      { name: "support_label", label: "Support label", type: "text", group: "Contact rows" },
+      { name: "support_text", label: "Support line", type: "text", group: "Contact rows" },
+    ],
+    lists: [],
+    defaults: {
+      fields: {
+        eyebrow: "Have a project in mind?",
+        heading: "Tell us what you want to achieve.",
+        heading_soft: "We will come back with a plan.",
+        intro: "Tell us what you are trying to achieve and we will come back to you with a plan, not a sales pitch.",
+        link_label: "Start a conversation",
+        link: "/contact-us",
+        phone_label: "Phone",
+        email_label: "Email",
+        address_label: "Location",
+        support_label: "Support",
+        support_text: "24/7 — always available",
+      },
+      lists: {},
+    },
+  },
+];
+
 /** A section's small heading and its heading in two tones. */
 const sectionHeading: HomeField[] = [
   { name: "eyebrow", label: "Small heading", type: "text" },
@@ -2350,7 +2473,7 @@ export const homeBlockKeys = homeBlocks.map((block) => block.key);
 
 /** A home, About, Services, Industries, IT AMC or legal page block by its key. */
 export function getHomeBlockDef(key: string | null): HomeBlockDef | undefined {
-  return [...homeBlocks, ...aboutBlocks, ...servicesBlocks, ...industriesBlocks, ...amcBlocks, ...allServicePageBlocks, ...legalBlocks].find((block) => block.key === key);
+  return [...homeBlocks, ...aboutBlocks, ...servicesBlocks, ...industriesBlocks, ...projectsBlocks, ...amcBlocks, ...allServicePageBlocks, ...legalBlocks].find((block) => block.key === key);
 }
 
 const LIMITS: Record<HomeFieldType, number> = { text: 200, textarea: 2000, link: 500, image: 500, select: 40, service: 100, tab: 200, post: 200, category: 200, menugroup: 200 };
