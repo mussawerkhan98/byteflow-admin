@@ -40,6 +40,7 @@ export default async function ServicePagesPage({ searchParams }: { searchParams:
         sectionKey="service-pages"
         pageName={`${current.name} page`}
         preview={`/${current.slug}`}
+        previewHidden
       />
     </div>
   );
