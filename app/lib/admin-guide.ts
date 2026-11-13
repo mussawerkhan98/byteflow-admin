@@ -125,6 +125,13 @@ export const adminGroups: AdminGroup[] = [
         preview: "/blog",
       },
       {
+        key: "contact-sections",
+        label: "Contact page",
+        shows:
+          "The wording of the Contact page (/contact-us): the promises, the Call / WhatsApp / Email rows, the heading above the enquiry form, the “What happens next” steps and the office section. The phone, email, WhatsApp link, address, hours, socials and map are Contact details & logo; the top banner is the page's hero.",
+        preview: "/contact-us",
+      },
+      {
         key: "legal-pages",
         label: "Legal pages",
         shows:

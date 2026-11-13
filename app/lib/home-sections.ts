@@ -1538,6 +1538,110 @@ export const blogBlocks: HomeBlockDef[] = [
   },
 ];
 
+/**
+ * The Contact page (/contact-us), saved on that page. Its banner words are
+ * the page's hero (Heroes); the phone, email, WhatsApp link, address, hours,
+ * socials and map are Contact details & logo.
+ */
+export const contactBlocks: HomeBlockDef[] = [
+  {
+    key: "contact_page",
+    page: "contact-us",
+    label: "Top: ways to reach us & form",
+    shows: "Beside the page's heading (its hero): the promises under it, the Call / WhatsApp / Email rows, the socials' label, and the heading and line above the enquiry form. The number, email and WhatsApp link themselves are Contact details & logo.",
+    preview: "/contact-us",
+    fields: [
+      { name: "promises", label: "Promises under the description (one per line)", type: "textarea" },
+      { name: "call_label", label: "Call row — label", type: "text", group: "Ways to reach us", help: "Leave a label blank to hide its row." },
+      { name: "whatsapp_label", label: "WhatsApp row — label", type: "text", group: "Ways to reach us" },
+      { name: "whatsapp_text", label: "WhatsApp row — line", type: "text", group: "Ways to reach us" },
+      { name: "email_label", label: "Email row — label", type: "text", group: "Ways to reach us" },
+      { name: "socials_label", label: "Label beside the social links", type: "text", group: "Ways to reach us" },
+      { name: "address_label", label: "Office label", type: "text", group: "Office details", help: "Shown over the address in the office section." },
+      { name: "hours_label", label: "Opening hours label", type: "text", group: "Office details" },
+      { name: "form_heading", label: "Heading above the form", type: "text", group: "Form" },
+      { name: "form_intro", label: "Line under it", type: "textarea", group: "Form" },
+    ],
+    lists: [],
+    defaults: {
+      fields: {
+        call_label: "Call us",
+        whatsapp_label: "WhatsApp",
+        whatsapp_text: "Chat with our team",
+        email_label: "Email",
+        address_label: "Office",
+        hours_label: "Opening hours",
+        socials_label: "Follow us",
+        form_heading: "Send us a message",
+        form_intro: "Tell us about your setup and what you need. Fields marked * are required.",
+        promises: "Free consultation\nClear, fixed proposal\nNo obligation",
+      },
+      lists: {},
+    },
+  },
+  {
+    key: "contact_steps",
+    page: "contact-us",
+    label: "What happens next",
+    shows: "The numbered steps under the form: what happens after someone sends a message.",
+    preview: "/contact-us",
+    fields: [
+      { name: "eyebrow", label: "Small heading", type: "text" },
+      { name: "heading", label: "Heading — first part", type: "text", help: headingHelp },
+      { name: "heading_soft", label: "Heading — second part", type: "text" },
+    ],
+    lists: [
+      {
+        name: "steps",
+        label: "Steps",
+        itemLabel: "Step",
+        max: 4,
+        fields: [
+          { name: "title", label: "Title", type: "text" },
+          { name: "description", label: "Text", type: "textarea" },
+        ],
+      },
+    ],
+    defaults: {
+      fields: { eyebrow: "What happens next", heading: "From your message", heading_soft: "to a clear plan." },
+      lists: {
+        steps: [
+          { title: "We read your message", description: "Our team reviews what you sent and the service you picked." },
+          { title: "We talk it through", description: "We call or email to understand your setup, team size and what you need." },
+          { title: "You get a clear proposal", description: "A fixed, itemised proposal, with no obligation to go ahead." },
+        ],
+      },
+    },
+  },
+  {
+    key: "contact_office",
+    page: "contact-us",
+    label: "Office & map",
+    shows: "The last section: the office heading beside the map, with the address and opening hours (Contact details & logo) and a directions button. The map is set, or switched off, under Contact details & logo.",
+    preview: "/contact-us",
+    fields: [
+      { name: "eyebrow", label: "Small heading", type: "text" },
+      { name: "heading", label: "Heading — first part", type: "text", help: headingHelp },
+      { name: "heading_soft", label: "Heading — second part", type: "text" },
+      { name: "text", label: "Line under the heading (optional)", type: "textarea" },
+      { name: "directions_label", label: "Directions button text", type: "text", group: "Directions", help: "Leave blank to hide the button." },
+      { name: "directions_link", label: "Directions link (optional)", type: "link", group: "Directions", help: "A Google Maps link to the office. Blank searches Google Maps for the address." },
+    ],
+    lists: [],
+    defaults: {
+      fields: {
+        eyebrow: "Our office",
+        heading: "Visit us",
+        heading_soft: "in Dubai.",
+        text: "",
+        directions_label: "Get directions",
+        directions_link: "",
+      },
+      lists: {},
+    },
+  },
+];
+
 /** A section's small heading and its heading in two tones. */
 const sectionHeading: HomeField[] = [
   { name: "eyebrow", label: "Small heading", type: "text" },
@@ -2777,7 +2881,7 @@ export const homeBlockKeys = homeBlocks.map((block) => block.key);
 
 /** A home, About, Services, Industries, IT AMC or legal page block by its key. */
 export function getHomeBlockDef(key: string | null): HomeBlockDef | undefined {
-  return [...homeBlocks, ...aboutBlocks, ...servicesBlocks, ...industriesBlocks, ...projectsBlocks, ...blogBlocks, ...amcBlocks, ...allServicePageBlocks, ...legalBlocks].find((block) => block.key === key);
+  return [...homeBlocks, ...aboutBlocks, ...servicesBlocks, ...industriesBlocks, ...projectsBlocks, ...blogBlocks, ...contactBlocks, ...amcBlocks, ...allServicePageBlocks, ...legalBlocks].find((block) => block.key === key);
 }
 
 const LIMITS: Record<HomeFieldType, number> = { text: 200, textarea: 2000, link: 500, image: 500, select: 40, service: 100, tab: 200, post: 200, category: 200, menugroup: 200 };

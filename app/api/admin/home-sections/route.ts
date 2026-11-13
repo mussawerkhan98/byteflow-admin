@@ -28,6 +28,8 @@ const pageName = (def: HomeBlockDef) =>
           ? "Projects"
           : def.page === "blog"
             ? "Blog"
+            : def.page === "contact-us"
+            ? "Contact Us"
             : def.page === "it-amc-services-dubai"
           ? "IT AMC Services"
           : def.remoteDefaults
@@ -42,6 +44,7 @@ const createsPage = (def: HomeBlockDef) =>
   def.page === "industries" ||
   def.page === "projects" ||
   def.page === "blog" ||
+  def.page === "contact-us" ||
   def.page === "it-amc-services-dubai" ||
   def.page === "privacy-policy" ||
   def.page === "terms-and-conditions" ||
