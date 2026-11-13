@@ -182,6 +182,12 @@ export const resources = {
       },
       { name: "description", label: "Full description", type: "textarea" },
       {
+        name: "home_heading",
+        label: "Home tab — heading",
+        type: "text",
+        help: "The service's name as the heading on the homepage's large featured card only, e.g. “IT AMC Services in Dubai”. Up to 60 characters. Blank uses the Title. The Title still names the service everywhere else: menus, footer, Services page and its own page.",
+      },
+      {
         name: "eyebrow",
         label: "Home tab — small heading",
         type: "text",
@@ -228,6 +234,12 @@ export const resources = {
         label: "Home tab — button text",
         type: "text",
         help: "Blank shows “Discuss this service”. Up to 28 characters.",
+      },
+      {
+        name: "home_link_label",
+        label: "Home tab — second button text",
+        type: "text",
+        help: "The “Explore …” link beside the button on the homepage's large featured card, e.g. “Explore IT AMC Services”. Up to 32 characters. Blank shows “Explore” and the Title. It always opens this service's page.",
       },
       {
         name: "cta_link",

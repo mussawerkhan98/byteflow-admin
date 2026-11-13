@@ -118,6 +118,13 @@ export const adminGroups: AdminGroup[] = [
         preview: "/blog",
       },
       {
+        key: "blog-sections",
+        label: "Blog page",
+        shows:
+          "The wording of the Blog page: the labels of the banner figures (the numbers are counted from your published posts), which article is featured, the heading, the topic buttons and search, the article cards and the closing panel. The articles themselves are under Blog posts; the top banner is the page's hero.",
+        preview: "/blog",
+      },
+      {
         key: "legal-pages",
         label: "Legal pages",
         shows:

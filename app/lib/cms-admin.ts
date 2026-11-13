@@ -53,6 +53,8 @@ const SERVICE_COLUMNS = [
   "ALTER TABLE services ADD COLUMN highlights TEXT NOT NULL DEFAULT ''",
   "ALTER TABLE services ADD COLUMN image_caption TEXT NOT NULL DEFAULT ''",
   "ALTER TABLE services ADD COLUMN show_in_menu INTEGER NOT NULL DEFAULT 1",
+  "ALTER TABLE services ADD COLUMN home_heading TEXT NOT NULL DEFAULT ''",
+  "ALTER TABLE services ADD COLUMN home_link_label TEXT NOT NULL DEFAULT ''",
 ]
 /** The home page Selected Work card (website: app/lib/project-cards.ts). */
 const PROJECT_COLUMNS = [
@@ -159,6 +161,8 @@ const SERVICE_TAB_LIMITS: [string, string, number][] = [
   ['image_caption', 'Home tab — image caption', 48],
   ['image_alt', 'Image alt text', 125],
   ['cta_label', 'Home tab — button text', 28],
+  ['home_heading', 'Home tab — heading', 60],
+  ['home_link_label', 'Home tab — second button text', 32],
 ]
 
 export function checkServiceTab(data: Record<string, unknown>) {
