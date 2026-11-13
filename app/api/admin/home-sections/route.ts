@@ -12,8 +12,8 @@ import {
 } from "../../../lib/home-sections";
 
 // Home page blocks are saved on the "home" page, the About page's on
-// "about-us", the Services, Industries and IT AMC pages' on their own
-// ("services", "industries", "it-amc-services-dubai"), and each legal
+// "about-us", the Services, Industries, Projects and IT AMC pages' on their
+// own ("services", "industries", "projects", "it-amc-services-dubai"), and each legal
 // page's on its own page; each service page's on its own (svc_* sections).
 const pageOf = (def: HomeBlockDef) => def.page ?? "home";
 const sectionTypeOf = (def: HomeBlockDef) => def.sectionType ?? def.key;
@@ -24,7 +24,9 @@ const pageName = (def: HomeBlockDef) =>
       ? "Services"
       : def.page === "industries"
         ? "Industries"
-        : def.page === "it-amc-services-dubai"
+        : def.page === "projects"
+          ? "Projects"
+          : def.page === "it-amc-services-dubai"
           ? "IT AMC Services"
           : def.remoteDefaults
             ? servicePageList.find((page) => page.slug === def.page)?.name ?? def.label
@@ -36,6 +38,7 @@ const pageName = (def: HomeBlockDef) =>
 const createsPage = (def: HomeBlockDef) =>
   def.page === "services" ||
   def.page === "industries" ||
+  def.page === "projects" ||
   def.page === "it-amc-services-dubai" ||
   def.page === "privacy-policy" ||
   def.page === "terms-and-conditions" ||

@@ -104,6 +104,13 @@ export const adminGroups: AdminGroup[] = [
         preview: "/projects",
       },
       {
+        key: "projects-sections",
+        label: "Projects page",
+        shows:
+          "The wording of the Projects page and of every project's own page: the labels of the banner figures (the numbers are counted from your published projects), the heading above the projects, the service filter, the labels on a project's page and the closing panel. The projects themselves are under Projects; the top banner is the page's hero.",
+        preview: "/projects",
+      },
+      {
         key: "posts",
         label: "Blog posts",
         shows:
