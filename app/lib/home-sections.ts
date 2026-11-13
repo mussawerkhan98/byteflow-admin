@@ -1432,6 +1432,112 @@ export const projectsBlocks: HomeBlockDef[] = [
   },
 ];
 
+/**
+ * The blog page (/blog): its wording and featured article, saved on the
+ * "blog" page. The articles are Blog posts; the banner is the page's hero
+ * (Heroes).
+ */
+export const blogBlocks: HomeBlockDef[] = [
+  {
+    key: "blog_page",
+    page: "blog",
+    label: "Articles",
+    shows: "The blog page under the top banner: the labels of the figures in the banner (the numbers and date are counted from your published posts), the featured article, the heading, the topic buttons (one per category your posts use), the search and the article cards.",
+    preview: "/blog",
+    fields: [
+      { name: "stat_articles", label: "Label under the number of articles", type: "text", group: "Banner figures", help: "Leave a label blank to hide that figure." },
+      { name: "stat_topics", label: "Label under the number of topics", type: "text", group: "Banner figures" },
+      { name: "stat_latest", label: "Label under the newest article's date", type: "text", group: "Banner figures" },
+      {
+        name: "featured",
+        label: "Featured article",
+        type: "post",
+        group: "Featured article",
+        help: "“Latest” always features the newest published post. A picked post that is later unpublished falls back to the latest.",
+      },
+      { name: "picked_badge", label: "Badge on a picked article", type: "text", group: "Featured article" },
+      { name: "latest_badge", label: "Badge on the newest article", type: "text", group: "Featured article" },
+      { name: "eyebrow", label: "Small heading", type: "text", group: "Articles" },
+      { name: "heading", label: "Heading — first part", type: "text", group: "Articles", help: headingHelp },
+      { name: "heading_soft", label: "Heading — second part", type: "text", group: "Articles" },
+      { name: "all_label", label: "First topic button (all articles)", type: "text", group: "Topics & search" },
+      { name: "filter_label", label: "Name of the topic buttons, read out by screen readers", type: "text", group: "Topics & search" },
+      { name: "search_label", label: "Name of the search box, read out by screen readers", type: "text", group: "Topics & search" },
+      { name: "search_placeholder", label: "Text inside the empty search box", type: "text", group: "Topics & search" },
+      { name: "article_word", label: "Word after the count, for one", type: "text", group: "Topics & search", help: "As in “1 article”." },
+      { name: "articles_word", label: "Word after the count, for more", type: "text", group: "Topics & search", help: "As in “36 articles”." },
+      { name: "clear_label", label: "Link that clears the topic and search", type: "text", group: "Topics & search" },
+      { name: "empty_text", label: "Shown when nothing matches", type: "text", group: "Topics & search" },
+      { name: "more_label", label: "Button that shows more articles", type: "text", group: "Cards" },
+      { name: "read_label", label: "Link text on each card", type: "text", group: "Cards" },
+      { name: "author_fallback", label: "Author when a post has none", type: "text", group: "Cards" },
+    ],
+    lists: [],
+    defaults: {
+      fields: {
+        stat_articles: "Articles published",
+        stat_topics: "Topics",
+        stat_latest: "Latest article",
+        featured: "latest",
+        picked_badge: "Editor's pick",
+        latest_badge: "Latest",
+        eyebrow: "All articles",
+        heading: "Browse by topic,",
+        heading_soft: "or search for what you need.",
+        all_label: "All topics",
+        filter_label: "Filter by topic",
+        search_label: "Search articles",
+        search_placeholder: "Search articles…",
+        article_word: "article",
+        articles_word: "articles",
+        clear_label: "Clear filters",
+        empty_text: "No articles match your search.",
+        more_label: "Show more articles",
+        read_label: "Read article",
+        author_fallback: "Byteflow team",
+      },
+      lists: {},
+    },
+  },
+  {
+    key: "blog_cta",
+    page: "blog",
+    label: "Closing panel",
+    shows: "The panel at the end of the blog page, with ways to reach you beside it. The phone, email and location are your Contact details & logo.",
+    preview: "/blog",
+    fields: [
+      { name: "eyebrow", label: "Small heading", type: "text" },
+      { name: "heading", label: "Heading — first part", type: "text", help: headingHelp },
+      { name: "heading_soft", label: "Heading — second part", type: "text" },
+      { name: "intro", label: "Intro paragraph", type: "textarea" },
+      { name: "link_label", label: "Button text", type: "text", group: "Button" },
+      { name: "link", label: "Button link", type: "link", group: "Button" },
+      { name: "phone_label", label: "Phone label", type: "text", group: "Contact rows" },
+      { name: "email_label", label: "Email label", type: "text", group: "Contact rows" },
+      { name: "address_label", label: "Location label", type: "text", group: "Contact rows" },
+      { name: "support_label", label: "Support label", type: "text", group: "Contact rows" },
+      { name: "support_text", label: "Support line", type: "text", group: "Contact rows" },
+    ],
+    lists: [],
+    defaults: {
+      fields: {
+        eyebrow: "Have an IT problem you need solved?",
+        heading: "Reading about it is one thing.",
+        heading_soft: "Getting it fixed is another.",
+        intro: "Tell us what is going on and our team will help you sort it out, with no sales pitch.",
+        link_label: "Talk to our team",
+        link: "/contact-us",
+        phone_label: "Phone",
+        email_label: "Email",
+        address_label: "Location",
+        support_label: "Support",
+        support_text: "24/7 — always available",
+      },
+      lists: {},
+    },
+  },
+];
+
 /** A section's small heading and its heading in two tones. */
 const sectionHeading: HomeField[] = [
   { name: "eyebrow", label: "Small heading", type: "text" },
@@ -2473,7 +2579,7 @@ export const homeBlockKeys = homeBlocks.map((block) => block.key);
 
 /** A home, About, Services, Industries, IT AMC or legal page block by its key. */
 export function getHomeBlockDef(key: string | null): HomeBlockDef | undefined {
-  return [...homeBlocks, ...aboutBlocks, ...servicesBlocks, ...industriesBlocks, ...projectsBlocks, ...amcBlocks, ...allServicePageBlocks, ...legalBlocks].find((block) => block.key === key);
+  return [...homeBlocks, ...aboutBlocks, ...servicesBlocks, ...industriesBlocks, ...projectsBlocks, ...blogBlocks, ...amcBlocks, ...allServicePageBlocks, ...legalBlocks].find((block) => block.key === key);
 }
 
 const LIMITS: Record<HomeFieldType, number> = { text: 200, textarea: 2000, link: 500, image: 500, select: 40, service: 100, tab: 200, post: 200, category: 200, menugroup: 200 };
