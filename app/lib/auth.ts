@@ -25,7 +25,7 @@ export function hashAdminPassword(password: string) {
   return `scrypt$${salt}$${scryptSync(password, salt, 64).toString('hex')}`
 }
 
-function verifyPassword(password: string, stored: string) {
+export function verifyPassword(password: string, stored: string) {
   if (stored.startsWith('scrypt$')) {
     const [, salt, expectedHex] = stored.split('$')
     if (!salt || !expectedHex) return false

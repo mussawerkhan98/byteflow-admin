@@ -274,6 +274,14 @@ export default function PostEditor({
                   ))}
                 </datalist>
               </Field>
+              <Field label="Tags" help="Keywords that group posts here and for Claude, separated by commas. Not shown on the website.">
+                <input
+                  value={value("tags")}
+                  onChange={(event) => change("tags", event.target.value)}
+                  placeholder="backup, Microsoft 365"
+                  className={inputClass}
+                />
+              </Field>
             </div>
             <Field
               label="Summary"

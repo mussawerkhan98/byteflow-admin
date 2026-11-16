@@ -4,6 +4,8 @@ import type { Field, Resource } from './cms-config'
 import { sanitizeEditorHtml } from './editor-html'
 import { checkSiteFigures } from './site-figures'
 import { FieldError } from './field-error'
+import { getCurrentAdminUser } from './auth'
+import { snapshotPost } from './post-revisions'
 
 type Data = Record<string, unknown>
 
@@ -18,6 +20,7 @@ const POST_COLUMNS = [
   'ALTER TABLE posts ADD COLUMN show_toc INTEGER NOT NULL DEFAULT 1',
   'ALTER TABLE posts ADD COLUMN show_share INTEGER NOT NULL DEFAULT 1',
   'ALTER TABLE posts ADD COLUMN show_related INTEGER NOT NULL DEFAULT 1',
+  "ALTER TABLE posts ADD COLUMN tags TEXT NOT NULL DEFAULT ''",
 ]
 /**
  * The header bar's settings. The switches default to on, which is how the
@@ -233,10 +236,20 @@ export async function createRecord(resource: Resource, input: Data) {
   return { id: Number(result.lastInsertRowid) }
 }
 
+export const ensurePostColumns = () => ensureColumns('posts', POST_COLUMNS)
+
+/** Who to name in a post's history for a change made in this panel. */
+async function panelActor() {
+  const user = await getCurrentAdminUser()
+  return user ? `${user.displayName} (admin panel)` : 'Admin panel'
+}
+
 export async function updateRecord(resource: Resource, id: number, input: Data) {
   await ensureResourceTable(resource)
   const data = clean(resource, input)
   const fields = Object.keys(data)
+  // Posts keep a copy of what they were, so the edit can be undone.
+  if (resource.table === 'posts') await snapshotPost(id, 'Before an edit in the admin panel', await panelActor())
   await db.execute({
     sql: `UPDATE ${resource.table} SET ${fields.map((field) => `${field} = ?`).join(', ')}, updated_at = datetime('now') WHERE id = ?`,
     args: [...Object.values(data), id] as (string | number | null)[],
@@ -245,6 +258,7 @@ export async function updateRecord(resource: Resource, id: number, input: Data) 
 
 export async function deleteRecord(resource: Resource, id: number) {
   await ensureResourceTable(resource)
+  if (resource.table === 'posts') await snapshotPost(id, 'Before it was deleted in the admin panel', await panelActor())
   await db.execute({ sql: `DELETE FROM ${resource.table} WHERE id = ?`, args: [id] })
 }
 
