@@ -1,6 +1,6 @@
 import { clientIp, httpsProblem } from '../../lib/claude-http'
 import { authenticateClaudeAccount, createAuthorizationCode, getClient, publicOrigin, type OAuthClient } from '../../lib/claude-store'
-import { signForm, verifyForm } from '../../lib/oauth-core'
+import { allowedRedirectUri, signForm, verifyForm } from '../../lib/oauth-core'
 import { createRateLimiter } from '../../lib/rate-limit'
 
 /**
@@ -58,7 +58,12 @@ async function check(source: URLSearchParams | FormData): Promise<Checked> {
   const client = params.client_id ? await getClient(params.client_id) : null
   if (!client) return { response: problem('This connection request is not from a registered Claude app.') }
   if (!params.redirect_uri && client.redirectUris.length === 1) params.redirect_uri = client.redirectUris[0]
-  if (!client.redirectUris.includes(params.redirect_uri)) return { response: problem('The return address in this request does not match the Claude app that registered.') }
+  if (!client.redirectUris.includes(params.redirect_uri)) return { response: problem('The return address in this request does not match the app that registered.') }
+  // The same rule as registration, so a client registered under older rules can't use an address no longer allowed.
+  if (!allowedRedirectUri(params.redirect_uri)) {
+    console.warn('OAuth authorize refused redirect URI:', params.redirect_uri)
+    return { response: problem('This return address is not allowed. Remove the connector and add it again.') }
+  }
   const responseType = source.get('response_type')
   if (responseType !== null && responseType !== 'code') return { response: backToClient(params.redirect_uri, { error: 'unsupported_response_type', state: params.state }) }
   if (!params.code_challenge || params.code_challenge_method !== 'S256')
