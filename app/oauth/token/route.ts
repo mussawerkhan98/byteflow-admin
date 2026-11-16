@@ -1,6 +1,6 @@
 import { clientIp, httpsProblem } from '../../lib/claude-http'
 import { consumeAuthorizationCode, getClient, issueTokens, rotateRefreshToken, type OAuthClient } from '../../lib/claude-store'
-import { sha256, verifyPkce } from '../../lib/oauth-core'
+import { allowedRedirectUri, sha256, verifyPkce } from '../../lib/oauth-core'
 import { createRateLimiter } from '../../lib/rate-limit'
 
 /** OAuth token endpoint: authorization_code (with PKCE) and refresh_token grants. */
@@ -46,6 +46,7 @@ export async function POST(request: Request) {
     const code = await consumeAuthorizationCode(body.code ?? '')
     if (!code || code.clientId !== client.clientId) return oauthError('invalid_grant', 'The authorization code is invalid, expired or already used.')
     if (body.redirect_uri && body.redirect_uri !== code.redirectUri) return oauthError('invalid_grant', 'redirect_uri does not match the authorization request.')
+    if (!allowedRedirectUri(code.redirectUri)) return oauthError('invalid_grant', 'This return address is no longer allowed. Connect again.')
     if (!verifyPkce(body.code_verifier ?? '', code.codeChallenge)) return oauthError('invalid_grant', 'code_verifier does not match the code challenge.')
     const tokens = await issueTokens({ clientId: client.clientId, accountId: code.accountId, scope: code.scope, resource: code.resource })
     return reply({ access_token: tokens.accessToken, token_type: 'Bearer', expires_in: tokens.expiresIn, refresh_token: tokens.refreshToken, scope: tokens.scope })

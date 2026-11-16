@@ -31,16 +31,20 @@ export function verifyPkce(verifier: string, challenge: string): boolean {
   return safeEqual(pkceChallenge(verifier), challenge);
 }
 
-/**
- * Composio's OAuth callback. Its docs show it with and without "auth", under
- * v3 and v3.1, so those four paths are accepted — nothing else on that host.
- */
-const COMPOSIO_CALLBACK = /^\/api\/v3(?:\.1)?\/toolkits\/(?:auth\/)?callback$/;
+/** Claude's connector callback, on claude.ai or claude.com. */
+const CLAUDE_CALLBACK = "/api/mcp/auth_callback";
 
 /**
- * Only Claude's own callback, Composio's callback, and loopback addresses for
- * Claude Desktop and Claude Code may receive an authorization code. Anything
- * else is refused at registration, so a code can't be sent to someone else's site.
+ * Composio and any of its subdomains, any path: its callback address isn't
+ * documented and has changed between API versions. Matched on the parsed
+ * hostname, so composio.dev.evil.com does not count.
+ */
+const isComposio = (hostname: string) => hostname === "composio.dev" || hostname.endsWith(".composio.dev");
+
+/**
+ * Only Claude's callback, Composio, and loopback addresses for Claude Desktop
+ * and Claude Code may receive an authorization code. Anything else is refused
+ * at registration and at sign-in, so a code can't be sent to someone else's site.
  */
 export function allowedRedirectUri(value: string): boolean {
   let url: URL;
@@ -51,8 +55,8 @@ export function allowedRedirectUri(value: string): boolean {
   }
   if (url.hash || url.username || url.password) return false;
   if (url.protocol === "https:" && url.port) return false;
-  if (url.protocol === "https:" && url.hostname === "backend.composio.dev") return COMPOSIO_CALLBACK.test(url.pathname);
-  if (url.protocol === "https:") return url.hostname === "claude.ai" || url.hostname === "claude.com";
+  if (url.protocol === "https:" && isComposio(url.hostname)) return true;
+  if (url.protocol === "https:") return (url.hostname === "claude.ai" || url.hostname === "claude.com") && url.pathname === CLAUDE_CALLBACK;
   if (url.protocol === "http:") return url.hostname === "localhost" || url.hostname === "127.0.0.1" || url.hostname === "[::1]";
   return false;
 }
