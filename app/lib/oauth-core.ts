@@ -32,9 +32,15 @@ export function verifyPkce(verifier: string, challenge: string): boolean {
 }
 
 /**
- * Only Claude's own callback, and loopback addresses for Claude Desktop and
- * Claude Code, may receive an authorization code. Anything else is refused at
- * registration, so a code can't be sent to someone else's site.
+ * Composio's OAuth callback. Its docs show it with and without "auth", under
+ * v3 and v3.1, so those four paths are accepted — nothing else on that host.
+ */
+const COMPOSIO_CALLBACK = /^\/api\/v3(?:\.1)?\/toolkits\/(?:auth\/)?callback$/;
+
+/**
+ * Only Claude's own callback, Composio's callback, and loopback addresses for
+ * Claude Desktop and Claude Code may receive an authorization code. Anything
+ * else is refused at registration, so a code can't be sent to someone else's site.
  */
 export function allowedRedirectUri(value: string): boolean {
   let url: URL;
@@ -44,7 +50,9 @@ export function allowedRedirectUri(value: string): boolean {
     return false;
   }
   if (url.hash || url.username || url.password) return false;
-  if (url.protocol === "https:") return (url.hostname === "claude.ai" || url.hostname === "claude.com") && !url.port;
+  if (url.protocol === "https:" && url.port) return false;
+  if (url.protocol === "https:" && url.hostname === "backend.composio.dev") return COMPOSIO_CALLBACK.test(url.pathname);
+  if (url.protocol === "https:") return url.hostname === "claude.ai" || url.hostname === "claude.com";
   if (url.protocol === "http:") return url.hostname === "localhost" || url.hostname === "127.0.0.1" || url.hostname === "[::1]";
   return false;
 }
