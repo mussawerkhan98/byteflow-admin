@@ -8,6 +8,11 @@ export function proxy(request: NextRequest) {
   if (pathname === '/' || pathname.startsWith('/admin') || pathname.startsWith('/api/admin') || pathname.startsWith('/api/media/') || pathname.startsWith('/uploads')) {
     return NextResponse.next()
   }
+  // The Claude connector: the MCP server, its REST API and the OAuth sign-in
+  // around them. Each checks its own access token or sign-in.
+  if (pathname === '/mcp' || pathname.startsWith('/api/claude/') || pathname.startsWith('/oauth/') || pathname.startsWith('/api/oauth/') || pathname.startsWith('/.well-known/')) {
+    return NextResponse.next()
+  }
   return NextResponse.redirect(new URL('/admin', request.url))
 }
 

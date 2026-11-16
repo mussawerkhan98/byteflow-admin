@@ -204,6 +204,12 @@ export const adminGroups: AdminGroup[] = [
         shows: "Who is allowed to sign in to this admin panel.",
       },
       {
+        key: "claude",
+        label: "Claude connector",
+        shows:
+          "Lets Claude (claude.ai) read, draft and edit blog articles for you. Every change Claude makes is listed here and can be undone.",
+      },
+      {
         key: "image-storage",
         label: "Image storage",
         shows:

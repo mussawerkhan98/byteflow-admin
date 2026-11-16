@@ -47,6 +47,17 @@ const nextConfig: NextConfig = {
       },
     ]
   },
+  // OAuth discovery for the Claude connector (app/api/oauth). Clients look
+  // for these at fixed /.well-known addresses, with or without the /mcp suffix.
+  async rewrites() {
+    return [
+      { source: '/.well-known/oauth-authorization-server', destination: '/api/oauth/authorization-server' },
+      { source: '/.well-known/oauth-authorization-server/:path*', destination: '/api/oauth/authorization-server' },
+      { source: '/.well-known/openid-configuration', destination: '/api/oauth/authorization-server' },
+      { source: '/.well-known/oauth-protected-resource', destination: '/api/oauth/protected-resource' },
+      { source: '/.well-known/oauth-protected-resource/:path*', destination: '/api/oauth/protected-resource' },
+    ]
+  },
 }
 
 export default nextConfig

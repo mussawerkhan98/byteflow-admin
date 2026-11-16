@@ -490,6 +490,7 @@ export const resources = {
       { name: "title", label: "Title", type: "text", required: true },
       { name: "slug", label: "Slug", type: "text", required: true },
       { name: "category", label: "Category", type: "text" },
+      { name: "tags", label: "Tags", type: "text" },
       { name: "excerpt", label: "Excerpt", type: "textarea" },
       { name: "content", label: "Content", type: "richtext", required: true },
       { name: "date", label: "Publication date", type: "text" },
