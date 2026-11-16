@@ -70,7 +70,7 @@ function form(client: OAuthClient, params: Record<string, string>, error = '', e
   const signature = signForm(secret(), params, Math.floor(Date.now() / 1000) + FORM_SECONDS)
   const hidden = PARAMS.map((key) => `<input type="hidden" name="${key}" value="${escape(params[key])}">`).join('')
   return page(`<h1>Connect ${escape(client.clientName)} to Byteflow</h1>
-<p>Sign in with the <strong>Claude account</strong> (not your own admin login) to let Claude:</p>
+<p>Sign in with the <strong>Claude account</strong> (not your own admin login) to let ${escape(client.clientName)}:</p>
 <ul><li>read all blog articles</li><li>create drafts and edit articles</li><li>publish an article when you ask it to</li><li>upload images for articles</li></ul>
 <p>It cannot delete anything or change any other part of the website. Every change is logged and can be undone under <strong>Claude connector</strong> in the admin panel.</p>
 ${error ? `<p class="error" role="alert">${escape(error)}</p>` : ''}
